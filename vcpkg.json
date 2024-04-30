@@ -1,0 +1,27 @@
+{
+  "name": "trade",
+  "version-string": "1.0.0",
+  "builtin-baseline": "055721089e8037d4d617250814d11f881e557549",
+  "dependencies": [
+    {
+      "name": "boost-core",
+      "version>=": "1.84.0"
+    },
+    {
+      "name": "catch2",
+      "version>=": "3.5.3"
+    },
+    {
+      "name": "fmt",
+      "version>=": "10.2.1#1"
+    },
+    {
+      "name": "pybind11",
+      "version>=": "2.11.1"
+    },
+    {
+      "name": "spdlog",
+      "version>=": "1.13.0"
+    }
+  ]
+}
