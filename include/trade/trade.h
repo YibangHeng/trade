@@ -1,7 +1,7 @@
 #pragma once
 
 #include <atomic>
-#include <boost/noncopyable.hpp>
+#include <boost/program_options.hpp>
 #include <set>
 
 #include "AppBase.hpp"
@@ -21,7 +21,14 @@ public:
     static void signal(int signal);
 
 private:
+    bool argv_parse(int argc, char* argv[]);
+
+private:
+    boost::program_options::variables_map arguments;
+
+private:
     std::atomic<bool> is_running = false;
+    std::atomic<int> exit_code   = 0;
 
 private:
     static std::set<Trade*> instances;

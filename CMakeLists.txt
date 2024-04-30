@@ -26,6 +26,10 @@ configure_file(
         ${CMAKE_SOURCE_DIR}/include/info.h
 )
 
+# Third-party libraries.
+find_package(fmt REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options)
+
 # Binaries and libraries.
 add_subdirectory(src/trade)
 
