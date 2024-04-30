@@ -32,6 +32,7 @@ find_package(Boost REQUIRED COMPONENTS program_options)
 
 # Binaries and libraries.
 add_subdirectory(src/trade)
+add_subdirectory(src/trade-gui)
 
 # Tests.
 include(CTest)
