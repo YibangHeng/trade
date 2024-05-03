@@ -15,8 +15,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(BUILD_PYTHON "Enable building of Python bindings" ON)
 option(BUILD_DOCS "Enable building of documentation" ON)
 
-# Include directories.
-include_directories(include)
+set(CMAKE_MESSAGE_CONTEXT_SHOW ON)
+set(CMAKE_MESSAGE_CONTEXT ${CMAKE_PROJECT_NAME})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -26,16 +26,16 @@ configure_file(
         ${CMAKE_SOURCE_DIR}/include/info.h
 )
 
-set(CMAKE_MESSAGE_CONTEXT_SHOW ON)
-set(CMAKE_MESSAGE_CONTEXT ${CMAKE_PROJECT_NAME})
-
 # Third-party libraries.
 find_package(fmt REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options)
 
+# Include directories.
+include_directories(include)
+
 # Protocols.
 add_subdirectory(trade_types)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/trade_types) # For generated *.pb.h.
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/trade_types) # For generated *.pb.h.
 
 # Binaries and libraries.
 add_subdirectory(src/trade)
