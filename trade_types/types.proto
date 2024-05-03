@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package trade.types;
+
+import "google/protobuf/timestamp.proto";
+
+import "enums.proto";
+
+/// Message ID for network.
+enum MessageID
+{
+    invalid_message_id = 0;
+
+    sig_int            = 100; /// 网络终止信号
+
+    /// 请求命令。客户端向 trade 发送的操作指令
+    new_order_req      = 1000; /// 新委托创建请求
+    new_cancel_req     = 1001; /// 新撤销创建请求
+    new_cancel_all_req = 1002; /// 新全部撤销创建请求
+
+    /// 内部响应。仅用于标识 trade 已接收到相应的命令
+    new_order_rsp      = 2000; /// 新委托创建响应
+    new_cancel_rsp     = 2001; /// 新撤销创建响应
+    new_cancel_all_rsp = 2002; /// 新全部撤销创建响应
+}
+
+/// 空消息
+message EmptyMessage {}
+
+/// 网络终止信号
+message SigInt {}
+
+/// 新委托创建请求
+message NewOrderReq
+{
+    int64 request_id                    = 1; /// 请求 ID
+    optional int64 unique_id            = 2; /// 委托 UniqueID
+    string symbol                       = 3;
+    ExchangeType exchange               = 4;
+    SideType side                       = 5;
+    optional PositionType position_side = 6; /// For futures and options.
+    double price                        = 7;
+    int64 quantity                      = 8;
+}
+
+/// 新委托创建响应
+message NewOrderRsp
+{
+    int64 request_id                        = 1; /// 请求 ID
+    int64 unique_id                         = 2; /// 委托 UniqueID
+    google.protobuf.Timestamp creation_time = 3; /// 委托创建时间
+    optional RejectionCode rejection_code   = 4; /// 拒绝代码
+}
+
+/// 新撤销创建请求
+message NewCancelReq
+{
+    int64 request_id                      = 1; /// 请求 ID
+    int64 original_unique_id              = 2; /// 委托 UniqueID
+    optional string original_raw_order_id = 3; /// 原始委托号
+}
+
+/// 新撤单创建响应
+message NewCancelRsp
+{
+    int64 request_id                        = 1; /// 请求 ID
+    int64 original_unique_id                = 2; /// 委托 UniqueID
+    google.protobuf.Timestamp creation_time = 3; /// 撤单创建时间
+    optional RejectionCode rejection_code   = 4; /// 拒绝代码
+}
+
+/// 新全部撤销创建请求
+message NewCancelAllReq
+{
+    int64 request_id = 1; /// 请求 ID
+}
+
+/// 新全部撤单创建响应
+message NewCancelAllRsp
+{
+    int64 request_id                        = 1; /// 请求 ID
+    google.protobuf.Timestamp creation_time = 2; /// 撤单创建时间
+    optional RejectionCode rejection_code   = 3; /// 拒绝代码
+}

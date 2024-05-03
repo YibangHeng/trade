@@ -26,9 +26,16 @@ configure_file(
         ${CMAKE_SOURCE_DIR}/include/info.h
 )
 
+set(CMAKE_MESSAGE_CONTEXT_SHOW ON)
+set(CMAKE_MESSAGE_CONTEXT ${CMAKE_PROJECT_NAME})
+
 # Third-party libraries.
 find_package(fmt REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options)
+
+# Protocols.
+add_subdirectory(trade_types)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/trade_types) # For generated *.pb.h.
 
 # Binaries and libraries.
 add_subdirectory(src/trade)
