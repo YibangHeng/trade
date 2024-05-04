@@ -16,6 +16,10 @@
       "version>=": "1.84.0"
     },
     {
+      "name": "boost-property-tree",
+      "version>=": "1.84.0"
+    },
+    {
       "name": "catch2",
       "version>=": "3.5.3"
     },

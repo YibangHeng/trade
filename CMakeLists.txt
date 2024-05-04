@@ -27,18 +27,39 @@ configure_file(
 )
 
 # Third-party libraries.
+link_directories(lib)
+
+find_package(
+        Boost REQUIRED
+        COMPONENTS
+        program_options
+)
 find_package(fmt REQUIRED)
-find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(Protobuf REQUIRED)
 
 # Include directories.
 include_directories(include)
 
 # Protocols.
 add_subdirectory(trade_types)
+include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/trade_types) # For generated *.pb.h.
 
 # Binaries and libraries.
+add_subdirectory(src/libbroker)
 add_subdirectory(src/trade)
+
+# Configuration files.
+set(CONFIG_FILES trade.ini ctp.ini)
+
+foreach (CONFIG_FILE ${CONFIG_FILES})
+    configure_file(${CMAKE_SOURCE_DIR}/etc/${CONFIG_FILE}
+            ${CMAKE_BINARY_DIR}/etc/${CONFIG_FILE}
+            COPYONLY)
+    install(FILES ${CMAKE_SOURCE_DIR}/etc/${CONFIG_FILE}
+            DESTINATION /usr/local/etc
+            COMPONENT config)
+endforeach ()
 
 # Tests.
 include(CTest)
