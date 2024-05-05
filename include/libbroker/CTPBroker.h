@@ -3,23 +3,36 @@
 #include <memory>
 
 #include "AppBase.hpp"
-#include "BrokerProxy.h"
+#include "BrokerProxy.hpp"
 #include "third/ctp/ThostFtdcTraderApi.h"
 
 namespace trade::broker
 {
 
-class CTPBrokerImpl final: private CThostFtdcTraderSpi
+class CTPBroker;
+
+class CTPBrokerImpl final: private AppBase<int>, private CThostFtdcTraderSpi
 {
 public:
-    explicit CTPBrokerImpl(const AppBase* parent);
-    virtual ~CTPBrokerImpl();
+    explicit CTPBrokerImpl(CTPBroker* parent);
+    ~CTPBrokerImpl() override;
+
+private:
+    void OnFrontConnected() override;
+    void OnRspUserLogin(
+        CThostFtdcRspUserLoginField* pRspUserLogin,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
 
 private:
     CThostFtdcTraderApi* m_api;
+
+private:
+    CTPBroker* m_parent;
 };
 
-class PUBLIC_API CTPBroker final: public BrokerProxy
+class PUBLIC_API CTPBroker final: public BrokerProxy<int>
 {
 public:
     explicit CTPBroker(const std::string& config_path);
