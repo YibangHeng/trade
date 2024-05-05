@@ -118,7 +118,7 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogout(
         return;
     }
 
-    logger->info("Logged out successfully as UserID/BrokerID {}/{}", pUserLogout->BrokerID, pUserLogout->UserID);
+    logger->info("Logged out successfully as UserID/BrokerID {}/{}", pUserLogout->UserID, pUserLogout->BrokerID);
 
     m_parent->notify_logout_success();
 }

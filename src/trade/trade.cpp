@@ -101,6 +101,8 @@ bool trade::Trade::argv_parse(const int argc, char* argv[])
     desc.add_options()("help,h", "print help message");
     desc.add_options()("version,v", "print version string and exit");
 
+    desc.add_options()("debug,d", "enable debug output");
+
     /// Config file.
     desc.add_options()("config,c", boost::program_options::value<std::string>()->default_value("./etc/trade.ini"), "config file");
 
@@ -123,6 +125,10 @@ bool trade::Trade::argv_parse(const int argc, char* argv[])
     if (m_arguments.contains("version")) {
         std::cout << fmt::format("trade {}", trade_VERSION) << std::endl;
         return false;
+    }
+
+    if (m_arguments.contains("debug")) {
+        spdlog::set_level(spdlog::level::debug);
     }
 
     return true;
