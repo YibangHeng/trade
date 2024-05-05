@@ -32,7 +32,7 @@ TEST_CASE("Login/Logout synchronization", "[LoginSyncer]")
         mock_login_syncer.start_login();
 
         std::thread notifier_thread([&mock_login_syncer] {
-            mock_login_syncer.notify_login_failure("Artificial failure");
+            mock_login_syncer.notify_login_failure("Artificial failure with code {}", 42);
         });
 
         CHECK_THROWS_AS(mock_login_syncer.wait_login_reasult(), std::runtime_error);
@@ -62,7 +62,7 @@ TEST_CASE("Login/Logout synchronization", "[LoginSyncer]")
         mock_login_syncer.start_logout();
 
         std::thread notifier_thread([&mock_login_syncer] {
-            mock_login_syncer.notify_logout_failure("Artificial failure");
+            mock_login_syncer.notify_logout_failure("Artificial failure with code {}", 42);
         });
 
         CHECK_THROWS_AS(mock_login_syncer.wait_logout_reasult(), std::runtime_error);

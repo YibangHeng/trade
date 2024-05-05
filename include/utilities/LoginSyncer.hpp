@@ -2,6 +2,7 @@
 
 #include <boost/logic/tribool.hpp>
 #include <condition_variable>
+#include <fmt/format.h>
 
 /// TODO: Add timeout support.
 
@@ -42,10 +43,11 @@ public:
         m_cv.notify_all();
     }
 
-    void notify_failure(const std::string& message)
+    template<typename... T>
+    void notify_failure(fmt::format_string<T...> fmt, T&&... args)
     {
         m_attempting.store(boost::logic::tribool::false_value);
-        m_message = message;
+        m_message = fmt::format(fmt, std::forward<T>(args)...);
         m_mutex.unlock();
         m_cv.notify_all();
     }
@@ -105,17 +107,19 @@ public:
     }
 
     /// Notifies that a login attempt has failed with a specific message.
-    /// @param message The message indicating the reason for the login failure.
-    void notify_login_failure(const std::string& message)
+    /// Error message complies with fmt::format syntax.
+    template<typename... T>
+    void notify_login_failure(fmt::format_string<T...> fmt, T&&... args)
     {
-        m_login_syncer.notify_failure(message);
+        m_login_syncer.notify_failure(fmt, std::forward<T>(args)...);
     }
 
     /// Notifies that a logout attempt has failed with a specific message.
-    /// @param message The message indicating the reason for the logout failure.
-    void notify_logout_failure(const std::string& message)
+    /// Error message complies with fmt::format syntax.
+    template<typename... T>
+    void notify_logout_failure(fmt::format_string<T...> fmt, T&&... args)
     {
-        m_logout_syncer.notify_failure(message);
+        m_logout_syncer.notify_failure(fmt, std::forward<T>(args)...);
     }
 
 private:
