@@ -17,12 +17,12 @@ trade::broker::CTPBrokerImpl::CTPBrokerImpl(CTPBroker* parent)
 
 trade::broker::CTPBrokerImpl::~CTPBrokerImpl()
 {
-    CThostFtdcUserLogoutField req {};
+    CThostFtdcUserLogoutField user_logout_field {};
 
-    M_A {req.BrokerID} = config->get<std::string>("User.BrokerID");
-    M_A {req.UserID}   = config->get<std::string>("User.UserID");
+    M_A {user_logout_field.BrokerID} = config->get<std::string>("User.BrokerID");
+    M_A {user_logout_field.UserID}   = config->get<std::string>("User.UserID");
 
-    m_api->ReqUserLogout(&req, ticker_taper());
+    m_api->ReqUserLogout(&user_logout_field, ticker_taper());
 
     /// Wait for @OnRspUserLogout.
     m_parent->wait_logout();
@@ -31,22 +31,48 @@ trade::broker::CTPBrokerImpl::~CTPBrokerImpl()
     m_api->Release();
 }
 
+void trade::broker::CTPBrokerImpl::init_req()
+{
+    int code;
+
+    /// @OnRspQryExchange.
+    CThostFtdcQryExchangeField qry_exchange_field {};
+    code = m_api->ReqQryExchange(&qry_exchange_field, ticker_taper());
+    if (code != 0) {
+        logger->error("Failed to call ReqQryExchange: returned code {}", code);
+    }
+
+    /// @OnReqQryProduct.
+    CThostFtdcQryProductField qry_product_field {};
+    code = m_api->ReqQryProduct(&qry_product_field, ticker_taper());
+    if (code != 0) {
+        logger->error("Failed to call ReqQryProduct: returned code {}", code);
+    }
+
+    /// @OnReqQryInstrument.
+    CThostFtdcQryInstrumentField qry_instrument_field {};
+    code = m_api->ReqQryInstrument(&qry_instrument_field, ticker_taper());
+    if (code != 0) {
+        logger->error("Failed to call ReqQryInstrument: returned code {}", code);
+    }
+}
+
 void trade::broker::CTPBrokerImpl::OnFrontConnected()
 {
     CThostFtdcTraderSpi::OnFrontConnected();
 
     logger->info("Connected to CTP server {} with version {}", config->get<std::string>("Server.TradeAddress"), CThostFtdcTraderApi::GetApiVersion());
 
-    CThostFtdcReqUserLoginField req {};
+    CThostFtdcReqUserLoginField req_user_login_field {};
 
-    M_A {req.BrokerID} = config->get<std::string>("User.BrokerID");
-    M_A {req.UserID}   = config->get<std::string>("User.UserID");
-    M_A {req.Password} = config->get<std::string>("User.Password");
+    M_A {req_user_login_field.BrokerID} = config->get<std::string>("User.BrokerID");
+    M_A {req_user_login_field.UserID}   = config->get<std::string>("User.UserID");
+    M_A {req_user_login_field.Password} = config->get<std::string>("User.Password");
 
-    /// Req user login.
-    const auto code = m_api->ReqUserLogin(&req, ticker_taper());
+    /// @OnRspUserLogin.
+    const auto code = m_api->ReqUserLogin(&req_user_login_field, ticker_taper());
     if (code != 0) {
-        m_parent->notify_login_failure("Failed to call ReqUserLogin with code {}", code);
+        m_parent->notify_login_failure("Failed to call ReqUserLogin: returned code {}", code);
     }
 }
 
@@ -70,6 +96,9 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogin(
     logger->info("Logged to {} successfully as UserID/BrokerID {}/{} at {}-{}", pRspUserLogin->SystemName, pRspUserLogin->UserID, pRspUserLogin->BrokerID, pRspUserLogin->TradingDay, pRspUserLogin->LoginTime);
 
     m_parent->notify_login_success();
+
+    /// Initial queries.
+    init_req();
 }
 
 void trade::broker::CTPBrokerImpl::OnRspUserLogout(
@@ -92,6 +121,87 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogout(
     logger->info("Logged out successfully as UserID/BrokerID {}/{}", pUserLogout->BrokerID, pUserLogout->UserID);
 
     m_parent->notify_logout_success();
+}
+
+/// @ReqQryExchange.
+void trade::broker::CTPBrokerImpl::OnRspQryExchange(
+    CThostFtdcExchangeField* pExchange,
+    CThostFtdcRspInfoField* pRspInfo,
+    const int nRequestID, const bool bIsLast
+)
+{
+    CThostFtdcTraderSpi::OnRspQryExchange(pExchange, pRspInfo, nRequestID, bIsLast);
+
+    if (pRspInfo == nullptr) {
+        return;
+    }
+
+    if (pRspInfo->ErrorID != 0) {
+        logger->error("Failed to load exchange: {}", pRspInfo->ErrorMsg);
+        return;
+    }
+
+    m_exchanges.emplace(pExchange->ExchangeID, *pExchange);
+
+    logger->debug("Loaded exchange {} - {}", pExchange->ExchangeID, pExchange->ExchangeName);
+
+    if (bIsLast) {
+        logger->info("Loaded {} exchanges", m_exchanges.size());
+    }
+}
+
+/// @ReqQryProduct.
+void trade::broker::CTPBrokerImpl::OnRspQryProduct(
+    CThostFtdcProductField* pProduct,
+    CThostFtdcRspInfoField* pRspInfo,
+    const int nRequestID, const bool bIsLast
+)
+{
+    CThostFtdcTraderSpi::OnRspQryProduct(pProduct, pRspInfo, nRequestID, bIsLast);
+
+    if (pRspInfo == nullptr) {
+        return;
+    }
+
+    if (pRspInfo->ErrorID != 0) {
+        logger->error("Failed to load product: {}", pRspInfo->ErrorMsg);
+        return;
+    }
+
+    m_products.emplace(pProduct->ProductID, *pProduct);
+
+    logger->debug("Loaded product {} - {}", pProduct->ProductID, pProduct->ProductName);
+
+    if (bIsLast) {
+        logger->info("Loaded {} products", m_products.size());
+    }
+}
+
+/// @ReqQryInstrument.
+void trade::broker::CTPBrokerImpl::OnRspQryInstrument(
+    CThostFtdcInstrumentField* pInstrument,
+    CThostFtdcRspInfoField* pRspInfo,
+    const int nRequestID, const bool bIsLast
+)
+{
+    CThostFtdcTraderSpi::OnRspQryInstrument(pInstrument, pRspInfo, nRequestID, bIsLast);
+
+    if (pRspInfo == nullptr) {
+        return;
+    }
+
+    if (pRspInfo->ErrorID != 0) {
+        logger->error("Failed to load instrument: {}", pRspInfo->ErrorMsg);
+        return;
+    }
+
+    m_instruments.emplace(pInstrument->InstrumentID, *pInstrument);
+
+    logger->debug("Loaded instrument {} - {}", pInstrument->InstrumentID, pInstrument->InstrumentName);
+
+    if (bIsLast) {
+        logger->info("Loaded {} instruments", m_instruments.size());
+    }
 }
 
 trade::broker::CTPBroker::CTPBroker(const std::string& config_path)

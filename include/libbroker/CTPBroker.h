@@ -18,6 +18,10 @@ public:
     ~CTPBrokerImpl() override;
 
 private:
+    /// Do some initial queries.
+    void init_req();
+
+private:
     void OnFrontConnected() override;
     void OnRspUserLogin(
         CThostFtdcRspUserLoginField* pRspUserLogin,
@@ -29,9 +33,30 @@ private:
         CThostFtdcRspInfoField* pRspInfo,
         int nRequestID, bool bIsLast
     ) override;
+    void OnRspQryExchange(
+        CThostFtdcExchangeField* pExchange,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
+    void OnRspQryProduct(
+        CThostFtdcProductField* pProduct,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
+    void OnRspQryInstrument(
+        CThostFtdcInstrumentField* pInstrument,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
 
 private:
     CThostFtdcTraderApi* m_api;
+    /// ExchangeID -> CThostFtdcExchangeField.
+    std::unordered_map<std::string, CThostFtdcExchangeField> m_exchanges;
+    /// ProductID -> CThostFtdcProductField.
+    std::unordered_map<std::string, CThostFtdcProductField> m_products;
+    /// InstrumentID -> CThostFtdcInstrumentField.
+    std::unordered_map<std::string, CThostFtdcInstrumentField> m_instruments;
 
 private:
     CTPBroker* m_parent;
