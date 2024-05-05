@@ -22,7 +22,14 @@ int trade::Trade::run()
         return m_exit_code;
     }
 
-    reset_config(m_arguments["config"].as<std::string>());
+    /// Load config.
+    try {
+        reset_config(m_arguments["config"].as<std::string>());
+    }
+    catch (const boost::property_tree::ini_parser_error& e) {
+        logger->error("Failed to load config: {}", e.what());
+        return 1;
+    }
 
     broker::IBroker* broker;
 
