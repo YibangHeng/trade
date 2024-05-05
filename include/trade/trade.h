@@ -9,11 +9,11 @@
 namespace trade
 {
 
-class Trade: private AppBase
+class Trade: private AppBase<>
 {
 public:
     Trade(int argc, char* argv[]);
-    ~Trade();
+    ~Trade() override;
 
 public:
     int run();
