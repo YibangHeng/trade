@@ -17,6 +17,16 @@ trade::broker::CTPBrokerImpl::CTPBrokerImpl(CTPBroker* parent)
 
 trade::broker::CTPBrokerImpl::~CTPBrokerImpl()
 {
+    CThostFtdcUserLogoutField req {};
+
+    M_A {req.BrokerID} = config->get<std::string>("User.BrokerID");
+    M_A {req.UserID}   = config->get<std::string>("User.UserID");
+
+    m_api->ReqUserLogout(&req, ticker_taper());
+
+    /// Wait for @OnRspUserLogout.
+    m_parent->wait_logout();
+
     m_api->RegisterSpi(nullptr);
     m_api->Release();
 }
@@ -57,9 +67,31 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogin(
         return;
     }
 
-    logger->info("Logged to {} successfully with UserID/BrokerID {}/{} at {}-{}", pRspUserLogin->SystemName, pRspUserLogin->UserID, pRspUserLogin->BrokerID, pRspUserLogin->TradingDay, pRspUserLogin->LoginTime);
+    logger->info("Logged to {} successfully as UserID/BrokerID {}/{} at {}-{}", pRspUserLogin->SystemName, pRspUserLogin->UserID, pRspUserLogin->BrokerID, pRspUserLogin->TradingDay, pRspUserLogin->LoginTime);
 
     m_parent->notify_login_success();
+}
+
+void trade::broker::CTPBrokerImpl::OnRspUserLogout(
+    CThostFtdcUserLogoutField* pUserLogout,
+    CThostFtdcRspInfoField* pRspInfo,
+    const int nRequestID, const bool bIsLast
+)
+{
+    CThostFtdcTraderSpi::OnRspUserLogout(pUserLogout, pRspInfo, nRequestID, bIsLast);
+
+    if (pRspInfo == nullptr) {
+        return;
+    }
+
+    if (pRspInfo->ErrorID != 0) {
+        m_parent->notify_logout_failure("Failed to logout with code {}: {}", pRspInfo->ErrorID, pRspInfo->ErrorMsg);
+        return;
+    }
+
+    logger->info("Logged out successfully as UserID/BrokerID {}/{}", pUserLogout->BrokerID, pUserLogout->UserID);
+
+    m_parent->notify_logout_success();
 }
 
 trade::broker::CTPBroker::CTPBroker(const std::string& config_path)
@@ -73,4 +105,11 @@ void trade::broker::CTPBroker::login() noexcept
     BrokerProxy::login();
 
     m_impl = std::make_unique<CTPBrokerImpl>(this);
+}
+
+void trade::broker::CTPBroker::logout() noexcept
+{
+    BrokerProxy::logout();
+
+    m_impl = nullptr;
 }

@@ -53,6 +53,16 @@ int trade::Trade::run()
 
     /// TODO: Start networking event loop here.
 
+    broker->logout();
+
+    try {
+        broker->wait_logout();
+    }
+    catch (const std::runtime_error& e) {
+        logger->error("Failed to logout: {}", e.what());
+        return 1;
+    }
+
     return m_exit_code;
 }
 

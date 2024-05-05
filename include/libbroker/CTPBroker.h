@@ -24,6 +24,11 @@ private:
         CThostFtdcRspInfoField* pRspInfo,
         int nRequestID, bool bIsLast
     ) override;
+    void OnRspUserLogout(
+        CThostFtdcUserLogoutField* pUserLogout,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
 
 private:
     CThostFtdcTraderApi* m_api;
@@ -40,6 +45,7 @@ public:
 
 public:
     void login() noexcept override;
+    void logout() noexcept override;
 
 private:
     std::unique_ptr<CTPBrokerImpl> m_impl;
