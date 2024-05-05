@@ -23,7 +23,7 @@ class ConfigHelperBase
 {
 protected:
     using ConfigType = boost::property_tree::ptree;
-    ConfigType _config;
+    ConfigType m_config;
 };
 
 /// Helper class for parsing config files.
@@ -41,7 +41,7 @@ class ConfigHelper<ConfigFileType::INI>: private ConfigHelperBase
 public:
     explicit ConfigHelper(const std::string& configPath)
     {
-        read_ini(configPath, _config);
+        read_ini(configPath, m_config);
     }
 
 public:
@@ -50,15 +50,15 @@ public:
     /// @param key Path to find the value in the configuration.
     /// @return Value retrieved from the configuration.
     template<typename Rt>
-    Rt get(const std::string& key) const { return _config.get<Rt>(key); }
+    Rt get(const std::string& key) const { return m_config.get<Rt>(key); }
     template<typename Rt>
-    Rt get(const std::string& key, Rt defaultValue) const
+    Rt get(const std::string& key, Rt default_value) const
     {
         try {
-            return _config.get<Rt>(key);
+            return m_config.get<Rt>(key);
         }
         catch (const boost::property_tree::ptree_bad_path&) {
-            return defaultValue;
+            return default_value;
         }
     }
 };
@@ -67,9 +67,9 @@ template<>
 class ConfigHelper<ConfigFileType::JSON>: private ConfigHelperBase
 {
 public:
-    explicit ConfigHelper(const std::string& configPath)
+    explicit ConfigHelper(const std::string& config_path)
     {
-        read_json(configPath, _config);
+        read_json(config_path, m_config);
     }
 
 public:
@@ -78,15 +78,15 @@ public:
     /// @param key Path to find the value in the configuration.
     /// @return Value retrieved from the configuration.
     template<typename Rt>
-    Rt get(const std::string& key) const { return _config.get<Rt>(key); }
+    Rt get(const std::string& key) const { return m_config.get<Rt>(key); }
     template<typename Rt>
-    Rt get(const std::string& key, Rt defaultValue) const
+    Rt get(const std::string& key, Rt default_value) const
     {
         try {
-            return _config.get<Rt>(key);
+            return m_config.get<Rt>(key);
         }
         catch (const boost::property_tree::ptree_bad_path&) {
-            return defaultValue;
+            return default_value;
         }
     }
 };
@@ -95,9 +95,9 @@ template<>
 class ConfigHelper<ConfigFileType::XML>: private ConfigHelperBase
 {
 public:
-    explicit ConfigHelper(const std::string& configPath)
+    explicit ConfigHelper(const std::string& config_path)
     {
-        read_xml(configPath, _config);
+        read_xml(config_path, m_config);
     }
 
 public:
@@ -106,15 +106,15 @@ public:
     /// @param key Path to find the value in the configuration.
     /// @return Value retrieved from the configuration.
     template<typename Rt>
-    Rt get(const std::string& key) const { return _config.get<Rt>(key); }
+    Rt get(const std::string& key) const { return m_config.get<Rt>(key); }
     template<typename Rt>
-    Rt get(const std::string& key, Rt defaultValue) const
+    Rt get(const std::string& key, Rt default_value) const
     {
         try {
-            return _config.get<Rt>(key);
+            return m_config.get<Rt>(key);
         }
         catch (const boost::property_tree::ptree_bad_path&) {
-            return defaultValue;
+            return default_value;
         }
     }
 };
