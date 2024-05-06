@@ -30,7 +30,7 @@ public:
         m_datacenter_id = datacenter_id;
     }
 
-    int64_t next()
+    [[nodiscard]] int64_t next()
     {
         std::lock_guard lock(m_lock);
 
@@ -51,6 +51,11 @@ public:
              | m_datacenter_id << DATACENTER_ID_SHIFT
              | m_worker_id << WORKER_ID_SHIFT
              | m_sequence;
+    }
+
+    [[nodiscard]] int64_t operator()()
+    {
+        return next();
     }
 
 private:
@@ -112,7 +117,7 @@ public:
 
     [[nodiscard]] int64_t operator()()
     {
-        return m_sf.next();
+        return m_sf();
     }
 
 private:
