@@ -48,8 +48,18 @@ private:
         CThostFtdcRspInfoField* pRspInfo,
         int nRequestID, bool bIsLast
     ) override;
+    void OnRspQryTradingAccount(
+        CThostFtdcTradingAccountField* pTradingAccount,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
     void OnRspQryInvestorPosition(
         CThostFtdcInvestorPositionField* pInvestorPosition,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
+    void OnRspQryOrder(
+        CThostFtdcOrderField* pOrder,
         CThostFtdcRspInfoField* pRspInfo,
         int nRequestID, bool bIsLast
     ) override;
@@ -62,8 +72,12 @@ private:
     std::unordered_map<std::string, CThostFtdcProductField> m_products;
     /// InstrumentID -> CThostFtdcInstrumentField.
     std::unordered_map<std::string, CThostFtdcInstrumentField> m_instruments;
+    /// InstrumentID -> CThostFtdcTradingAccountField.
+    std::unordered_map<std::string, CThostFtdcTradingAccountField> m_trading_account;
     /// InstrumentID -> CThostFtdcInvestorPositionField.
     std::unordered_map<std::string, CThostFtdcInvestorPositionField> m_positions;
+    /// OrderRef -> CThostFtdcOrderField.
+    std::unordered_map<std::string, CThostFtdcOrderField> m_orders;
 
 private:
     CTPBroker* m_parent;

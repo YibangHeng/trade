@@ -57,11 +57,25 @@ void trade::broker::CTPBrokerImpl::init_req()
         logger->error("Failed to call ReqQryInstrument: returned code {}", code);
     }
 
+    /// @OnReqQryTradingAccount.
+    CThostFtdcQryTradingAccountField qry_trading_account_field {};
+    code = m_api->ReqQryTradingAccount(&qry_trading_account_field, ticker_taper());
+    if (code != 0) {
+        logger->error("Failed to call ReqQryTradingAccount: returned code {}", code);
+    }
+
     /// @OnQryInvestorPosition.
     CThostFtdcQryInvestorPositionField qry_investor_position_field {};
     code = m_api->ReqQryInvestorPosition(&qry_investor_position_field, ticker_taper());
     if (code != 0) {
         logger->error("Failed to call ReqQryInvestorPosition: returned code {}", code);
+    }
+
+    /// @OnReqQryOrder.
+    CThostFtdcQryOrderField qry_order_field {};
+    code = m_api->ReqQryOrder(&qry_order_field, ticker_taper());
+    if (code != 0) {
+        logger->error("Failed to call ReqQryOrder: returned code {}", code);
     }
 }
 
@@ -212,6 +226,40 @@ void trade::broker::CTPBrokerImpl::OnRspQryInstrument(
     }
 }
 
+/// @ReqQryTradingAccount.
+void trade::broker::CTPBrokerImpl::OnRspQryTradingAccount(
+    CThostFtdcTradingAccountField* pTradingAccount,
+    CThostFtdcRspInfoField* pRspInfo,
+    const int nRequestID, const bool bIsLast
+)
+{
+    CThostFtdcTraderSpi::OnRspQryTradingAccount(pTradingAccount, pRspInfo, nRequestID, bIsLast);
+
+    if (pRspInfo == nullptr) {
+        return;
+    }
+
+    if (pRspInfo->ErrorID != 0) {
+        logger->error("Failed to load trading account: {}", pRspInfo->ErrorMsg);
+        return;
+    }
+
+    /// pTradingAccount will be nullptr if there is no trading account.
+    if (pTradingAccount == nullptr) {
+        assert(bIsLast);
+        logger->warn("No trading account loaded");
+        return;
+    }
+
+    m_trading_account.emplace(pTradingAccount->BrokerID, *pTradingAccount);
+
+    logger->debug("Loaded trading account {}/{} with available funds {} {}", pTradingAccount->AccountID, pTradingAccount->BrokerID, pTradingAccount->Available, pTradingAccount->CurrencyID);
+
+    if (bIsLast) {
+        logger->info("Loaded {} trading accounts", m_trading_account.size());
+    }
+}
+
 /// @ReqQryInvestorPosition.
 void trade::broker::CTPBrokerImpl::OnRspQryInvestorPosition(
     CThostFtdcInvestorPositionField* pInvestorPosition,
@@ -243,6 +291,40 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestorPosition(
 
     if (bIsLast) {
         logger->info("Loaded {} positions", m_positions.size());
+    }
+}
+
+/// @ReqQryOrder.
+void trade::broker::CTPBrokerImpl::OnRspQryOrder(
+    CThostFtdcOrderField* pOrder,
+    CThostFtdcRspInfoField* pRspInfo,
+    const int nRequestID, const bool bIsLast
+)
+{
+    CThostFtdcTraderSpi::OnRspQryOrder(pOrder, pRspInfo, nRequestID, bIsLast);
+
+    if (pRspInfo == nullptr) {
+        return;
+    }
+
+    if (pRspInfo->ErrorID != 0) {
+        logger->error("Failed to load order: {}", pRspInfo->ErrorMsg);
+        return;
+    }
+
+    /// pOrder will be nullptr if there is no order.
+    if (pOrder == nullptr) {
+        assert(bIsLast);
+        logger->warn("No order loaded");
+        return;
+    }
+
+    m_orders.emplace(pOrder->OrderRef, *pOrder);
+
+    logger->debug("Loaded order {} - {}", pOrder->OrderRef, utilities::GB2312ToUTF8()(pOrder->InstrumentID));
+
+    if (bIsLast) {
+        logger->info("Loaded {} orders", m_orders.size());
     }
 }
 
