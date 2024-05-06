@@ -56,6 +56,13 @@ void trade::broker::CTPBrokerImpl::init_req()
     if (code != 0) {
         logger->error("Failed to call ReqQryInstrument: returned code {}", code);
     }
+
+    /// @OnQryInvestorPosition.
+    CThostFtdcQryInvestorPositionField qry_investor_position_field {};
+    code = m_api->ReqQryInvestorPosition(&qry_investor_position_field, ticker_taper());
+    if (code != 0) {
+        logger->error("Failed to call ReqQryInvestorPosition: returned code {}", code);
+    }
 }
 
 void trade::broker::CTPBrokerImpl::OnFrontConnected()
@@ -202,6 +209,40 @@ void trade::broker::CTPBrokerImpl::OnRspQryInstrument(
 
     if (bIsLast) {
         logger->info("Loaded {} instruments", m_instruments.size());
+    }
+}
+
+/// @ReqQryInvestorPosition.
+void trade::broker::CTPBrokerImpl::OnRspQryInvestorPosition(
+    CThostFtdcInvestorPositionField* pInvestorPosition,
+    CThostFtdcRspInfoField* pRspInfo,
+    const int nRequestID, const bool bIsLast
+)
+{
+    CThostFtdcTraderSpi::OnRspQryInvestorPosition(pInvestorPosition, pRspInfo, nRequestID, bIsLast);
+
+    if (pRspInfo == nullptr) {
+        return;
+    }
+
+    if (pRspInfo->ErrorID != 0) {
+        logger->error("Failed to load position: {}", pRspInfo->ErrorMsg);
+        return;
+    }
+
+    /// pInvestorPosition will be nullptr if there is no position.
+    if (pInvestorPosition == nullptr) {
+        assert(bIsLast);
+        logger->warn("No position loaded");
+        return;
+    }
+
+    m_positions.emplace(pInvestorPosition->InstrumentID, *pInvestorPosition);
+
+    logger->debug("Loaded position {} - {}", pInvestorPosition->InstrumentID, pInvestorPosition->Position);
+
+    if (bIsLast) {
+        logger->info("Loaded {} positions", m_positions.size());
     }
 }
 
