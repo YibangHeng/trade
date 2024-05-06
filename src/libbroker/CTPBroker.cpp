@@ -1,4 +1,5 @@
 #include "libbroker/CTPBroker.h"
+#include "utilities/GB2312ToUTF8.hpp"
 #include "utilities/MakeAssignable.hpp"
 
 trade::broker::CTPBrokerImpl::CTPBrokerImpl(CTPBroker* parent)
@@ -89,7 +90,7 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogin(
     }
 
     if (pRspInfo->ErrorID != 0) {
-        m_parent->notify_login_failure("Failed to login with code {}: {}", pRspInfo->ErrorID, pRspInfo->ErrorMsg);
+        m_parent->notify_login_failure("Failed to login with code {}: {}", pRspInfo->ErrorID, utilities::GB2312ToUTF8()(pRspInfo->ErrorMsg));
         return;
     }
 
@@ -143,7 +144,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryExchange(
 
     m_exchanges.emplace(pExchange->ExchangeID, *pExchange);
 
-    logger->debug("Loaded exchange {} - {}", pExchange->ExchangeID, pExchange->ExchangeName);
+    logger->debug("Loaded exchange {} - {}", pExchange->ExchangeID, utilities::GB2312ToUTF8()(pExchange->ExchangeName));
 
     if (bIsLast) {
         logger->info("Loaded {} exchanges", m_exchanges.size());
@@ -170,7 +171,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryProduct(
 
     m_products.emplace(pProduct->ProductID, *pProduct);
 
-    logger->debug("Loaded product {} - {}", pProduct->ProductID, pProduct->ProductName);
+    logger->debug("Loaded product {} - {}", pProduct->ProductID, utilities::GB2312ToUTF8()(pProduct->ProductName));
 
     if (bIsLast) {
         logger->info("Loaded {} products", m_products.size());
@@ -197,7 +198,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryInstrument(
 
     m_instruments.emplace(pInstrument->InstrumentID, *pInstrument);
 
-    logger->debug("Loaded instrument {} - {}", pInstrument->InstrumentID, pInstrument->InstrumentName);
+    logger->debug("Loaded instrument {} - {}", pInstrument->InstrumentID, utilities::GB2312ToUTF8()(pInstrument->InstrumentName));
 
     if (bIsLast) {
         logger->info("Loaded {} instruments", m_instruments.size());
