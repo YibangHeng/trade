@@ -31,9 +31,17 @@ public:
     void wait_logout() noexcept(false) override { wait_logout_reasult(); }
 
 public:
-    int64_t new_order(types::NewOrderReq&& new_order_req) override { return 0; }
-    int64_t cancel_order(types::NewCancelReq&& new_cancel_req) override { return 0; }
-    int64_t cancel_all(types::NewCancelAllReq&& new_cancel_all_req) override { return 0; }
+    int64_t new_order(std::shared_ptr<types::NewOrderReq> new_order_req) override
+    {
+        if (!new_order_req->has_unique_id()) {
+            new_order_req->set_unique_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
+        }
+
+        return new_order_req->unique_id();
+    }
+
+    int64_t cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req) override { return INVALID_ID; }
+    int64_t cancel_all(std::shared_ptr<types::NewCancelAllReq> new_cancel_all_req) override { return INVALID_ID; }
 
 protected:
     std::shared_ptr<holder::IHolder> m_holder;

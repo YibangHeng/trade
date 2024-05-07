@@ -15,8 +15,12 @@ trade::holder::SQLLiteHolder::SQLLiteHolder(const std::string& db_path)
       m_order_insert_stmt(nullptr)
 {
     /// Create parent folder if not exist.
-    const std::filesystem::path path = db_path;
-    create_directories(path.parent_path());
+    if (db_path != ":memory:") {
+        const std::filesystem::path path = db_path;
+        if (!exists(path.parent_path())) {
+            create_directories(path.parent_path());
+        }
+    }
 
     /// Open database.
     sqlite3_open(db_path.c_str(), &m_db);

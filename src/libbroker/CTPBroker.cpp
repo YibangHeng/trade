@@ -5,6 +5,9 @@
 trade::broker::CTPBrokerImpl::CTPBrokerImpl(CTPBroker* parent)
     : AppBase("CTPBrokerImpl", parent->config),
       m_api(CThostFtdcTraderApi::CreateFtdcTraderApi()),
+      m_broker_id(),
+      m_user_id(),
+      m_investor_id(),
       m_holder(parent->m_holder),
       m_parent(parent)
 {
@@ -21,8 +24,8 @@ trade::broker::CTPBrokerImpl::~CTPBrokerImpl()
 {
     CThostFtdcUserLogoutField user_logout_field {};
 
-    M_A {user_logout_field.BrokerID} = config->get<std::string>("User.BrokerID");
-    M_A {user_logout_field.UserID}   = config->get<std::string>("User.UserID");
+    M_A {user_logout_field.BrokerID} = m_broker_id;
+    M_A {user_logout_field.UserID}   = m_user_id;
 
     m_api->ReqUserLogout(&user_logout_field, ticker_taper());
 
@@ -33,9 +36,61 @@ trade::broker::CTPBrokerImpl::~CTPBrokerImpl()
     m_api->Release();
 }
 
+int64_t trade::broker::CTPBrokerImpl::new_order(const std::shared_ptr<types::NewOrderReq>& new_order_req)
+{
+    const auto [request_seq, unique_id] = new_id_pair();
+
+    CThostFtdcInputOrderField input_order_field {};
+
+    /// SDK only accepts int32_t/std::string for OrderRef, so we need to map
+    /// unique_id to int32_t.
+    M_A {input_order_field.OrderRef} = std::to_string(request_seq);
+
+    /// Fields in NewOrderReq.
+    M_A {input_order_field.InstrumentID}  = new_order_req->symbol();
+    M_A {input_order_field.ExchangeID}    = to_exchange(new_order_req->exchange());
+    input_order_field.Direction           = to_side(new_order_req->side());
+    input_order_field.CombOffsetFlag[0]   = to_position_side(new_order_req->position_side());
+    input_order_field.LimitPrice          = new_order_req->price();
+    input_order_field.VolumeTotalOriginal = static_cast<TThostFtdcVolumeType>(new_order_req->quantity());
+
+    /// Fields required in docs.
+    input_order_field.OrderPriceType      = THOST_FTDC_OPT_LimitPrice; /// 限价单
+    input_order_field.TimeCondition       = THOST_FTDC_TC_GFD;         /// 当日有效
+
+    M_A {input_order_field.BrokerID}      = m_broker_id;
+    M_A {input_order_field.InvestorID}    = m_investor_id;
+
+    input_order_field.ContingentCondition = THOST_FTDC_CC_Immediately;
+    input_order_field.CombHedgeFlag[0]    = THOST_FTDC_HF_Speculation;
+
+    input_order_field.VolumeCondition     = THOST_FTDC_VC_AV;
+    input_order_field.TimeCondition       = THOST_FTDC_TC_GFD;
+    input_order_field.MinVolume           = 1;
+    input_order_field.ForceCloseReason    = THOST_FTDC_FCC_NotForceClose;
+
+    /// @OnRspOrderInsert.
+    const auto code = m_api->ReqOrderInsert(&input_order_field, request_seq);
+    if (code != 0) {
+        logger->error("Failed to call ReqOrderInsert: returned code {}", code);
+        return INVALID_ID;
+    }
+
+    return unique_id;
+}
+
 void trade::broker::CTPBrokerImpl::init_req()
 {
     int code, request_seq, request_id;
+
+    std::tie(request_seq, request_id) = new_id_pair();
+
+    /// @OnRspQryInvestor.
+    CThostFtdcQryInvestorField qry_investor_field {};
+    code = m_api->ReqQryInvestor(&qry_investor_field, request_seq);
+    if (code != 0) {
+        logger->error("Failed to call ReqQryInvestor: returned code {}", code);
+    }
 
     std::tie(request_seq, request_id) = new_id_pair();
 
@@ -128,7 +183,10 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogin(
         return;
     }
 
-    logger->info("Logged to {} successfully as UserID/BrokerID {}/{} at {}-{}", pRspUserLogin->SystemName, pRspUserLogin->UserID, pRspUserLogin->BrokerID, pRspUserLogin->TradingDay, pRspUserLogin->LoginTime);
+    M_A {m_broker_id} = pRspUserLogin->BrokerID;
+    M_A {m_user_id}   = pRspUserLogin->UserID;
+
+    logger->info("Logged to {} successfully as BrokerID/UserID {}/{} at {}-{}", pRspUserLogin->SystemName, pRspUserLogin->BrokerID, pRspUserLogin->UserID, pRspUserLogin->TradingDay, pRspUserLogin->LoginTime);
 
     m_parent->notify_login_success();
 
@@ -153,9 +211,38 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogout(
         return;
     }
 
-    logger->info("Logged out successfully as UserID/BrokerID {}/{}", pUserLogout->UserID, pUserLogout->BrokerID);
+    logger->info("Logged out successfully as BrokerID/UserID {}/{}", pUserLogout->BrokerID, pUserLogout->UserID);
 
     m_parent->notify_logout_success();
+}
+
+/// @ReqQryInvestor.
+void trade::broker::CTPBrokerImpl::OnRspQryInvestor(
+    CThostFtdcInvestorField* pInvestor,
+    CThostFtdcRspInfoField* pRspInfo,
+    const int nRequestID, const bool bIsLast
+)
+{
+    CThostFtdcTraderSpi::OnRspQryInvestor(pInvestor, pRspInfo, nRequestID, bIsLast);
+
+    const auto request_id = get_by_seq_id(nRequestID);
+
+    if (pRspInfo == nullptr) {
+        return;
+    }
+
+    if (pRspInfo->ErrorID != 0) {
+        logger->error("Failed to load investor: {}", pRspInfo->ErrorMsg);
+        return;
+    }
+
+    M_A {m_investor_id} = pInvestor->InvestorID;
+
+    logger->debug("Loaded investor {} - {}", pInvestor->InvestorID, utilities::GB2312ToUTF8()(pInvestor->InvestorName));
+
+    if (bIsLast) {
+        logger->info("Loaded investor id {} in request {}", m_investor_id, request_id);
+    }
 }
 
 /// @ReqQryExchange.
@@ -274,7 +361,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryTradingAccount(
 
     m_trading_account.emplace(pTradingAccount->BrokerID, *pTradingAccount);
 
-    logger->debug("Loaded trading account {}/{} with available funds {} {}", pTradingAccount->AccountID, pTradingAccount->BrokerID, pTradingAccount->Available, pTradingAccount->CurrencyID);
+    logger->debug("Loaded trading account {} with available funds {} {}", pTradingAccount->AccountID, pTradingAccount->Available, pTradingAccount->CurrencyID);
 
     /// For caching between multiple calls.
     static std::unordered_map<decltype(snow_flaker()), types::Funds> fund_cache;
@@ -395,6 +482,44 @@ void trade::broker::CTPBrokerImpl::OnRspQryOrder(
     }
 }
 
+std::string trade::broker::CTPBrokerImpl::to_exchange(const types::ExchangeType exchange)
+{
+    switch (exchange) {
+    case types::ExchangeType::bse: return "BSE";
+    case types::ExchangeType::cffex: return "CFFEX";
+    case types::ExchangeType::cme: return "CME";
+    case types::ExchangeType::czce: return "CZCE";
+    case types::ExchangeType::dce: return "DCE";
+    case types::ExchangeType::gfex: return "GFEX";
+    case types::ExchangeType::hkex: return "HKEX";
+    case types::ExchangeType::ine: return "INE";
+    case types::ExchangeType::nasd: return "NASD";
+    case types::ExchangeType::nyse: return "NYSE";
+    case types::ExchangeType::shfe: return "SHFE";
+    case types::ExchangeType::sse: return "SSE";
+    case types::ExchangeType::szse: return "SZSE";
+    default: return "";
+    }
+}
+
+TThostFtdcDirectionType trade::broker::CTPBrokerImpl::to_side(const types::SideType side)
+{
+    switch (side) {
+    case types::SideType::buy: return THOST_FTDC_DEN_Buy;
+    case types::SideType::sell: return THOST_FTDC_DEN_Sell;
+    default: return '\0';
+    }
+}
+
+char trade::broker::CTPBrokerImpl::to_position_side(const types::PositionSideType position_side)
+{
+    switch (position_side) {
+    case types::PositionSideType::open: return THOST_FTDC_OFEN_Open;
+    case types::PositionSideType::close: return THOST_FTDC_OFEN_Close;
+    default: return '\0';
+    }
+}
+
 google::protobuf::Timestamp trade::broker::CTPBrokerImpl::now()
 {
     google::protobuf::Timestamp timestamp;
@@ -430,4 +555,9 @@ void trade::broker::CTPBroker::logout() noexcept
     BrokerProxy::logout();
 
     m_impl = nullptr;
+}
+int64_t trade::broker::CTPBroker::new_order(const std::shared_ptr<types::NewOrderReq> new_order_req)
+{
+    BrokerProxy::new_order(new_order_req);
+    return m_impl->new_order(new_order_req);
 }

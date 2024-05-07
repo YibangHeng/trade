@@ -17,6 +17,9 @@ public:
     explicit CTPBrokerImpl(CTPBroker* parent);
     ~CTPBrokerImpl() override;
 
+public:
+    int64_t new_order(const std::shared_ptr<types::NewOrderReq>& new_order_req);
+
 private:
     /// Do some initial queries.
     void init_req();
@@ -30,6 +33,11 @@ private:
     ) override;
     void OnRspUserLogout(
         CThostFtdcUserLogoutField* pUserLogout,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
+    void OnRspQryInvestor(
+        CThostFtdcInvestorField* pInvestor,
         CThostFtdcRspInfoField* pRspInfo,
         int nRequestID, bool bIsLast
     ) override;
@@ -65,10 +73,16 @@ private:
     ) override;
 
 private:
+    static std::string to_exchange(types::ExchangeType exchange);
+    static TThostFtdcDirectionType to_side(types::SideType side);
+    static char to_position_side(types::PositionSideType position_side);
     static google::protobuf::Timestamp now();
 
 private:
     CThostFtdcTraderApi* m_api;
+    TThostFtdcBrokerIDType m_broker_id;
+    TThostFtdcUserIDType m_user_id;
+    TThostFtdcInvestorIDType m_investor_id;
     /// ExchangeID -> CThostFtdcExchangeField.
     std::unordered_map<std::string, CThostFtdcExchangeField> m_exchanges;
     /// ProductID -> CThostFtdcProductField.
@@ -105,6 +119,9 @@ public:
 public:
     void login() noexcept override;
     void logout() noexcept override;
+
+public:
+    int64_t new_order(std::shared_ptr<types::NewOrderReq> new_order_req) override;
 
 private:
     std::unique_ptr<CTPBrokerImpl> m_impl;

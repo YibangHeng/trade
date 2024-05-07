@@ -33,14 +33,14 @@ message SigInt {}
 /// 新委托创建请求
 message NewOrderReq
 {
-    int64 request_id                    = 1; /// 请求 ID
-    optional int64 unique_id            = 2; /// 委托 UniqueID
-    string symbol                       = 3;
-    ExchangeType exchange               = 4;
-    SideType side                       = 5;
-    optional PositionType position_side = 6; /// For futures and options.
-    double price                        = 7;
-    int64 quantity                      = 8;
+    int64 request_id                        = 1; /// 请求 ID
+    optional int64 unique_id                = 2; /// 委托 UniqueID。若不指定则自动生成
+    string symbol                           = 3;
+    ExchangeType exchange                   = 4;
+    SideType side                           = 5;
+    optional PositionSideType position_side = 6; /// For futures and options.
+    double price                            = 7;
+    int64 quantity                          = 8;
 }
 
 /// 新委托创建响应

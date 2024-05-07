@@ -31,6 +31,15 @@ enum SideType
     sell         = 1001; /// 卖
 }
 
+/// 开平方向
+enum PositionSideType
+{
+    invalid_position_side = 0;
+
+    open                  = 1000; /// 开
+    close                 = 1001; /// 平
+}
+
 /// 多空方向
 enum PositionType
 {
