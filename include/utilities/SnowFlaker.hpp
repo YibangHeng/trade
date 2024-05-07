@@ -1,6 +1,6 @@
 #pragma once
 
-#include <fmt/format.h>
+#include <boost/noncopyable.hpp>
 #include <mutex>
 
 namespace trade::utilities
@@ -11,7 +11,7 @@ namespace trade::utilities
 /// See https://en.wikipedia.org/wiki/Snowflake_ID and
 /// https://blog.twitter.com/engineering/en_us/a/2010/announcing-snowflake.
 template<int64_t TEpoch, typename Lock = std::mutex>
-class SnowFlaker
+class SnowFlaker: private boost::noncopyable
 {
 public:
     SnowFlaker() = default;
