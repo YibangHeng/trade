@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/noncopyable.hpp>
+#include <fmt/format.h>
 #include <mutex>
 
 namespace trade::utilities
