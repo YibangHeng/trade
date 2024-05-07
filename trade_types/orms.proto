@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package trade.types;
+
+import "google/protobuf/timestamp.proto";
+
+import "enums.proto";
+
+message Fund
+{
+    string account_id        = 1; /// 资金账户
+    double available_fund    = 2; /// 可用资金
+    double withdrawn_fund    = 3; /// 可取资金
+    double frozen_fund       = 4; /// 冻结资金
+    double frozen_margin     = 5; /// 冻结保证金
+    double frozen_commission = 6; /// 冻结手续费
+}
+
+message Funds
+{
+    repeated Fund funds = 1;
+}
+
+message Position
+{
+    string symbol                         = 1;  /// 合约代码
+    int64 yesterday_position              = 2;  /// 上日持仓
+    int64 today_position                  = 3;  /// 今日持仓
+    optional int64 open_volume            = 4;  /// 开仓量
+    optional int64 close_volume           = 5;  /// 平仓量
+    optional double position_cost         = 6;  /// 持仓成本
+    optional double pre_margin            = 7;  /// 上次占用的保证金
+    optional double used_margin           = 8;  /// 占用的保证金
+    optional double frozen_margin         = 9;  /// 可用保证金
+    optional double open_cost             = 10; /// 开仓成本
+    google.protobuf.Timestamp update_time = 11; /// 更新时间
+}
+
+message Positions
+{
+    repeated Position positions = 1;
+}
+
+message Order
+{
+    int64 unique_id                         = 1; /// 唯一 ID
+    string symbol                           = 2; /// 合约代码
+    SideType side                           = 3; /// 买卖方向
+    optional PositionType position          = 4; /// 开平方向
+    double price                            = 5; /// 价格
+    double quantity                         = 6; /// 数量
+    google.protobuf.Timestamp creation_time = 7; /// 创建时间
+    google.protobuf.Timestamp update_time   = 8; /// 更新时间
+}
+
+message Orders
+{
+    repeated Order orders = 1;
+}

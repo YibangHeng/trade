@@ -65,6 +65,9 @@ private:
     ) override;
 
 private:
+    static google::protobuf::Timestamp now();
+
+private:
     CThostFtdcTraderApi* m_api;
     /// ExchangeID -> CThostFtdcExchangeField.
     std::unordered_map<std::string, CThostFtdcExchangeField> m_exchanges;
@@ -80,13 +83,23 @@ private:
     std::unordered_map<std::string, CThostFtdcOrderField> m_orders;
 
 private:
+    /// nRequestID -> UniqueID/RequestID.
+    std::unordered_map<decltype(ticker_taper()), decltype(NEW_ID())> m_id_map;
+    std::shared_ptr<holder::IHolder> m_holder;
+
+private:
     CTPBroker* m_parent;
 };
 
 class PUBLIC_API CTPBroker final: public BrokerProxy<int>
 {
+    friend class CTPBrokerImpl;
+
 public:
-    explicit CTPBroker(const std::string& config_path);
+    explicit CTPBroker(
+        const std::string& config_path,
+        const std::shared_ptr<holder::IHolder>& holder
+    );
     ~CTPBroker() override = default;
 
 public:

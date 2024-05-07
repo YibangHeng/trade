@@ -36,6 +36,7 @@ find_package(
 )
 find_package(fmt REQUIRED)
 find_package(Protobuf REQUIRED)
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
 
 # Include directories.
 include_directories(include)
@@ -47,6 +48,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/trade_types) # For generated *.p
 
 # Binaries and libraries.
 add_subdirectory(src/libbroker)
+add_subdirectory(src/libholder)
 add_subdirectory(src/trade)
 
 # Configuration files.

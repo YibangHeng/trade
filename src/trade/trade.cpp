@@ -1,10 +1,9 @@
 #include <csignal>
 #include <iostream>
-#include <thread>
 
 #include "info.h"
 #include "libbroker/CTPBroker.h"
-#include "libbroker/IBroker.h"
+#include "libholder/SQLLiteHolder.h"
 #include "trade/trade.h"
 
 trade::Trade::Trade(const int argc, char* argv[])
@@ -34,7 +33,10 @@ int trade::Trade::run()
     broker::IBroker* broker;
 
     if (config->get<std::string>("Broker.Type") == "CTP") {
-        broker = new broker::CTPBroker(config->get<std::string>("Broker.Config"));
+        broker = new broker::CTPBroker(
+            config->get<std::string>("Broker.Config"),
+            std::make_shared<holder::SQLLiteHolder>()
+        );
     }
     else {
         logger->error("Unsupported broker type {}", config->get<std::string>("Broker.Type"));

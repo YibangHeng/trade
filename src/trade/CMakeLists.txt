@@ -11,4 +11,5 @@ target_link_libraries(
         fmt::fmt
         PRIVATE
         broker
+        holder
 )
