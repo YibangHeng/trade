@@ -16,9 +16,9 @@ public:
     ~SQLLiteHolder() override;
 
 public:
-    int64_t init_funds(types::Funds&& funds) override;
-    int64_t init_positions(types::Positions&& positions) override;
-    int64_t init_orders(types::Orders&& orders) override;
+    int64_t init_funds(std::shared_ptr<types::Funds> funds) override;
+    int64_t init_positions(std::shared_ptr<types::Positions> positions) override;
+    int64_t init_orders(std::shared_ptr<types::Orders> orders) override;
 
 private:
     void start_transaction() const;

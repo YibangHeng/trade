@@ -35,7 +35,7 @@ trade::holder::SQLLiteHolder::~SQLLiteHolder()
     sqlite3_close(m_db);
 }
 
-int64_t trade::holder::SQLLiteHolder::init_funds(types::Funds&& funds)
+int64_t trade::holder::SQLLiteHolder::init_funds(const std::shared_ptr<types::Funds> funds)
 {
     /// Initialize funds at first time.
     if (m_fund_insert_stmt == nullptr) {
@@ -44,7 +44,7 @@ int64_t trade::holder::SQLLiteHolder::init_funds(types::Funds&& funds)
 
     start_transaction();
 
-    for (const auto& fund : funds.funds()) {
+    for (const auto& fund : funds->funds()) {
         sqlite3_reset(m_fund_insert_stmt);
 
         sqlite3_bind_text(m_fund_insert_stmt, 1, fund.account_id().c_str(), -1, SQLITE_STATIC);
@@ -62,15 +62,15 @@ int64_t trade::holder::SQLLiteHolder::init_funds(types::Funds&& funds)
 
     commit_or_rollback(SQLITE_OK);
 
-    return funds.funds_size();
+    return funds->funds_size();
 }
 
-int64_t trade::holder::SQLLiteHolder::init_positions(types::Positions&& positions)
+int64_t trade::holder::SQLLiteHolder::init_positions(std::shared_ptr<types::Positions> positions)
 {
     return 0;
 }
 
-int64_t trade::holder::SQLLiteHolder::init_orders(types::Orders&& orders)
+int64_t trade::holder::SQLLiteHolder::init_orders(std::shared_ptr<types::Orders> orders)
 {
     return 0;
 }

@@ -81,7 +81,7 @@ private:
     static std::string to_exchange(types::ExchangeType exchange);
     static TThostFtdcDirectionType to_side(types::SideType side);
     static char to_position_side(types::PositionSideType position_side);
-    static google::protobuf::Timestamp now();
+    static google::protobuf::Timestamp* now();
 
 private:
     CThostFtdcTraderApi* m_api;

@@ -1,3 +1,5 @@
+#include <google/protobuf/util/time_util.h>
+
 #include "libbroker/CTPBroker.h"
 #include "utilities/GB2312ToUTF8.hpp"
 #include "utilities/MakeAssignable.hpp"
@@ -361,9 +363,9 @@ void trade::broker::CTPBrokerImpl::OnRspQryTradingAccount(
     logger->debug("Loaded trading account {} with available funds {} {}", pTradingAccount->AccountID, pTradingAccount->Available, pTradingAccount->CurrencyID);
 
     /// For caching between multiple calls.
-    static std::unordered_map<decltype(snow_flaker()), types::Funds> fund_cache;
+    static std::unordered_map<decltype(snow_flaker()), std::shared_ptr<types::Funds>> fund_cache;
 
-    auto& funds = fund_cache[request_id];
+    const auto funds = fund_cache.emplace(request_id, std::make_shared<types::Funds>()).first->second;
 
     types::Fund fund;
 
@@ -374,11 +376,11 @@ void trade::broker::CTPBrokerImpl::OnRspQryTradingAccount(
     fund.set_frozen_margin(pTradingAccount->FrozenMargin);
     fund.set_frozen_commission(pTradingAccount->FrozenCommission);
 
-    funds.add_funds()->CopyFrom(fund);
+    funds->add_funds()->CopyFrom(fund);
 
     if (bIsLast) {
         logger->info("Loaded {} trading accounts for request {}", m_trading_account.size(), request_id);
-        m_holder->init_funds(std::move(funds));
+        m_holder->init_funds(funds);
         fund_cache.erase(request_id);
     }
 }
@@ -413,9 +415,9 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestorPosition(
     logger->debug("Loaded position {} - {}", pInvestorPosition->InstrumentID, pInvestorPosition->Position);
 
     /// For caching between multiple calls.
-    static std::unordered_map<decltype(snow_flaker()), types::Positions> position_cache;
+    static std::unordered_map<decltype(snow_flaker()), std::shared_ptr<types::Positions>> position_cache;
 
-    auto& positions = position_cache[request_id];
+    const auto positions = position_cache.emplace(request_id, std::make_shared<types::Positions>()).first->second;
 
     types::Position position;
 
@@ -429,14 +431,13 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestorPosition(
     position.set_used_margin(pInvestorPosition->UseMargin);
     position.set_frozen_margin(pInvestorPosition->FrozenMargin);
     position.set_open_cost(pInvestorPosition->OpenCost);
-    auto update_time = now();
-    position.set_allocated_update_time(&update_time);
+    position.set_allocated_update_time(now());
 
-    positions.add_positions()->CopyFrom(position);
+    positions->add_positions()->CopyFrom(position);
 
     if (bIsLast) {
         logger->info("Loaded {} positions for request {}", m_positions.size(), request_id);
-        m_holder->init_positions(std::move(positions));
+        m_holder->init_positions(positions);
         position_cache.erase(request_id);
     }
 }
@@ -533,19 +534,13 @@ char trade::broker::CTPBrokerImpl::to_position_side(const types::PositionSideTyp
     }
 }
 
-google::protobuf::Timestamp trade::broker::CTPBrokerImpl::now()
+/// Returns the current time with nanosecond precision.
+///
+/// Note: Set the returned value to a protobuf message will hand over the
+/// ownership to the message, which takes the responsibility of freeing it.
+google::protobuf::Timestamp* trade::broker::CTPBrokerImpl::now()
 {
-    google::protobuf::Timestamp timestamp;
-
-    const auto now     = std::chrono::system_clock::now();
-
-    const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
-    timestamp.set_seconds(seconds);
-
-    const auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count() % 1000000000;
-    timestamp.set_nanos(static_cast<int32_t>(nanoseconds));
-
-    return timestamp;
+    return new google::protobuf::Timestamp(google::protobuf::util::TimeUtil::GetCurrentTime());
 }
 
 trade::broker::CTPBroker::CTPBroker(
