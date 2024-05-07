@@ -245,8 +245,6 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestor(
 
     M_A {m_investor_id} = pInvestor->InvestorID;
 
-    logger->debug("Loaded investor {} - {}", pInvestor->InvestorID, utilities::GB2312ToUTF8()(pInvestor->InvestorName));
-
     if (bIsLast) {
         logger->info("Loaded investor id {} for request {}", m_investor_id, request_id);
     }
