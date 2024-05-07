@@ -71,6 +71,11 @@ private:
         CThostFtdcRspInfoField* pRspInfo,
         int nRequestID, bool bIsLast
     ) override;
+    void OnRspOrderInsert(
+        CThostFtdcInputOrderField* pInputOrder,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
 
 private:
     static std::string to_exchange(types::ExchangeType exchange);

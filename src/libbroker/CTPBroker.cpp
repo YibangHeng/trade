@@ -152,6 +152,12 @@ void trade::broker::CTPBrokerImpl::init_req()
     logger->info("Queried orders in request {}", request_id);
 }
 
+#define pRspInfo_NULLPTR_CHECKER                                  \
+    if (pRspInfo == nullptr) {                                    \
+        logger->warn("A nullptr pRspInfo found in {}", __func__); \
+        return;                                                   \
+    }
+
 void trade::broker::CTPBrokerImpl::OnFrontConnected()
 {
     CThostFtdcTraderSpi::OnFrontConnected();
@@ -179,9 +185,7 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogin(
 {
     CThostFtdcTraderSpi::OnRspUserLogin(pRspUserLogin, pRspInfo, nRequestID, bIsLast);
 
-    if (pRspInfo == nullptr) {
-        return;
-    }
+    pRspInfo_NULLPTR_CHECKER;
 
     if (pRspInfo->ErrorID != 0) {
         m_parent->notify_login_failure("Failed to login with code {}: {}", pRspInfo->ErrorID, utilities::GB2312ToUTF8()(pRspInfo->ErrorMsg));
@@ -207,9 +211,7 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogout(
 {
     CThostFtdcTraderSpi::OnRspUserLogout(pUserLogout, pRspInfo, nRequestID, bIsLast);
 
-    if (pRspInfo == nullptr) {
-        return;
-    }
+    pRspInfo_NULLPTR_CHECKER;
 
     if (pRspInfo->ErrorID != 0) {
         m_parent->notify_logout_failure("Failed to logout with code {}: {}", pRspInfo->ErrorID, pRspInfo->ErrorMsg);
@@ -230,14 +232,12 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestor(
 {
     CThostFtdcTraderSpi::OnRspQryInvestor(pInvestor, pRspInfo, nRequestID, bIsLast);
 
+    pRspInfo_NULLPTR_CHECKER;
+
     const auto request_id = get_by_seq_id(nRequestID);
 
-    if (pRspInfo == nullptr) {
-        return;
-    }
-
     if (pRspInfo->ErrorID != 0) {
-        logger->error("Failed to load investor: {}", pRspInfo->ErrorMsg);
+        logger->error("Failed to load investor for request {}: {}", request_id, pRspInfo->ErrorMsg);
         return;
     }
 
@@ -259,14 +259,12 @@ void trade::broker::CTPBrokerImpl::OnRspQryExchange(
 {
     CThostFtdcTraderSpi::OnRspQryExchange(pExchange, pRspInfo, nRequestID, bIsLast);
 
+    pRspInfo_NULLPTR_CHECKER;
+
     const auto request_id = get_by_seq_id(nRequestID);
 
-    if (pRspInfo == nullptr) {
-        return;
-    }
-
     if (pRspInfo->ErrorID != 0) {
-        logger->error("Failed to load exchange: {}", pRspInfo->ErrorMsg);
+        logger->error("Failed to load exchange for request {}: {}", request_id, pRspInfo->ErrorMsg);
         return;
     }
 
@@ -288,14 +286,12 @@ void trade::broker::CTPBrokerImpl::OnRspQryProduct(
 {
     CThostFtdcTraderSpi::OnRspQryProduct(pProduct, pRspInfo, nRequestID, bIsLast);
 
+    pRspInfo_NULLPTR_CHECKER;
+
     const auto request_id = get_by_seq_id(nRequestID);
 
-    if (pRspInfo == nullptr) {
-        return;
-    }
-
     if (pRspInfo->ErrorID != 0) {
-        logger->error("Failed to load product: {}", pRspInfo->ErrorMsg);
+        logger->error("Failed to load product for request {}: {}", request_id, pRspInfo->ErrorMsg);
         return;
     }
 
@@ -317,14 +313,12 @@ void trade::broker::CTPBrokerImpl::OnRspQryInstrument(
 {
     CThostFtdcTraderSpi::OnRspQryInstrument(pInstrument, pRspInfo, nRequestID, bIsLast);
 
+    pRspInfo_NULLPTR_CHECKER;
+
     const auto request_id = get_by_seq_id(nRequestID);
 
-    if (pRspInfo == nullptr) {
-        return;
-    }
-
     if (pRspInfo->ErrorID != 0) {
-        logger->error("Failed to load instrument: {}", pRspInfo->ErrorMsg);
+        logger->error("Failed to load instrument for request {}: {}", request_id, pRspInfo->ErrorMsg);
         return;
     }
 
@@ -346,14 +340,12 @@ void trade::broker::CTPBrokerImpl::OnRspQryTradingAccount(
 {
     CThostFtdcTraderSpi::OnRspQryTradingAccount(pTradingAccount, pRspInfo, nRequestID, bIsLast);
 
+    pRspInfo_NULLPTR_CHECKER;
+
     const auto request_id = get_by_seq_id(nRequestID);
 
-    if (pRspInfo == nullptr) {
-        return;
-    }
-
     if (pRspInfo->ErrorID != 0) {
-        logger->error("Failed to load trading account: {}", pRspInfo->ErrorMsg);
+        logger->error("Failed to load trading account for request {}: {}", request_id, pRspInfo->ErrorMsg);
         return;
     }
 
@@ -400,14 +392,12 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestorPosition(
 {
     CThostFtdcTraderSpi::OnRspQryInvestorPosition(pInvestorPosition, pRspInfo, nRequestID, bIsLast);
 
+    pRspInfo_NULLPTR_CHECKER;
+
     const auto request_id = get_by_seq_id(nRequestID);
 
-    if (pRspInfo == nullptr) {
-        return;
-    }
-
     if (pRspInfo->ErrorID != 0) {
-        logger->error("Failed to load position: {}", pRspInfo->ErrorMsg);
+        logger->error("Failed to load position for request {}: {}", request_id, pRspInfo->ErrorMsg);
         return;
     }
 
@@ -460,14 +450,12 @@ void trade::broker::CTPBrokerImpl::OnRspQryOrder(
 {
     CThostFtdcTraderSpi::OnRspQryOrder(pOrder, pRspInfo, nRequestID, bIsLast);
 
+    pRspInfo_NULLPTR_CHECKER;
+
     const auto request_id = get_by_seq_id(nRequestID);
 
-    if (pRspInfo == nullptr) {
-        return;
-    }
-
     if (pRspInfo->ErrorID != 0) {
-        logger->error("Failed to load order: {}", pRspInfo->ErrorMsg);
+        logger->error("Failed to load order for request {}: {}", request_id, pRspInfo->ErrorMsg);
         return;
     }
 
@@ -485,6 +473,26 @@ void trade::broker::CTPBrokerImpl::OnRspQryOrder(
     if (bIsLast) {
         logger->info("Loaded {} orders for request {}", m_orders.size(), request_id);
     }
+}
+
+void trade::broker::CTPBrokerImpl::OnRspOrderInsert(
+    CThostFtdcInputOrderField* pInputOrder,
+    CThostFtdcRspInfoField* pRspInfo,
+    const int nRequestID, const bool bIsLast
+)
+{
+    CThostFtdcTraderSpi::OnRspOrderInsert(pInputOrder, pRspInfo, nRequestID, bIsLast);
+
+    pRspInfo_NULLPTR_CHECKER;
+
+    const auto request_id = get_by_seq_id(nRequestID);
+
+    if (pRspInfo->ErrorID != 0) {
+        logger->error("Failed to insert order for request {}: {}", request_id, utilities::GB2312ToUTF8()(pRspInfo->ErrorMsg));
+        return;
+    }
+
+    logger->debug("Inserted order {} - {}", pInputOrder->OrderRef, utilities::GB2312ToUTF8()(pInputOrder->InstrumentID));
 }
 
 std::string trade::broker::CTPBrokerImpl::to_exchange(const types::ExchangeType exchange)
