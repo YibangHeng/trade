@@ -4,12 +4,16 @@
 #include "IBroker.h"
 #include "libholder/IHolder.h"
 #include "utilities/LoginSyncer.hpp"
+#include "utilities/ToJSON.hpp"
 
 namespace trade::broker
 {
 
 template<typename TickerTaperT = int64_t, utilities::ConfigFileType ConfigFileType = utilities::ConfigFileType::INI>
-class BrokerProxy: public IBroker, public utilities::LoginSyncer, public AppBase<TickerTaperT, ConfigFileType>
+class BrokerProxy
+    : public IBroker,
+      public utilities::LoginSyncer,
+      public AppBase<TickerTaperT, ConfigFileType>
 {
 public:
     explicit BrokerProxy(
@@ -33,9 +37,15 @@ public:
 public:
     int64_t new_order(std::shared_ptr<types::NewOrderReq> new_order_req) override
     {
+        if (!new_order_req->has_request_id()) {
+            new_order_req->set_request_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
+        }
+
         if (!new_order_req->has_unique_id()) {
             new_order_req->set_unique_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
         }
+
+        logger->info("New order pre-created: {}", utilities::ToJSON()(*new_order_req));
 
         return new_order_req->unique_id();
     }
@@ -45,6 +55,9 @@ public:
 
 protected:
     std::shared_ptr<holder::IHolder> m_holder;
+
+private:
+    decltype(AppBase<TickerTaperT, ConfigFileType>::logger) logger = AppBase<TickerTaperT, ConfigFileType>::logger;
 };
 
 } // namespace trade::broker

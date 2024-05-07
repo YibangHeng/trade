@@ -81,16 +81,15 @@ int64_t trade::broker::CTPBrokerImpl::new_order(const std::shared_ptr<types::New
 
 void trade::broker::CTPBrokerImpl::init_req()
 {
-    int code, request_seq, request_id;
-
-    std::tie(request_seq, request_id) = new_id_pair();
+    auto [request_seq, request_id] = new_id_pair();
 
     /// @OnRspQryInvestor.
     CThostFtdcQryInvestorField qry_investor_field {};
-    code = m_api->ReqQryInvestor(&qry_investor_field, request_seq);
+    auto code = m_api->ReqQryInvestor(&qry_investor_field, request_seq);
     if (code != 0) {
         logger->error("Failed to call ReqQryInvestor: returned code {}", code);
     }
+    logger->info("Queried investors in request {}", request_id);
 
     std::tie(request_seq, request_id) = new_id_pair();
 
@@ -100,6 +99,7 @@ void trade::broker::CTPBrokerImpl::init_req()
     if (code != 0) {
         logger->error("Failed to call ReqQryExchange: returned code {}", code);
     }
+    logger->info("Queried exchanges in request {}", request_id);
 
     std::tie(request_seq, request_id) = new_id_pair();
 
@@ -109,6 +109,7 @@ void trade::broker::CTPBrokerImpl::init_req()
     if (code != 0) {
         logger->error("Failed to call ReqQryProduct: returned code {}", code);
     }
+    logger->info("Queried products in request {}", request_id);
 
     std::tie(request_seq, request_id) = new_id_pair();
 
@@ -118,6 +119,7 @@ void trade::broker::CTPBrokerImpl::init_req()
     if (code != 0) {
         logger->error("Failed to call ReqQryInstrument: returned code {}", code);
     }
+    logger->info("Queried instruments in request {}", request_id);
 
     std::tie(request_seq, request_id) = new_id_pair();
 
@@ -127,6 +129,7 @@ void trade::broker::CTPBrokerImpl::init_req()
     if (code != 0) {
         logger->error("Failed to call ReqQryTradingAccount: returned code {}", code);
     }
+    logger->info("Queried trading accounts in request {}", request_id);
 
     std::tie(request_seq, request_id) = new_id_pair();
 
@@ -136,6 +139,7 @@ void trade::broker::CTPBrokerImpl::init_req()
     if (code != 0) {
         logger->error("Failed to call ReqQryInvestorPosition: returned code {}", code);
     }
+    logger->info("Queried investor positions in request {}", request_id);
 
     std::tie(request_seq, request_id) = new_id_pair();
 
@@ -145,6 +149,7 @@ void trade::broker::CTPBrokerImpl::init_req()
     if (code != 0) {
         logger->error("Failed to call ReqQryOrder: returned code {}", code);
     }
+    logger->info("Queried orders in request {}", request_id);
 }
 
 void trade::broker::CTPBrokerImpl::OnFrontConnected()
@@ -241,7 +246,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestor(
     logger->debug("Loaded investor {} - {}", pInvestor->InvestorID, utilities::GB2312ToUTF8()(pInvestor->InvestorName));
 
     if (bIsLast) {
-        logger->info("Loaded investor id {} in request {}", m_investor_id, request_id);
+        logger->info("Loaded investor id {} for request {}", m_investor_id, request_id);
     }
 }
 
@@ -270,7 +275,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryExchange(
     logger->debug("Loaded exchange {} - {}", pExchange->ExchangeID, utilities::GB2312ToUTF8()(pExchange->ExchangeName));
 
     if (bIsLast) {
-        logger->info("Loaded {} exchanges in request {}", m_exchanges.size(), request_id);
+        logger->info("Loaded {} exchanges for request {}", m_exchanges.size(), request_id);
     }
 }
 
@@ -299,7 +304,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryProduct(
     logger->debug("Loaded product {} - {}", pProduct->ProductID, utilities::GB2312ToUTF8()(pProduct->ProductName));
 
     if (bIsLast) {
-        logger->info("Loaded {} products in request {}", m_products.size(), request_id);
+        logger->info("Loaded {} products for request {}", m_products.size(), request_id);
     }
 }
 
@@ -328,7 +333,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryInstrument(
     logger->debug("Loaded instrument {} - {}", pInstrument->InstrumentID, utilities::GB2312ToUTF8()(pInstrument->InstrumentName));
 
     if (bIsLast) {
-        logger->info("Loaded {} instruments in request {}", m_instruments.size(), request_id);
+        logger->info("Loaded {} instruments for request {}", m_instruments.size(), request_id);
     }
 }
 
@@ -355,7 +360,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryTradingAccount(
     /// pTradingAccount will be nullptr if there is no trading account.
     if (pTradingAccount == nullptr) {
         assert(bIsLast);
-        logger->warn("No trading account loaded in request {}", request_id);
+        logger->warn("No trading account loaded for request {}", request_id);
         return;
     }
 
@@ -380,7 +385,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryTradingAccount(
     funds.add_funds()->CopyFrom(fund);
 
     if (bIsLast) {
-        logger->info("Loaded {} trading accounts in request {}", m_trading_account.size(), request_id);
+        logger->info("Loaded {} trading accounts for request {}", m_trading_account.size(), request_id);
         m_holder->init_funds(std::move(funds));
         fund_cache.erase(request_id);
     }
@@ -409,7 +414,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestorPosition(
     /// pInvestorPosition will be nullptr if there is no position.
     if (pInvestorPosition == nullptr) {
         assert(bIsLast);
-        logger->warn("No position loaded in request {}", request_id);
+        logger->warn("No position loaded for request {}", request_id);
         return;
     }
 
@@ -440,7 +445,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestorPosition(
     positions.add_positions()->CopyFrom(position);
 
     if (bIsLast) {
-        logger->info("Loaded {} positions in request {}", m_positions.size(), request_id);
+        logger->info("Loaded {} positions for request {}", m_positions.size(), request_id);
         m_holder->init_positions(std::move(positions));
         position_cache.erase(request_id);
     }
@@ -469,7 +474,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryOrder(
     /// pOrder will be nullptr if there is no order.
     if (pOrder == nullptr) {
         assert(bIsLast);
-        logger->warn("No order loaded in request {}", request_id);
+        logger->warn("No order loaded for request {}", request_id);
         return;
     }
 
@@ -478,7 +483,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryOrder(
     logger->debug("Loaded order {} - {}", pOrder->OrderRef, utilities::GB2312ToUTF8()(pOrder->InstrumentID));
 
     if (bIsLast) {
-        logger->info("Loaded {} orders in request {}", m_orders.size(), request_id);
+        logger->info("Loaded {} orders for request {}", m_orders.size(), request_id);
     }
 }
 

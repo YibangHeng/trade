@@ -14,9 +14,9 @@ namespace trade
 /// AppBase, which contains all the common functionalities (logger, config,
 /// etc), is the base class for all classes.
 template<typename TickerTaperT = int64_t, utilities::ConfigFileType ConfigFileType = utilities::ConfigFileType::INI>
-class AppBase: boost::noncopyable
+class AppBase: private boost::noncopyable
 {
-private:
+protected:
     using ConfigType = utilities::ConfigHelper<ConfigFileType>;
 
 public:
