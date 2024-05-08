@@ -24,13 +24,13 @@ public:
 #if PROTOBUF_SYNYAX_VERSION >= 3
         static google::protobuf::util::JsonPrintOptions json_options;
 
-        json_options.add_whitespace                = true;
+        json_options.add_whitespace                = false;
         json_options.always_print_enums_as_ints    = false;
         json_options.always_print_primitive_fields = true;
         json_options.preserve_proto_field_names    = true;
 
         std::string json_string;
-        google::protobuf::util::MessageToJsonString(message, &json_string);
+        MessageToJsonString(message, &json_string, json_options);
 
         return json_string;
 #else
@@ -147,8 +147,10 @@ private:
         return json;
     }
 
+#if PROTOBUF_SYNYAX_VERSION >= 3
 private:
     static google::protobuf::util::JsonPrintOptions json_options;
+#endif
 };
 
 } // namespace trade::utilities
