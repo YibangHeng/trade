@@ -76,18 +76,30 @@ private:
         CThostFtdcRspInfoField* pRspInfo,
         int nRequestID, bool bIsLast
     ) override;
+    void OnErrRtnOrderInsert(
+        CThostFtdcInputOrderField* pInputOrder,
+        CThostFtdcRspInfoField* pRspInfo
+    ) override;
+    void OnRtnOrder(CThostFtdcOrderField* pOrder) override;
 
 private:
-    static std::string to_exchange(types::ExchangeType exchange);
-    static TThostFtdcDirectionType to_side(types::SideType side);
-    static char to_position_side(types::PositionSideType position_side);
-    static google::protobuf::Timestamp* now();
+    [[nodiscard]] static std::string to_exchange(types::ExchangeType exchange);
+    [[nodiscard]] static TThostFtdcDirectionType to_side(types::SideType side);
+    [[nodiscard]] static char to_position_side(types::PositionSideType position_side);
+    /// Concatenate front_id, session_id and order_ref.
+    /// This tuples uniquely identify a CTP order.
+    /// @param order_ref The CTP order reference.
+    /// @return The unique order reference in format of {front_id}:{session_id}:{order_ref}.
+    [[nodiscard]] std::string concatenate(const std::string& order_ref) const;
+    [[nodiscard]] static google::protobuf::Timestamp* now();
 
 private:
     CThostFtdcTraderApi* m_api;
     TThostFtdcBrokerIDType m_broker_id;
     TThostFtdcUserIDType m_user_id;
     TThostFtdcInvestorIDType m_investor_id;
+    TThostFtdcFrontIDType m_front_id;
+    TThostFtdcSessionIDType m_session_id;
     /// ExchangeID -> CThostFtdcExchangeField.
     std::unordered_map<std::string, CThostFtdcExchangeField> m_exchanges;
     /// ProductID -> CThostFtdcProductField.
@@ -105,6 +117,7 @@ private:
     /// nRequestID -> UniqueID/RequestID.
     std::unordered_map<decltype(ticker_taper()), decltype(NEW_ID())> m_id_map;
     std::shared_ptr<holder::IHolder> m_holder;
+    std::shared_ptr<reporter::IReporter> m_reporter;
 
 private:
     CTPBroker* m_parent;
@@ -117,7 +130,8 @@ class PUBLIC_API CTPBroker final: public BrokerProxy<int>
 public:
     explicit CTPBroker(
         const std::string& config_path,
-        const std::shared_ptr<holder::IHolder>& holder
+        const std::shared_ptr<holder::IHolder>& holder,
+        const std::shared_ptr<reporter::IReporter>& reporter
     );
     ~CTPBroker() override = default;
 

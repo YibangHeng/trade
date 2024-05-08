@@ -4,6 +4,7 @@
 #include "info.h"
 #include "libbroker/CTPBroker.h"
 #include "libholder/SQLLiteHolder.h"
+#include "libreporter/LogReporter.h"
 #include "trade/trade.h"
 
 trade::Trade::Trade(const int argc, char* argv[])
@@ -30,12 +31,17 @@ int trade::Trade::run()
         return 1;
     }
 
-    broker::IBroker* broker;
+    auto reporter = std::make_shared<reporter::LogReporter>();
+
+    auto holder   = std::make_shared<holder::SQLLiteHolder>();
+
+    std::shared_ptr<broker::IBroker> broker;
 
     if (config->get<std::string>("Broker.Type") == "CTP") {
-        broker = new broker::CTPBroker(
+        broker = std::make_shared<broker::CTPBroker>(
             config->get<std::string>("Broker.Config"),
-            std::make_shared<holder::SQLLiteHolder>()
+            holder, 
+            reporter
         );
     }
     else {

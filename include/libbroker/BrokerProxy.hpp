@@ -3,6 +3,7 @@
 #include "AppBase.hpp"
 #include "IBroker.h"
 #include "libholder/IHolder.h"
+#include "libreporter/IReporter.hpp"
 #include "utilities/LoginSyncer.hpp"
 #include "utilities/ToJSON.hpp"
 
@@ -19,9 +20,11 @@ public:
     explicit BrokerProxy(
         const std::string& name,
         const std::shared_ptr<holder::IHolder>& holder,
+        const std::shared_ptr<reporter::IReporter>& reporter,
         const std::string& config_path = "./etc/trade.ini"
     ) : AppBase<TickerTaperT, ConfigFileType>(name, config_path),
-        m_holder(holder)
+        m_holder(holder),
+        m_reporter(reporter)
     {
     }
 
@@ -55,6 +58,7 @@ public:
 
 protected:
     std::shared_ptr<holder::IHolder> m_holder;
+    std::shared_ptr<reporter::IReporter> m_reporter;
 
 private:
     decltype(AppBase<TickerTaperT, ConfigFileType>::logger) logger = AppBase<TickerTaperT, ConfigFileType>::logger;

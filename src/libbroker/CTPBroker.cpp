@@ -10,7 +10,10 @@ trade::broker::CTPBrokerImpl::CTPBrokerImpl(CTPBroker* parent)
       m_broker_id(),
       m_user_id(),
       m_investor_id(),
+      m_front_id(0),
+      m_session_id(0),
       m_holder(parent->m_holder),
+      m_reporter(parent->m_reporter),
       m_parent(parent)
 {
     m_api->RegisterSpi(this);
@@ -154,9 +157,9 @@ void trade::broker::CTPBrokerImpl::init_req()
     logger->info("Queried orders in request {}", request_id);
 }
 
-#define pRspInfo_NULLPTR_CHECKER                                  \
-    if (pRspInfo == nullptr) {                                    \
-        logger->warn("A nullptr pRspInfo found in {}", __func__); \
+#define NULLPTR_CHECKER(ptr)                                      \
+    if (ptr == nullptr) {                                         \
+        logger->warn("A nullptr {} found in {}", #ptr, __func__); \
         return;                                                   \
     }
 
@@ -187,7 +190,7 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogin(
 {
     CThostFtdcTraderSpi::OnRspUserLogin(pRspUserLogin, pRspInfo, nRequestID, bIsLast);
 
-    pRspInfo_NULLPTR_CHECKER;
+    NULLPTR_CHECKER(pRspInfo);
 
     if (pRspInfo->ErrorID != 0) {
         m_parent->notify_login_failure("Failed to login with code {}: {}", pRspInfo->ErrorID, utilities::GB2312ToUTF8()(pRspInfo->ErrorMsg));
@@ -196,6 +199,8 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogin(
 
     M_A {m_broker_id} = pRspUserLogin->BrokerID;
     M_A {m_user_id}   = pRspUserLogin->UserID;
+    m_front_id        = pRspUserLogin->FrontID;
+    m_session_id      = pRspUserLogin->SessionID;
 
     logger->info("Logged to {} successfully as BrokerID/UserID {}/{} at {}-{}", pRspUserLogin->SystemName, pRspUserLogin->BrokerID, pRspUserLogin->UserID, pRspUserLogin->TradingDay, pRspUserLogin->LoginTime);
 
@@ -213,7 +218,7 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogout(
 {
     CThostFtdcTraderSpi::OnRspUserLogout(pUserLogout, pRspInfo, nRequestID, bIsLast);
 
-    pRspInfo_NULLPTR_CHECKER;
+    NULLPTR_CHECKER(pRspInfo);
 
     if (pRspInfo->ErrorID != 0) {
         m_parent->notify_logout_failure("Failed to logout with code {}: {}", pRspInfo->ErrorID, pRspInfo->ErrorMsg);
@@ -234,7 +239,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestor(
 {
     CThostFtdcTraderSpi::OnRspQryInvestor(pInvestor, pRspInfo, nRequestID, bIsLast);
 
-    pRspInfo_NULLPTR_CHECKER;
+    NULLPTR_CHECKER(pRspInfo);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -259,7 +264,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryExchange(
 {
     CThostFtdcTraderSpi::OnRspQryExchange(pExchange, pRspInfo, nRequestID, bIsLast);
 
-    pRspInfo_NULLPTR_CHECKER;
+    NULLPTR_CHECKER(pRspInfo);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -286,7 +291,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryProduct(
 {
     CThostFtdcTraderSpi::OnRspQryProduct(pProduct, pRspInfo, nRequestID, bIsLast);
 
-    pRspInfo_NULLPTR_CHECKER;
+    NULLPTR_CHECKER(pRspInfo);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -313,7 +318,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryInstrument(
 {
     CThostFtdcTraderSpi::OnRspQryInstrument(pInstrument, pRspInfo, nRequestID, bIsLast);
 
-    pRspInfo_NULLPTR_CHECKER;
+    NULLPTR_CHECKER(pRspInfo);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -340,7 +345,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryTradingAccount(
 {
     CThostFtdcTraderSpi::OnRspQryTradingAccount(pTradingAccount, pRspInfo, nRequestID, bIsLast);
 
-    pRspInfo_NULLPTR_CHECKER;
+    NULLPTR_CHECKER(pRspInfo);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -392,7 +397,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestorPosition(
 {
     CThostFtdcTraderSpi::OnRspQryInvestorPosition(pInvestorPosition, pRspInfo, nRequestID, bIsLast);
 
-    pRspInfo_NULLPTR_CHECKER;
+    NULLPTR_CHECKER(pRspInfo);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -449,7 +454,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryOrder(
 {
     CThostFtdcTraderSpi::OnRspQryOrder(pOrder, pRspInfo, nRequestID, bIsLast);
 
-    pRspInfo_NULLPTR_CHECKER;
+    NULLPTR_CHECKER(pRspInfo);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -474,6 +479,8 @@ void trade::broker::CTPBrokerImpl::OnRspQryOrder(
     }
 }
 
+/// @ReqOrderInsert.
+/// Local order contains only, rejected by front end.
 void trade::broker::CTPBrokerImpl::OnRspOrderInsert(
     CThostFtdcInputOrderField* pInputOrder,
     CThostFtdcRspInfoField* pRspInfo,
@@ -482,16 +489,145 @@ void trade::broker::CTPBrokerImpl::OnRspOrderInsert(
 {
     CThostFtdcTraderSpi::OnRspOrderInsert(pInputOrder, pRspInfo, nRequestID, bIsLast);
 
-    pRspInfo_NULLPTR_CHECKER;
+    NULLPTR_CHECKER(pRspInfo);
 
-    const auto request_id = get_by_seq_id(nRequestID);
+    const auto unique_id = get_by_seq_id(nRequestID);
 
-    if (pRspInfo->ErrorID != 0) {
-        logger->error("Failed to insert order for request {}: {}", request_id, utilities::GB2312ToUTF8()(pRspInfo->ErrorMsg));
+    /// This callback is called only when an order is rejected by front end.
+    /// Original description:
+    /// 综合交易平台交易核心返回的包含错误信息的报单响应 …… 交易前置从交易核心订
+    /// 阅到错误的报单响应报文，以对话模式将该报文转发给交易终端。
+    assert(pRspInfo->ErrorID != 0);
+
+    const auto order_rejection = std::make_shared<types::OrderRejection>();
+
+    order_rejection->set_original_unique_id(unique_id);
+    if (pInputOrder != nullptr) {
+        order_rejection->set_original_broker_id(concatenate(pInputOrder->OrderRef));
+        order_rejection->set_original_exchange_id(concatenate(pInputOrder->OrderRef));
+    }
+    order_rejection->set_rejection_code(types::RejectionCode::unknown);
+    order_rejection->set_rejection_reason(utilities::GB2312ToUTF8()(pRspInfo->ErrorMsg));
+    order_rejection->set_allocated_rejection_time(now());
+
+    m_reporter->order_rejected(order_rejection);
+}
+
+/// Outside order (order submitted from other session) contains, rejected by
+/// exchange.
+void trade::broker::CTPBrokerImpl::OnErrRtnOrderInsert(
+    CThostFtdcInputOrderField* pInputOrder,
+    CThostFtdcRspInfoField* pRspInfo
+)
+{
+    CThostFtdcTraderSpi::OnErrRtnOrderInsert(pInputOrder, pRspInfo);
+
+    NULLPTR_CHECKER(pRspInfo);
+
+    /// This callback is called only when an order is rejected by exchange.
+    /// See https://zhuanlan.zhihu.com/p/94507929 for more details.
+    assert(pRspInfo->ErrorID != 0);
+
+    logger->warn("An outside order {} from ip {} mac {} is rejected by exchange: {}", pInputOrder->OrderRef, pInputOrder->IPAddress, pInputOrder->MacAddress, pRspInfo->ErrorMsg);
+}
+
+void trade::broker::CTPBrokerImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
+{
+    CThostFtdcTraderSpi::OnRtnOrder(pOrder);
+
+    NULLPTR_CHECKER(pOrder);
+
+    using OrderRefType = std::tuple_element_t<0, decltype(new_id_pair())>;
+    OrderRefType order_ref;
+
+    try {
+        /// TThostFtdcOrderRefType is char[13], so we can use std::stoi.
+        /// UINT32_MAX is 4,294,967,295.
+        order_ref = std::stoi(pOrder->OrderRef);
+    }
+    catch (const std::exception& e) {
+        logger->warn("Can not convert OrderRef {} to OrderRefType: {}", pOrder->OrderRef, e.what());
         return;
     }
 
-    logger->debug("Inserted order {} - {}", pInputOrder->OrderRef, utilities::GB2312ToUTF8()(pInputOrder->InstrumentID));
+    const auto unique_id = get_by_seq_id(order_ref);
+
+    switch (pOrder->OrderStatus) {
+    case THOST_FTDC_OST_Canceled: {
+        switch (pOrder->OrderSubmitStatus) {
+        case THOST_FTDC_OSS_CancelSubmitted: {
+            const auto cancel_broker_acceptance = std::make_shared<types::CancelBrokerAcceptance>();
+
+            cancel_broker_acceptance->set_original_unique_id(unique_id);
+            cancel_broker_acceptance->set_original_broker_id(concatenate(pOrder->OrderRef));
+            cancel_broker_acceptance->set_original_exchange_id(concatenate(pOrder->OrderRef));
+            cancel_broker_acceptance->set_allocated_broker_acceptance_time(now());
+
+            m_reporter->cancel_broker_accepted(cancel_broker_acceptance);
+
+            const auto cancel_exchange_acceptance = std::make_shared<types::CancelExchangeAcceptance>();
+
+            cancel_exchange_acceptance->set_original_unique_id(unique_id);
+            cancel_exchange_acceptance->set_original_broker_id(concatenate(pOrder->OrderRef));
+            cancel_exchange_acceptance->set_original_exchange_id(concatenate(pOrder->OrderRef));
+            cancel_exchange_acceptance->set_allocated_exchange_acceptance_time(now());
+
+            m_reporter->cancel_exchange_accepted(cancel_exchange_acceptance);
+
+            break;
+        }
+        case THOST_FTDC_OSS_InsertRejected: {
+            const auto order_rejection = std::make_shared<types::OrderRejection>();
+
+            order_rejection->set_original_unique_id(unique_id);
+            order_rejection->set_original_broker_id(concatenate(pOrder->OrderRef));
+            order_rejection->set_original_exchange_id(concatenate(pOrder->OrderRef));
+            order_rejection->set_rejection_code(types::RejectionCode::unknown);
+            order_rejection->set_rejection_reason(utilities::GB2312ToUTF8()(pOrder->StatusMsg));
+            order_rejection->set_allocated_rejection_time(now());
+
+            m_reporter->order_rejected(order_rejection);
+
+            break;
+        }
+        case THOST_FTDC_OSS_CancelRejected: {
+            const auto cancel_order_rejection = std::make_shared<types::CancelOrderRejection>();
+
+            cancel_order_rejection->set_original_unique_id(unique_id);
+            cancel_order_rejection->set_original_broker_id(concatenate(pOrder->OrderRef));
+            cancel_order_rejection->set_original_exchange_id(concatenate(pOrder->OrderRef));
+            cancel_order_rejection->set_rejection_code(types::RejectionCode::unknown);
+            cancel_order_rejection->set_rejection_reason(utilities::GB2312ToUTF8()(pOrder->StatusMsg));
+            cancel_order_rejection->set_allocated_rejection_time(now());
+
+            m_reporter->cancel_order_rejected(cancel_order_rejection);
+
+            break;
+        }
+        default: break;
+        }
+    case THOST_FTDC_OST_NoTradeQueueing: {
+        const auto broker_acceptance = std::make_shared<types::BrokerAcceptance>();
+
+        broker_acceptance->set_unique_id(unique_id);
+        broker_acceptance->set_broker_id(concatenate(pOrder->OrderRef));
+        broker_acceptance->set_allocated_broker_acceptance_time(now());
+
+        m_reporter->broker_accepted(broker_acceptance);
+
+        const auto exchange_acceptance = std::make_shared<types::ExchangeAcceptance>();
+
+        exchange_acceptance->set_unique_id(unique_id);
+        exchange_acceptance->set_exchange_id(concatenate(pOrder->OrderRef));
+        exchange_acceptance->set_allocated_exchange_acceptance_time(now());
+
+        m_reporter->exchange_accepted(exchange_acceptance);
+
+        break;
+    }
+    default: break;
+    }
+    }
 }
 
 std::string trade::broker::CTPBrokerImpl::to_exchange(const types::ExchangeType exchange)
@@ -532,6 +668,11 @@ char trade::broker::CTPBrokerImpl::to_position_side(const types::PositionSideTyp
     }
 }
 
+std::string trade::broker::CTPBrokerImpl::concatenate(const std::string& order_ref) const
+{
+    return fmt::format("{}:{}:{}", m_front_id, m_session_id, order_ref);
+}
+
 /// Returns the current time with nanosecond precision.
 ///
 /// Note: Set the returned value to a protobuf message will hand over the
@@ -543,8 +684,9 @@ google::protobuf::Timestamp* trade::broker::CTPBrokerImpl::now()
 
 trade::broker::CTPBroker::CTPBroker(
     const std::string& config_path,
-    const std::shared_ptr<holder::IHolder>& holder
-) : BrokerProxy("CTPBroker", holder, config_path),
+    const std::shared_ptr<holder::IHolder>& holder,
+    const std::shared_ptr<reporter::IReporter>& reporter
+) : BrokerProxy("CTPBroker", holder, reporter, config_path),
     m_impl(nullptr)
 {
 }
