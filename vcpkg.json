@@ -24,6 +24,10 @@
       "version>=": "3.5.3"
     },
     {
+      "name": "date",
+      "version>=": "3.0.1#5"
+    },
+    {
       "name": "fmt",
       "version>=": "10.2.1#1"
     },

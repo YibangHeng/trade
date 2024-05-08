@@ -9,5 +9,7 @@ target_link_libraries(
         PRIVATE
         trade_types
         PRIVATE
+        date::date
+        date::date-tz
         unofficial::sqlite3::sqlite3
 )

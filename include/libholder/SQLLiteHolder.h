@@ -2,9 +2,10 @@
 
 #include <sqlite3.h>
 
+#include "AppBase.hpp"
 #include "IHolder.h"
 
-#include <AppBase.hpp>
+#define SQLITE_AUTO_LENGTH (-1)
 
 namespace trade::holder
 {
@@ -27,6 +28,7 @@ private:
 private:
     void init_funds_table();
     void init_positions_table();
+    void init_orders_table();
 
 private:
     sqlite3* m_db;

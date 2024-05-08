@@ -34,6 +34,7 @@ find_package(
         COMPONENTS
         program_options
 )
+find_package(date REQUIRED)
 find_package(fmt REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
