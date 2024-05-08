@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "networks.pb.h"
 #include "visibility.h"
 

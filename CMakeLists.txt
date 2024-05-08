@@ -49,6 +49,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/trade_types) # For generated *.p
 
 # Binaries and libraries.
 add_subdirectory(src/libbroker)
+add_subdirectory(src/libreporter)
 add_subdirectory(src/libholder)
 add_subdirectory(src/trade)
 

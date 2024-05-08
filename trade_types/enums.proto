@@ -81,7 +81,7 @@ enum ExecStatusType
     rejected                       = 3000; /// 已拒绝
 }
 
-/// 委托错误代码
+/// 委托拒单代码
 enum RejectionCode
 {
     invalid_rejection_code = 0;

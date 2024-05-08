@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "orms.pb.h"
 #include "visibility.h"
 
