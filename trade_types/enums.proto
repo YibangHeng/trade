@@ -93,8 +93,9 @@ enum RejectionCode
 
     /// 字段
     repeated_unique_id = 2000; /// 重复的 UniqueID
-    invalid_symbol     = 2001; /// 无效合约代码
-    invalid_price_type = 2002; /// 无效报价类型
+    invalid_unique_id  = 2001; /// 无效的 UniqueID
+    invalid_symbol     = 2002; /// 无效合约代码
+    invalid_price_type = 2003; /// 无效报价类型
 
     /// 交易规则
     invalid_price    = 3000; /// 无效价格

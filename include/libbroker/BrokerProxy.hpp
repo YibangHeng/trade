@@ -59,7 +59,17 @@ public:
         return new_order_req->unique_id();
     }
 
-    int64_t cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req) override { return INVALID_ID; }
+    int64_t cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req) override
+    {
+        if (!new_cancel_req->has_request_id()) {
+            new_cancel_req->set_request_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
+        }
+
+        logger->info("New cancel pre-created: {}", utilities::ToJSON()(*new_cancel_req));
+
+        return new_cancel_req->request_id();
+    }
+
     int64_t cancel_all(std::shared_ptr<types::NewCancelAllReq> new_cancel_all_req) override { return INVALID_ID; }
 
 private:

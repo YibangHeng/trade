@@ -19,6 +19,7 @@ public:
 
 public:
     int64_t new_order(const std::shared_ptr<types::NewOrderReq>& new_order_req);
+    int64_t cancel_order(const std::shared_ptr<types::NewCancelReq>& new_cancel_req);
 
 private:
     /// Do some initial queries.
@@ -75,6 +76,15 @@ private:
         CThostFtdcInputOrderField* pInputOrder,
         CThostFtdcRspInfoField* pRspInfo
     ) override;
+    void OnRspOrderAction(
+        CThostFtdcInputOrderActionField* pInputOrderAction,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
+    void OnErrRtnOrderAction(
+        CThostFtdcOrderActionField* pOrderAction,
+        CThostFtdcRspInfoField* pRspInfo
+    ) override;
     void OnRtnOrder(CThostFtdcOrderField* pOrder) override;
 
 private:
@@ -92,6 +102,11 @@ private:
         TThostFtdcSessionIDType session_id,
         const std::string& order_ref
     );
+    /// Extract front_id, session_id and order_ref from broker_id in format of
+    /// {front_id}:{session_id}:{order_ref}.
+    /// @return std::tuple<front_id, session_id, order_ref>. Empty string if
+    /// broker_id is not in format.
+    [[nodiscard]] static auto from_broker_id(const std::string& broker_id);
     /// Concatenate exchange and order_sys_id to exchange_id in format of
     /// {exchange}:{order_sys_id}.
     /// This tuples uniquely identify a CTP order.
@@ -99,6 +114,11 @@ private:
         const std::string& exchange,
         const std::string& order_sys_id
     );
+    /// Extract exchange and order_sys_id from exchange_id in format of
+    /// {exchange}:{order_sys_id}.
+    /// @return std::tuple<exchange, order_sys_id>. Empty string if exchange_id
+    /// is not in format.
+    [[nodiscard]] static auto from_exchange_id(const std::string& exchange_id);
     [[nodiscard]] static google::protobuf::Timestamp* now();
 
 private:
@@ -149,6 +169,7 @@ public:
 
 public:
     int64_t new_order(std::shared_ptr<types::NewOrderReq> new_order_req) override;
+    int64_t cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req) override;
 
 private:
     std::unique_ptr<CTPBrokerImpl> m_impl;
