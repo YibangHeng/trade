@@ -5,6 +5,7 @@
 #include "libholder/IHolder.h"
 #include "libreporter/IReporter.hpp"
 #include "utilities/LoginSyncer.hpp"
+#include "utilities/TimeHelper.hpp"
 #include "utilities/ToJSON.hpp"
 
 namespace trade::broker
@@ -48,13 +49,42 @@ public:
             new_order_req->set_unique_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
         }
 
-        logger->info("New order pre-created: {}", utilities::ToJSON()(*new_order_req));
+        /// Pre-create order in holder.
+        if (!pre_insert_order(new_order_req)) {
+            logger->error("Failed to pre-create order due to holder error: {}", utilities::ToJSON()(*new_order_req));
+            return INVALID_ID;
+        }
 
+        logger->info("New order pre-created: {}", utilities::ToJSON()(*new_order_req));
         return new_order_req->unique_id();
     }
 
     int64_t cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req) override { return INVALID_ID; }
     int64_t cancel_all(std::shared_ptr<types::NewCancelAllReq> new_cancel_all_req) override { return INVALID_ID; }
+
+private:
+    [[nodiscard]] bool pre_insert_order(const std::shared_ptr<types::NewOrderReq>& new_order_req) const
+    {
+        const auto orders = std::make_shared<types::Orders>();
+
+        types::Order order;
+
+        order.set_unique_id(new_order_req->unique_id());
+        order.clear_broker_id();   /// No broker_id yet.
+        order.clear_exchange_id(); /// No exchange_id yet.
+        order.set_symbol(new_order_req->symbol());
+        order.set_side(new_order_req->side());
+        order.set_position_side(new_order_req->position_side());
+        order.set_price(new_order_req->price());
+        order.set_quantity(new_order_req->quantity());
+        order.set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
+        order.set_allocated_update_time(utilities::Now<google::protobuf::Timestamp*>()());
+
+        orders->add_orders()->CopyFrom(order);
+
+        /// Return true if the order is inserted successfully.
+        return m_holder->update_orders(orders) == 1;
+    }
 
 protected:
     std::shared_ptr<holder::IHolder> m_holder;

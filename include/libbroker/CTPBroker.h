@@ -66,11 +66,6 @@ private:
         CThostFtdcRspInfoField* pRspInfo,
         int nRequestID, bool bIsLast
     ) override;
-    void OnRspQryOrder(
-        CThostFtdcOrderField* pOrder,
-        CThostFtdcRspInfoField* pRspInfo,
-        int nRequestID, bool bIsLast
-    ) override;
     void OnRspOrderInsert(
         CThostFtdcInputOrderField* pInputOrder,
         CThostFtdcRspInfoField* pRspInfo,
@@ -84,13 +79,26 @@ private:
 
 private:
     [[nodiscard]] static std::string to_exchange(types::ExchangeType exchange);
+    [[nodiscard]] static types::ExchangeType to_exchange(const std::string& exchange);
     [[nodiscard]] static TThostFtdcDirectionType to_side(types::SideType side);
+    [[nodiscard]] static types::SideType to_side(TThostFtdcDirectionType side);
     [[nodiscard]] static char to_position_side(types::PositionSideType position_side);
-    /// Concatenate front_id, session_id and order_ref.
+    [[nodiscard]] static types::PositionSideType to_position_side(char position_side);
+    /// Concatenate front_id, session_id and order_ref to broker_id in format of
+    /// {front_id}:{session_id}:{order_ref}.
     /// This tuples uniquely identify a CTP order.
-    /// @param order_ref The CTP order reference.
-    /// @return The unique order reference in format of {front_id}:{session_id}:{order_ref}.
-    [[nodiscard]] std::string concatenate(const std::string& order_ref) const;
+    [[nodiscard]] static std::string to_broker_id(
+        TThostFtdcFrontIDType front_id,
+        TThostFtdcSessionIDType session_id,
+        const std::string& order_ref
+    );
+    /// Concatenate exchange and order_sys_id to exchange_id in format of
+    /// {exchange}:{order_sys_id}.
+    /// This tuples uniquely identify a CTP order.
+    [[nodiscard]] static std::string to_exchange_id(
+        const std::string& exchange,
+        const std::string& order_sys_id
+    );
     [[nodiscard]] static google::protobuf::Timestamp* now();
 
 private:

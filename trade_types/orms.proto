@@ -43,14 +43,16 @@ message Positions
 
 message Order
 {
-    int64 unique_id                         = 1; /// 唯一 ID
-    string symbol                           = 2; /// 合约代码
-    SideType side                           = 3; /// 买卖方向
-    optional PositionType position          = 4; /// 开平方向
-    double price                            = 5; /// 价格
-    double quantity                         = 6; /// 数量
-    google.protobuf.Timestamp creation_time = 7; /// 创建时间
-    google.protobuf.Timestamp update_time   = 8; /// 更新时间
+    int64 unique_id                         = 1;  /// 唯一 ID
+    optional string broker_id               = 2;  /// 券商 ID
+    optional string exchange_id             = 3;  /// 交易所 ID
+    string symbol                           = 4;  /// 合约代码
+    SideType side                           = 5;  /// 买卖方向
+    optional PositionSideType position_side = 6;  /// 开平方向
+    double price                            = 7;  /// 价格
+    int64 quantity                          = 8;  /// 数量
+    google.protobuf.Timestamp creation_time = 9;  /// 创建时间
+    google.protobuf.Timestamp update_time   = 10; /// 更新时间
 }
 
 message Orders

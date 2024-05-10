@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/core/noncopyable.hpp>
+#include <optional>
 #include <spdlog/spdlog.h>
 #include <utility>
 
@@ -64,11 +65,11 @@ public:
     /// Get the unique id by the given sequence id.
     /// @param seq_id The sequence id.
     /// @return The unique id. If the given sequence id is not found, return INVALID_ID.
-    auto get_by_seq_id(const TickerTaperT& seq_id)
+    std::optional<int64_t> get_by_seq_id(const TickerTaperT& seq_id)
     {
         std::lock_guard lock(m_id_map_mutex);
 
-        return m_id_map.contains(seq_id) ? m_id_map[seq_id] : INVALID_ID;
+        return m_id_map.contains(seq_id) ? std::make_optional(m_id_map[seq_id]) : std::nullopt;
     }
 
     /// Erase the unique id by the given sequence id.

@@ -3,11 +3,13 @@
 #include <google/protobuf/util/json_util.h>
 
 #include "libholder/SQLLiteHolder.h"
-#include "utilities/TimeHelper.h"
+#include "utilities/TimeHelper.hpp"
+#include "utilities/ToJSON.hpp"
 
 trade::holder::SQLLiteHolder::SQLLiteHolder(const std::string& db_path)
     : AppBase("SQLLiteHolder"),
       m_db(nullptr),
+      m_exec_code(SQLITE_OK),
       m_fund_table_name("funds"),
       m_fund_insert_stmt(nullptr),
       m_position_table_name("positions"),
@@ -28,7 +30,13 @@ trade::holder::SQLLiteHolder::SQLLiteHolder(const std::string& db_path)
     if (m_db == nullptr) {
         throw std::runtime_error(fmt::format("Failed to open sqlite3 database: {}", std::string(sqlite3_errmsg(m_db))));
     }
-    sqlite3_exec(m_db, "PRAGMA foreign_keys = ON;", nullptr, nullptr, nullptr);
+
+    m_exec_code = sqlite3_exec(m_db, "PRAGMA foreign_keys = ON;", nullptr, nullptr, nullptr);
+    if (m_exec_code != SQLITE_OK) {
+        throw std::runtime_error(fmt::format("Failed to enable foreign keys: {}", std::string(sqlite3_errmsg(m_db))));
+    }
+
+    init_database();
 }
 
 trade::holder::SQLLiteHolder::~SQLLiteHolder()
@@ -38,11 +46,6 @@ trade::holder::SQLLiteHolder::~SQLLiteHolder()
 
 int64_t trade::holder::SQLLiteHolder::init_funds(const std::shared_ptr<types::Funds> funds)
 {
-    /// Initialize funds at first time.
-    if (m_fund_insert_stmt == nullptr) {
-        init_funds_table();
-    }
-
     start_transaction();
 
     for (const auto& fund : funds->funds()) {
@@ -55,8 +58,8 @@ int64_t trade::holder::SQLLiteHolder::init_funds(const std::shared_ptr<types::Fu
         sqlite3_bind_double(m_fund_insert_stmt, 5, fund.frozen_margin());
         sqlite3_bind_double(m_fund_insert_stmt, 6, fund.frozen_commission());
 
-        const auto code = sqlite3_step(m_fund_insert_stmt);
-        if (code != SQLITE_DONE) {
+        m_exec_code = sqlite3_step(m_fund_insert_stmt);
+        if (m_exec_code != SQLITE_DONE) {
             logger->error("Failed to insert fund {}: {}", fund.account_id(), std::string(sqlite3_errmsg(m_db)));
         }
     }
@@ -68,11 +71,6 @@ int64_t trade::holder::SQLLiteHolder::init_funds(const std::shared_ptr<types::Fu
 
 int64_t trade::holder::SQLLiteHolder::init_positions(const std::shared_ptr<types::Positions> positions)
 {
-    /// Initialize positions at first time.
-    if (m_position_insert_stmt == nullptr) {
-        init_positions_table();
-    }
-
     start_transaction();
 
     for (const auto& position : positions->positions()) {
@@ -90,8 +88,8 @@ int64_t trade::holder::SQLLiteHolder::init_positions(const std::shared_ptr<types
         sqlite3_bind_double(m_position_insert_stmt, 10, position.open_cost());
         sqlite3_bind_text(m_position_insert_stmt, 11, utilities::ProtobufTimeToSQLiteDatetime()(position.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
 
-        const auto code = sqlite3_step(m_position_insert_stmt);
-        if (code != SQLITE_DONE) {
+        m_exec_code = sqlite3_step(m_position_insert_stmt);
+        if (m_exec_code != SQLITE_DONE) {
             logger->error("Failed to insert position {}: {}", position.symbol(), std::string(sqlite3_errmsg(m_db)));
         }
     }
@@ -101,28 +99,33 @@ int64_t trade::holder::SQLLiteHolder::init_positions(const std::shared_ptr<types
     return positions->positions_size();
 }
 
-int64_t trade::holder::SQLLiteHolder::init_orders(const std::shared_ptr<types::Orders> orders)
+int64_t trade::holder::SQLLiteHolder::update_orders(const std::shared_ptr<types::Orders> orders)
 {
-    if (m_order_insert_stmt == nullptr) {
-        init_orders_table();
-    }
-
     start_transaction();
 
     for (const auto& order : orders->orders()) {
+        if (order.unique_id() == INVALID_ID) {
+            logger->warn("No Unique ID for order: {}", utilities::ToJSON()(order));
+            continue;
+        }
+
         sqlite3_reset(m_order_insert_stmt);
 
         sqlite3_bind_int64(m_order_insert_stmt, 1, order.unique_id());
-        sqlite3_bind_text(m_order_insert_stmt, 2, order.symbol().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
-        sqlite3_bind_int64(m_order_insert_stmt, 3, order.side());
-        sqlite3_bind_int64(m_order_insert_stmt, 4, order.position());
-        sqlite3_bind_double(m_order_insert_stmt, 5, order.price());
-        sqlite3_bind_double(m_order_insert_stmt, 6, order.quantity());
-        sqlite3_bind_text(m_order_insert_stmt, 7, utilities::ProtobufTimeToSQLiteDatetime()(order.creation_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
-        sqlite3_bind_text(m_order_insert_stmt, 8, utilities::ProtobufTimeToSQLiteDatetime()(order.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        order.has_broker_id() ? sqlite3_bind_text(m_order_insert_stmt, 2, order.broker_id().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT)
+                              : sqlite3_bind_null(m_order_insert_stmt, 2);
+        order.has_exchange_id() ? sqlite3_bind_text(m_order_insert_stmt, 3, order.exchange_id().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT)
+                                : sqlite3_bind_null(m_order_insert_stmt, 3);
+        sqlite3_bind_text(m_order_insert_stmt, 4, order.symbol().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_order_insert_stmt, 5, to_side(order.side()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_order_insert_stmt, 6, order.has_position_side() ? to_position_side(order.position_side()).c_str() : "NULL", SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_double(m_order_insert_stmt, 7, order.price());
+        sqlite3_bind_int64(m_order_insert_stmt, 8, order.quantity());
+        sqlite3_bind_text(m_order_insert_stmt, 9, utilities::ProtobufTimeToSQLiteDatetime()(order.creation_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_order_insert_stmt, 10, utilities::ProtobufTimeToSQLiteDatetime()(order.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
 
-        const auto code = sqlite3_step(m_order_insert_stmt);
-        if (code != SQLITE_DONE) {
+        m_exec_code = sqlite3_step(m_order_insert_stmt);
+        if (m_exec_code != SQLITE_DONE) {
             logger->error("Failed to insert order {}: {}", order.unique_id(), std::string(sqlite3_errmsg(m_db)));
         }
     }
@@ -130,6 +133,21 @@ int64_t trade::holder::SQLLiteHolder::init_orders(const std::shared_ptr<types::O
     commit_or_rollback(SQLITE_OK);
 
     return orders->orders_size();
+}
+
+std::shared_ptr<trade::types::Orders> trade::holder::SQLLiteHolder::query_orders_by_unique_id(int64_t unique_id)
+{
+    return query_orders_by("unique_id", std::to_string(unique_id));
+}
+
+std::shared_ptr<trade::types::Orders> trade::holder::SQLLiteHolder::query_orders_by_broker_id(const std::string& broker_id)
+{
+    return query_orders_by("broker_id", broker_id);
+}
+
+std::shared_ptr<trade::types::Orders> trade::holder::SQLLiteHolder::query_orders_by_exchange_id(const std::string& exchange_id)
+{
+    return query_orders_by("exchange_id", exchange_id);
 }
 
 void trade::holder::SQLLiteHolder::start_transaction() const
@@ -165,9 +183,9 @@ void trade::holder::SQLLiteHolder::init_funds_table()
 
     start_transaction();
 
-    auto code = sqlite3_exec(m_db, create_funds_table_sql.c_str(), nullptr, nullptr, nullptr);
+    auto m_exec_code = sqlite3_exec(m_db, create_funds_table_sql.c_str(), nullptr, nullptr, nullptr);
 
-    commit_or_rollback(code);
+    commit_or_rollback(m_exec_code);
 
     /// Prepare insert statement.
     const std::string& fund_insert_sql = fmt::format(
@@ -175,9 +193,9 @@ void trade::holder::SQLLiteHolder::init_funds_table()
         m_fund_table_name
     );
 
-    code = sqlite3_prepare_v2(m_db, fund_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &m_fund_insert_stmt, nullptr);
+    m_exec_code = sqlite3_prepare_v2(m_db, fund_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &m_fund_insert_stmt, nullptr);
 
-    if (code != SQLITE_OK) {
+    if (m_exec_code != SQLITE_OK) {
         throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
     }
 }
@@ -204,9 +222,9 @@ void trade::holder::SQLLiteHolder::init_positions_table()
 
     start_transaction();
 
-    auto code = sqlite3_exec(m_db, create_positions_table_sql.c_str(), nullptr, nullptr, nullptr);
+    auto m_exec_code = sqlite3_exec(m_db, create_positions_table_sql.c_str(), nullptr, nullptr, nullptr);
 
-    commit_or_rollback(code);
+    commit_or_rollback(m_exec_code);
 
     /// Prepare insert statement.
     const std::string& position_insert_sql = fmt::format(
@@ -214,9 +232,9 @@ void trade::holder::SQLLiteHolder::init_positions_table()
         m_position_table_name
     );
 
-    code = sqlite3_prepare_v2(m_db, position_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &m_position_insert_stmt, nullptr);
+    m_exec_code = sqlite3_prepare_v2(m_db, position_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &m_position_insert_stmt, nullptr);
 
-    if (code != SQLITE_OK) {
+    if (m_exec_code != SQLITE_OK) {
         throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
     }
 }
@@ -225,35 +243,191 @@ void trade::holder::SQLLiteHolder::init_orders_table()
 {
     /// Create table for orders.
     const std::string& create_orders_table_sql = fmt::format(
-        "CREATE TABLE IF NOT EXISTS {} ("
+        "CREATE TABLE IF NOT EXISTS {0} ("
         "unique_id     TEXT NOT NULL PRIMARY KEY,"
-        "account_id    TEXT NOT NULL,"
+        "broker_id     TEXT,"
+        "exchange_id   TEXT UNIQUE,"
         "symbol        TEXT NOT NULL,"
-        "side          TEXT NOT NULL,"
-        "type          TEXT NOT NULL,"
-        "price         REAL,"
-        "quantity      REAL,"
-        "creation_time DATETIME,"
-        "update_time   DATETIME"
-        ");",
+        "side          TEXT CHECK(side in ('buy', 'sell')) NOT NULL,"
+        "position_side TEXT CHECK(position_side in ('open', 'close')),"
+        "price         REAL NOT NULL,"
+        "quantity      INTEGER NOT NULL,"
+        "creation_time DATETIME NOT NULL,"
+        "update_time   DATETIME NOT NULL"
+        ");"
+        "CREATE INDEX IF NOT EXISTS broker_id_index ON {0} (broker_id);"
+        "CREATE UNIQUE INDEX IF NOT EXISTS exchange_id_index ON {0} (exchange_id);",
         m_order_table_name
     );
 
     start_transaction();
 
-    auto code = sqlite3_exec(m_db, create_orders_table_sql.c_str(), nullptr, nullptr, nullptr);
+    auto m_exec_code = sqlite3_exec(m_db, create_orders_table_sql.c_str(), nullptr, nullptr, nullptr);
 
-    commit_or_rollback(code);
+    commit_or_rollback(m_exec_code);
 
     /// Prepare insert statement.
     const std::string& order_insert_sql = fmt::format(
-        "INSERT OR REPLACE INTO {} VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);",
+        "INSERT OR REPLACE INTO {} VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
         m_order_table_name
     );
 
-    code = sqlite3_prepare_v2(m_db, order_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &m_order_insert_stmt, nullptr);
+    m_exec_code = sqlite3_prepare_v2(m_db, order_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &m_order_insert_stmt, nullptr);
 
-    if (code != SQLITE_OK) {
+    if (m_exec_code != SQLITE_OK) {
         throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
     }
+}
+
+void trade::holder::SQLLiteHolder::init_query_orders_stmts()
+{
+    const std::array<std::string, 3> ids = {
+        "unique_id",
+        "broker_id",
+        "exchange_id"
+    };
+
+    const std::array<sqlite3_stmt**, 3> stmts = {
+        &m_query_orders_by_unique_id_stmt,
+        &m_query_orders_by_broker_id_stmt,
+        &m_query_orders_by_exchange_id_stmt
+    };
+
+    for (size_t i = 0; i < 3; i++) {
+        const std::string& sql = fmt::format(
+            "SELECT * FROM {} WHERE {} = ?;",
+            m_order_table_name,
+            ids[i]
+        );
+
+        const auto m_exec_code = sqlite3_prepare_v2(m_db, sql.c_str(), SQLITE_AUTO_LENGTH, stmts[i], nullptr);
+        if (m_exec_code != SQLITE_OK) {
+            throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
+        }
+    }
+}
+
+std::shared_ptr<trade::types::Orders> trade::holder::SQLLiteHolder::query_orders_by(
+    const std::string& by,
+    const std::string& id
+) const
+{
+    start_transaction();
+
+    sqlite3_stmt* tp_stmt;
+
+    /// TODO: Optimize this.
+    if (by == "unique_id")
+        tp_stmt = m_query_orders_by_unique_id_stmt;
+    else if (by == "broker_id")
+        tp_stmt = m_query_orders_by_broker_id_stmt;
+    else if (by == "exchange_id")
+        tp_stmt = m_query_orders_by_exchange_id_stmt;
+    else
+        throw std::runtime_error(fmt::format("Invalid query type: {}", by));
+
+    sqlite3_reset(tp_stmt);
+
+    sqlite3_bind_text(tp_stmt, 1, id.c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+
+    sqlite3_step(tp_stmt);
+
+    const auto orders = std::make_shared<types::Orders>();
+
+    while (sqlite3_step(tp_stmt) == SQLITE_ROW) {
+        types::Order order;
+
+        order.set_unique_id(sqlite3_column_int64(tp_stmt, 1));
+        order.set_broker_id(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 2)));
+        order.set_exchange_id(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 3)));
+        order.set_symbol(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 4)));
+        order.set_side(to_side(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 5))));
+        order.set_position_side(to_position_side(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 6))));
+        order.set_price(sqlite3_column_double(tp_stmt, 7));
+        order.set_quantity(sqlite3_column_int64(tp_stmt, 8));
+        order.set_allocated_creation_time(utilities::SQLiteDatetimeToProtobufTime()(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 9))));
+
+        orders->add_orders()->CopyFrom(order);
+    }
+
+    return orders;
+}
+
+void trade::holder::SQLLiteHolder::init_database()
+{
+    init_funds_table();
+    init_positions_table();
+    init_orders_table();
+
+    init_query_orders_stmts();
+}
+
+std::string trade::holder::SQLLiteHolder::to_exchange(types::ExchangeType exchange)
+{
+    switch (exchange) {
+    case types::ExchangeType::bse: return "BSE";
+    case types::ExchangeType::cffex: return "CFFEX";
+    case types::ExchangeType::cme: return "CME";
+    case types::ExchangeType::czce: return "CZCE";
+    case types::ExchangeType::dce: return "DCE";
+    case types::ExchangeType::gfex: return "GFEX";
+    case types::ExchangeType::hkex: return "HKEX";
+    case types::ExchangeType::ine: return "INE";
+    case types::ExchangeType::nasd: return "NASD";
+    case types::ExchangeType::nyse: return "NYSE";
+    case types::ExchangeType::shfe: return "SHFE";
+    case types::ExchangeType::sse: return "SSE";
+    case types::ExchangeType::szse: return "SZSE";
+    default: return "";
+    }
+}
+
+trade::types::ExchangeType trade::holder::SQLLiteHolder::to_exchange(const std::string& exchange)
+{
+    if (exchange == "BSE") return types::ExchangeType::bse;
+    if (exchange == "CFFEX") return types::ExchangeType::cffex;
+    if (exchange == "CME") return types::ExchangeType::cme;
+    if (exchange == "CZCE") return types::ExchangeType::czce;
+    if (exchange == "DCE") return types::ExchangeType::dce;
+    if (exchange == "GFEX") return types::ExchangeType::gfex;
+    if (exchange == "HKEX") return types::ExchangeType::hkex;
+    if (exchange == "INE") return types::ExchangeType::ine;
+    if (exchange == "NASD") return types::ExchangeType::nasd;
+    if (exchange == "NYSE") return types::ExchangeType::nyse;
+    if (exchange == "SHFE") return types::ExchangeType::shfe;
+    if (exchange == "SSE") return types::ExchangeType::sse;
+    if (exchange == "SZSE") return types::ExchangeType::szse;
+    return types::ExchangeType::invalid_exchange;
+}
+
+std::string trade::holder::SQLLiteHolder::to_side(const types::SideType side)
+{
+    switch (side) {
+    case types::SideType::buy: return "buy";
+    case types::SideType::sell: return "sell";
+    default: return "";
+    }
+}
+
+trade::types::SideType trade::holder::SQLLiteHolder::to_side(const std::string& side)
+{
+    if (side == "buy") return types::SideType::buy;
+    if (side == "sell") return types::SideType::sell;
+    return types::SideType::invalid_side;
+}
+
+std::string trade::holder::SQLLiteHolder::to_position_side(const types::PositionSideType position_side)
+{
+    switch (position_side) {
+    case types::PositionSideType::open: return "open";
+    case types::PositionSideType::close: return "close";
+    default: return "";
+    }
+}
+
+trade::types::PositionSideType trade::holder::SQLLiteHolder::to_position_side(const std::string& position_side)
+{
+    if (position_side == "open") return types::PositionSideType::open;
+    if (position_side == "close") return types::PositionSideType::close;
+    return types::PositionSideType::invalid_position_side;
 }
