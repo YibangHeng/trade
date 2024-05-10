@@ -800,7 +800,7 @@ std::string trade::broker::CTPBrokerImpl::to_broker_id(
     return fmt::format("{}:{}:{}", front_id, session_id, order_ref);
 }
 
-auto trade::broker::CTPBrokerImpl::from_broker_id(const std::string& broker_id)
+std::tuple<std::string, std::string, std::string> trade::broker::CTPBrokerImpl::from_broker_id(const std::string& broker_id)
 {
     std::string front_id, session_id, order_ref;
 
@@ -825,7 +825,7 @@ std::string trade::broker::CTPBrokerImpl::to_exchange_id(
     return fmt::format("{}:{}", exchange, order_sys_id);
 }
 
-auto trade::broker::CTPBrokerImpl::from_exchange_id(const std::string& exchange_id)
+std::tuple<std::string, std::string> trade::broker::CTPBrokerImpl::from_exchange_id(const std::string& exchange_id)
 {
     std::string exchange, order_sys_id;
 

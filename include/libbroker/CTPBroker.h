@@ -106,7 +106,7 @@ private:
     /// {front_id}:{session_id}:{order_ref}.
     /// @return std::tuple<front_id, session_id, order_ref>. Empty string if
     /// broker_id is not in format.
-    [[nodiscard]] static auto from_broker_id(const std::string& broker_id);
+    [[nodiscard]] static std::tuple<std::string, std::string, std::string> from_broker_id(const std::string& broker_id);
     /// Concatenate exchange and order_sys_id to exchange_id in format of
     /// {exchange}:{order_sys_id}.
     /// This tuples uniquely identify a CTP order.
@@ -118,7 +118,7 @@ private:
     /// {exchange}:{order_sys_id}.
     /// @return std::tuple<exchange, order_sys_id>. Empty string if exchange_id
     /// is not in format.
-    [[nodiscard]] static auto from_exchange_id(const std::string& exchange_id);
+    [[nodiscard]] static std::tuple<std::string, std::string> from_exchange_id(const std::string& exchange_id);
     [[nodiscard]] static google::protobuf::Timestamp* now();
 
 private:
