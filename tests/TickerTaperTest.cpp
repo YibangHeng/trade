@@ -16,6 +16,11 @@ TEST_CASE("TickerTaper", "[TickerTaper]")
         CHECK(ticker_taper() == 0);
         CHECK(ticker_taper() == 1);
         CHECK(ticker_taper() == 2);
+
+        ticker_taper.reset(10);
+        CHECK(ticker_taper() == 10);
+        CHECK(ticker_taper() == 11);
+        CHECK(ticker_taper() == 12);
     }
 
     SECTION("TickerTaper increment in multiple threads")
@@ -50,6 +55,11 @@ TEST_CASE("TickerTaper", "[TickerTaper]")
         CHECK(ticker_taper() == "0");
         CHECK(ticker_taper() == "1");
         CHECK(ticker_taper() == "2");
+
+        ticker_taper.reset(10);
+        CHECK(ticker_taper() == "10");
+        CHECK(ticker_taper() == "11");
+        CHECK(ticker_taper() == "12");
     }
 
     SECTION("TickerTaper for string increment in multiple threads")

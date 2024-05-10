@@ -21,10 +21,10 @@ public:
         return m_seq_id.fetch_add(1);
     }
 
-    /// Resets the value to 0.
-    void reset()
+    /// Resets the value to v.
+    void reset(const T v = 0)
     {
-        m_seq_id.store(0);
+        m_seq_id.store(v);
     }
 
 private:
@@ -48,10 +48,10 @@ public:
         return std::to_string(m_seq_id.fetch_add(1));
     }
 
-    /// Resets the value to 0.
-    void reset()
+    /// Resets the value to v.
+    void reset(const int64_t v = 0)
     {
-        m_seq_id.store(0);
+        m_seq_id.store(v);
     }
 
 private:

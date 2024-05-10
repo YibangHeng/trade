@@ -250,6 +250,17 @@ void trade::broker::CTPBrokerImpl::OnRspUserLogin(
     m_front_id        = pRspUserLogin->FrontID;
     m_session_id      = pRspUserLogin->SessionID;
 
+    try {
+        /// Set OrderRef starts from MaxOrderRef for avoiding duplicated
+        /// OrderRef in same session.
+        /// TThostFtdcOrderRefType is char[13], so we can use std::stoi.
+        /// UINT32_MAX is 4,294,967,295.
+        ticker_taper.reset(std::stoi(pRspUserLogin->MaxOrderRef));
+    }
+    catch (const std::exception& e) {
+        m_parent->notify_login_failure("Can not parse MaxOrderRef {}: {}", pRspUserLogin->MaxOrderRef, e.what());
+    }
+
     logger->info("Logged to {} successfully as BrokerID/UserID {}/{} with FrontID/SessionID {}/{} at {}-{}", pRspUserLogin->SystemName, pRspUserLogin->BrokerID, pRspUserLogin->UserID, pRspUserLogin->FrontID, pRspUserLogin->SessionID, pRspUserLogin->TradingDay, pRspUserLogin->LoginTime);
 
     m_parent->notify_login_success();
