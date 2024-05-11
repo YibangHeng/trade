@@ -1,7 +1,14 @@
 #pragma once
 
-#include <iconv.h>
 #include <string>
+
+#ifdef unix
+    #include <iconv.h>
+#endif
+
+#ifdef WIN32
+    #include <windows.h>
+#endif
 
 namespace trade::utilities
 {
@@ -15,6 +22,7 @@ public:
     /// @return UTF8 string.
     std::string operator()(std::string const& gb2312_string) const
     {
+#ifdef unix
         /// Create an iconv converter from gb2312 to utf8.
         const auto cd = iconv_open("UTF-8", "GB2312");
         if (cd == reinterpret_cast<iconv_t>(-1)) {
@@ -43,6 +51,29 @@ public:
         std::string utf8_string(out_buf, out_ptr - out_buf);
         delete[] out_buf;
         return utf8_string;
+#endif
+
+#ifdef WIN32
+        // Convert GB2312 string to a wide-character string.
+        const int wide_chars_num = MultiByteToWideChar(CP_ACP, 0, gb2312_string.c_str(), -1, nullptr, 0);
+        if (wide_chars_num == 0) {
+            throw std::runtime_error("MultiByteToWideChar failed");
+        }
+
+        std::wstring wide_string(wide_chars_num, 0);
+        MultiByteToWideChar(CP_ACP, 0, gb2312_string.c_str(), -1, &wide_string[0], wide_chars_num);
+
+        // Convert wide-character string to UTF-8 string.
+        const int utf8_chars_num = WideCharToMultiByte(CP_UTF8, 0, wide_string.c_str(), -1, nullptr, 0, nullptr, nullptr);
+        if (utf8_chars_num == 0) {
+            throw std::runtime_error("WideCharToMultiByte failed");
+        }
+
+        std::string utf8_string(utf8_chars_num, 0);
+        WideCharToMultiByte(CP_UTF8, 0, wide_string.c_str(), -1, &utf8_string[0], utf8_chars_num, nullptr, nullptr);
+
+        return utf8_string;
+#endif
     }
 };
 

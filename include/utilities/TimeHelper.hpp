@@ -86,6 +86,9 @@ public:
     Now() = delete;
 };
 
+/// See https://protobuf.dev/support/migration/#getcurrenttime.
+#undef GetCurrentTime
+
 template<>
 class Now<std::string>
 {

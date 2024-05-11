@@ -4,9 +4,9 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-#define PROTOBUF_SYNYAX_VERSION 3
+#define PROTOBUF_SYNTAX_VERSION 3
 
-#if PROTOBUF_SYNYAX_VERSION >= 3
+#if PROTOBUF_SYNTAX_VERSION >= 3
     #include <google/protobuf/util/json_util.h>
 #endif
 
@@ -21,7 +21,7 @@ public:
     /// @return The JSON string without indentation and newlines.
     std::string operator()(const google::protobuf::Message& message) const
     {
-#if PROTOBUF_SYNYAX_VERSION >= 3
+#if PROTOBUF_SYNTAX_VERSION >= 3
         static google::protobuf::util::JsonPrintOptions json_options;
 
         json_options.add_whitespace                = false;
@@ -38,6 +38,7 @@ public:
 #endif
     }
 
+#if not PROTOBUF_SYNTAX_VERSION >= 3
 private:
     [[nodiscard]] static nlohmann::json proto2_to_json(const google::protobuf::Message& message) // NOLINT(*-no-recursion)
     {
@@ -136,6 +137,7 @@ private:
                     }
                 }
                 else {
+                    /// BUG: mingw complains error: 'const class google::protobuf::Reflection' has no member named 'GetMessage'; did you mean 'GetMessageA'?
                     json[field->name()] = proto2_to_json(message.GetReflection()->GetMessage(message, field));
                 }
                 break;
@@ -146,10 +148,6 @@ private:
 
         return json;
     }
-
-#if PROTOBUF_SYNYAX_VERSION >= 3
-private:
-    static google::protobuf::util::JsonPrintOptions json_options;
 #endif
 };
 
