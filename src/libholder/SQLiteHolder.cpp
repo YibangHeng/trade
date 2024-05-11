@@ -8,14 +8,9 @@
 
 trade::holder::SQLiteHolder::SQLiteHolder(const std::string& db_path)
     : AppBase("SQLiteHolder"),
-      m_db(nullptr),
-      m_exec_code(SQLITE_OK),
       m_fund_table_name("funds"),
-      m_insert_funds(nullptr),
       m_position_table_name("positions"),
-      m_insert_positions(nullptr),
-      m_order_table_name("orders"),
-      m_insert_orders(nullptr)
+      m_order_table_name("orders")
 {
     /// Create parent folder if not exist.
     if (db_path != ":memory:") {
@@ -26,22 +21,22 @@ trade::holder::SQLiteHolder::SQLiteHolder(const std::string& db_path)
     }
 
     /// Open database.
-    sqlite3_open(db_path.c_str(), &m_db);
+    sqlite3* raw_db;
+    sqlite3_open(db_path.c_str(), &raw_db);
+
+    m_db.reset(raw_db); /// Hand over ownership to m_db.
+
     if (m_db == nullptr) {
-        throw std::runtime_error(fmt::format("Failed to open sqlite3 database: {}", std::string(sqlite3_errmsg(m_db))));
+        throw std::runtime_error(fmt::format("Failed to open sqlite3 database: {}", std::string(sqlite3_errmsg(m_db.get()))));
     }
 
-    m_exec_code = sqlite3_exec(m_db, "PRAGMA foreign_keys = ON;", nullptr, nullptr, nullptr);
+    m_exec_code = sqlite3_exec(m_db.get(), "PRAGMA foreign_keys = ON;", nullptr, nullptr, nullptr);
+
     if (m_exec_code != SQLITE_OK) {
-        throw std::runtime_error(fmt::format("Failed to enable foreign keys: {}", std::string(sqlite3_errmsg(m_db))));
+        throw std::runtime_error(fmt::format("Failed to enable foreign keys: {}", std::string(sqlite3_errmsg(m_db.get()))));
     }
 
     prepare_database();
-}
-
-trade::holder::SQLiteHolder::~SQLiteHolder()
-{
-    sqlite3_close(m_db);
 }
 
 int64_t trade::holder::SQLiteHolder::update_funds(const std::shared_ptr<types::Funds> funds)
@@ -49,18 +44,18 @@ int64_t trade::holder::SQLiteHolder::update_funds(const std::shared_ptr<types::F
     start_transaction();
 
     for (const auto& fund : funds->funds()) {
-        sqlite3_reset(m_insert_funds);
+        sqlite3_reset(m_insert_funds.get());
 
-        sqlite3_bind_text(m_insert_funds, 1, fund.account_id().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
-        sqlite3_bind_double(m_insert_funds, 2, fund.available_fund());
-        sqlite3_bind_double(m_insert_funds, 3, fund.withdrawn_fund());
-        sqlite3_bind_double(m_insert_funds, 4, fund.frozen_fund());
-        sqlite3_bind_double(m_insert_funds, 5, fund.frozen_margin());
-        sqlite3_bind_double(m_insert_funds, 6, fund.frozen_commission());
+        sqlite3_bind_text(m_insert_funds.get(), 1, fund.account_id().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_double(m_insert_funds.get(), 2, fund.available_fund());
+        sqlite3_bind_double(m_insert_funds.get(), 3, fund.withdrawn_fund());
+        sqlite3_bind_double(m_insert_funds.get(), 4, fund.frozen_fund());
+        sqlite3_bind_double(m_insert_funds.get(), 5, fund.frozen_margin());
+        sqlite3_bind_double(m_insert_funds.get(), 6, fund.frozen_commission());
 
-        m_exec_code = sqlite3_step(m_insert_funds);
+        m_exec_code = sqlite3_step(m_insert_funds.get());
         if (m_exec_code != SQLITE_DONE) {
-            logger->error("Failed to insert fund {}: {}", fund.account_id(), std::string(sqlite3_errmsg(m_db)));
+            logger->error("Failed to insert fund {}: {}", fund.account_id(), std::string(sqlite3_errmsg(m_db.get())));
         }
     }
 
@@ -73,21 +68,21 @@ std::shared_ptr<trade::types::Funds> trade::holder::SQLiteHolder::query_funds_by
 {
     start_transaction();
 
-    sqlite3_reset(m_query_funds_by_account_id);
+    sqlite3_reset(m_query_funds_by_account_id.get());
 
-    sqlite3_bind_text(m_query_funds_by_account_id, 1, account_id.c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+    sqlite3_bind_text(m_query_funds_by_account_id.get(), 1, account_id.c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
 
     const auto funds = std::make_shared<types::Funds>();
 
-    while (sqlite3_step(m_query_funds_by_account_id) == SQLITE_ROW) {
+    while (sqlite3_step(m_query_funds_by_account_id.get()) == SQLITE_ROW) {
         types::Fund fund;
 
-        fund.set_account_id(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_query_funds_by_account_id, 0))));
-        fund.set_available_fund(sqlite3_column_double(m_query_funds_by_account_id, 1));
-        fund.set_withdrawn_fund(sqlite3_column_double(m_query_funds_by_account_id, 2));
-        fund.set_frozen_fund(sqlite3_column_double(m_query_funds_by_account_id, 3));
-        fund.set_frozen_margin(sqlite3_column_double(m_query_funds_by_account_id, 4));
-        fund.set_frozen_commission(sqlite3_column_double(m_query_funds_by_account_id, 5));
+        fund.set_account_id(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_query_funds_by_account_id.get(), 0))));
+        fund.set_available_fund(sqlite3_column_double(m_query_funds_by_account_id.get(), 1));
+        fund.set_withdrawn_fund(sqlite3_column_double(m_query_funds_by_account_id.get(), 2));
+        fund.set_frozen_fund(sqlite3_column_double(m_query_funds_by_account_id.get(), 3));
+        fund.set_frozen_margin(sqlite3_column_double(m_query_funds_by_account_id.get(), 4));
+        fund.set_frozen_commission(sqlite3_column_double(m_query_funds_by_account_id.get(), 5));
 
         funds->add_funds()->CopyFrom(fund);
     }
@@ -102,23 +97,23 @@ int64_t trade::holder::SQLiteHolder::update_positions(const std::shared_ptr<type
     start_transaction();
 
     for (const auto& position : positions->positions()) {
-        sqlite3_reset(m_insert_positions);
+        sqlite3_reset(m_insert_positions.get());
 
-        sqlite3_bind_text(m_insert_positions, 1, position.symbol().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
-        sqlite3_bind_int64(m_insert_positions, 2, position.yesterday_position());
-        sqlite3_bind_int64(m_insert_positions, 3, position.today_position());
-        sqlite3_bind_int64(m_insert_positions, 4, position.open_volume());
-        sqlite3_bind_int64(m_insert_positions, 5, position.close_volume());
-        sqlite3_bind_double(m_insert_positions, 6, position.position_cost());
-        sqlite3_bind_double(m_insert_positions, 7, position.pre_margin());
-        sqlite3_bind_double(m_insert_positions, 8, position.used_margin());
-        sqlite3_bind_double(m_insert_positions, 9, position.frozen_margin());
-        sqlite3_bind_double(m_insert_positions, 10, position.open_cost());
-        sqlite3_bind_text(m_insert_positions, 11, utilities::ToTime<std::string>()(position.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_insert_positions.get(), 1, position.symbol().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_int64(m_insert_positions.get(), 2, position.yesterday_position());
+        sqlite3_bind_int64(m_insert_positions.get(), 3, position.today_position());
+        sqlite3_bind_int64(m_insert_positions.get(), 4, position.open_volume());
+        sqlite3_bind_int64(m_insert_positions.get(), 5, position.close_volume());
+        sqlite3_bind_double(m_insert_positions.get(), 6, position.position_cost());
+        sqlite3_bind_double(m_insert_positions.get(), 7, position.pre_margin());
+        sqlite3_bind_double(m_insert_positions.get(), 8, position.used_margin());
+        sqlite3_bind_double(m_insert_positions.get(), 9, position.frozen_margin());
+        sqlite3_bind_double(m_insert_positions.get(), 10, position.open_cost());
+        sqlite3_bind_text(m_insert_positions.get(), 11, utilities::ToTime<std::string>()(position.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
 
-        m_exec_code = sqlite3_step(m_insert_positions);
+        m_exec_code = sqlite3_step(m_insert_positions.get());
         if (m_exec_code != SQLITE_DONE) {
-            logger->error("Failed to insert position {}: {}", position.symbol(), std::string(sqlite3_errmsg(m_db)));
+            logger->error("Failed to insert position {}: {}", position.symbol(), std::string(sqlite3_errmsg(m_db.get())));
         }
     }
 
@@ -131,26 +126,26 @@ std::shared_ptr<trade::types::Positions> trade::holder::SQLiteHolder::query_posi
 {
     start_transaction();
 
-    sqlite3_reset(m_query_positions_by_symbol);
+    sqlite3_reset(m_query_positions_by_symbol.get());
 
-    sqlite3_bind_text(m_query_positions_by_symbol, 1, symbol.c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+    sqlite3_bind_text(m_query_positions_by_symbol.get(), 1, symbol.c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
 
     const auto positions = std::make_shared<types::Positions>();
 
-    while (sqlite3_step(m_query_positions_by_symbol) == SQLITE_ROW) {
+    while (sqlite3_step(m_query_positions_by_symbol.get()) == SQLITE_ROW) {
         types::Position position;
 
-        position.set_symbol(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_query_positions_by_symbol, 0))));
-        position.set_yesterday_position(sqlite3_column_int64(m_query_positions_by_symbol, 1));
-        position.set_today_position(sqlite3_column_int64(m_query_positions_by_symbol, 2));
-        position.set_open_volume(sqlite3_column_int64(m_query_positions_by_symbol, 3));
-        position.set_close_volume(sqlite3_column_int64(m_query_positions_by_symbol, 4));
-        position.set_position_cost(sqlite3_column_double(m_query_positions_by_symbol, 5));
-        position.set_pre_margin(sqlite3_column_double(m_query_positions_by_symbol, 6));
-        position.set_used_margin(sqlite3_column_double(m_query_positions_by_symbol, 7));
-        position.set_frozen_margin(sqlite3_column_double(m_query_positions_by_symbol, 8));
-        position.set_open_cost(sqlite3_column_double(m_query_positions_by_symbol, 9));
-        position.set_allocated_update_time(utilities::ToTime<google::protobuf::Timestamp*>()(reinterpret_cast<const char*>(sqlite3_column_text(m_query_positions_by_symbol, 10))));
+        position.set_symbol(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_query_positions_by_symbol.get(), 0))));
+        position.set_yesterday_position(sqlite3_column_int64(m_query_positions_by_symbol.get(), 1));
+        position.set_today_position(sqlite3_column_int64(m_query_positions_by_symbol.get(), 2));
+        position.set_open_volume(sqlite3_column_int64(m_query_positions_by_symbol.get(), 3));
+        position.set_close_volume(sqlite3_column_int64(m_query_positions_by_symbol.get(), 4));
+        position.set_position_cost(sqlite3_column_double(m_query_positions_by_symbol.get(), 5));
+        position.set_pre_margin(sqlite3_column_double(m_query_positions_by_symbol.get(), 6));
+        position.set_used_margin(sqlite3_column_double(m_query_positions_by_symbol.get(), 7));
+        position.set_frozen_margin(sqlite3_column_double(m_query_positions_by_symbol.get(), 8));
+        position.set_open_cost(sqlite3_column_double(m_query_positions_by_symbol.get(), 9));
+        position.set_allocated_update_time(utilities::ToTime<google::protobuf::Timestamp*>()(reinterpret_cast<const char*>(sqlite3_column_text(m_query_positions_by_symbol.get(), 10))));
 
         positions->add_positions()->CopyFrom(position);
     }
@@ -170,24 +165,24 @@ int64_t trade::holder::SQLiteHolder::update_orders(const std::shared_ptr<types::
             continue;
         }
 
-        sqlite3_reset(m_insert_orders);
+        sqlite3_reset(m_insert_orders.get());
 
-        sqlite3_bind_int64(m_insert_orders, 1, order.unique_id());
-        order.has_broker_id() ? sqlite3_bind_text(m_insert_orders, 2, order.broker_id().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT)
-                              : sqlite3_bind_null(m_insert_orders, 2);
-        order.has_exchange_id() ? sqlite3_bind_text(m_insert_orders, 3, order.exchange_id().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT)
-                                : sqlite3_bind_null(m_insert_orders, 3);
-        sqlite3_bind_text(m_insert_orders, 4, order.symbol().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
-        sqlite3_bind_text(m_insert_orders, 5, to_side(order.side()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
-        sqlite3_bind_text(m_insert_orders, 6, order.has_position_side() ? to_position_side(order.position_side()).c_str() : "NULL", SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
-        sqlite3_bind_double(m_insert_orders, 7, order.price());
-        sqlite3_bind_int64(m_insert_orders, 8, order.quantity());
-        sqlite3_bind_text(m_insert_orders, 9, utilities::ToTime<std::string>()(order.creation_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
-        sqlite3_bind_text(m_insert_orders, 10, utilities::ToTime<std::string>()(order.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_int64(m_insert_orders.get(), 1, order.unique_id());
+        order.has_broker_id() ? sqlite3_bind_text(m_insert_orders.get(), 2, order.broker_id().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT)
+                              : sqlite3_bind_null(m_insert_orders.get(), 2);
+        order.has_exchange_id() ? sqlite3_bind_text(m_insert_orders.get(), 3, order.exchange_id().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT)
+                                : sqlite3_bind_null(m_insert_orders.get(), 3);
+        sqlite3_bind_text(m_insert_orders.get(), 4, order.symbol().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_insert_orders.get(), 5, to_side(order.side()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_insert_orders.get(), 6, order.has_position_side() ? to_position_side(order.position_side()).c_str() : "NULL", SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_double(m_insert_orders.get(), 7, order.price());
+        sqlite3_bind_int64(m_insert_orders.get(), 8, order.quantity());
+        sqlite3_bind_text(m_insert_orders.get(), 9, utilities::ToTime<std::string>()(order.creation_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_insert_orders.get(), 10, utilities::ToTime<std::string>()(order.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
 
-        m_exec_code = sqlite3_step(m_insert_orders);
+        m_exec_code = sqlite3_step(m_insert_orders.get());
         if (m_exec_code != SQLITE_DONE) {
-            logger->error("Failed to insert order {}: {}", order.unique_id(), std::string(sqlite3_errmsg(m_db)));
+            logger->error("Failed to insert order {}: {}", order.unique_id(), std::string(sqlite3_errmsg(m_db.get())));
         }
     }
 
@@ -196,7 +191,7 @@ int64_t trade::holder::SQLiteHolder::update_orders(const std::shared_ptr<types::
     return orders->orders_size();
 }
 
-std::shared_ptr<trade::types::Orders> trade::holder::SQLiteHolder::query_orders_by_unique_id(int64_t unique_id)
+std::shared_ptr<trade::types::Orders> trade::holder::SQLiteHolder::query_orders_by_unique_id(const int64_t unique_id)
 {
     return query_orders_by("unique_id", std::to_string(unique_id));
 }
@@ -213,17 +208,17 @@ std::shared_ptr<trade::types::Orders> trade::holder::SQLiteHolder::query_orders_
 
 void trade::holder::SQLiteHolder::start_transaction() const
 {
-    sqlite3_exec(m_db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
+    sqlite3_exec(m_db.get(), "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
 }
 
 void trade::holder::SQLiteHolder::commit_or_rollback(const decltype(SQLITE_OK) code) const
 {
     if (code == SQLITE_OK) {
-        sqlite3_exec(m_db, "COMMIT;", nullptr, nullptr, nullptr);
+        sqlite3_exec(m_db.get(), "COMMIT;", nullptr, nullptr, nullptr);
     }
     else {
-        logger->error("Failed to execute SQL: {}", std::string(sqlite3_errmsg(m_db)));
-        sqlite3_exec(m_db, "ROLLBACK;", nullptr, nullptr, nullptr);
+        logger->error("Failed to execute SQL: {}", std::string(sqlite3_errmsg(m_db.get())));
+        sqlite3_exec(m_db.get(), "ROLLBACK;", nullptr, nullptr, nullptr);
     }
 }
 
@@ -244,7 +239,7 @@ void trade::holder::SQLiteHolder::init_fund_table()
 
     start_transaction();
 
-    auto m_exec_code = sqlite3_exec(m_db, create_funds_table_sql.c_str(), nullptr, nullptr, nullptr);
+    auto m_exec_code = sqlite3_exec(m_db.get(), create_funds_table_sql.c_str(), nullptr, nullptr, nullptr);
 
     commit_or_rollback(m_exec_code);
 
@@ -254,10 +249,13 @@ void trade::holder::SQLiteHolder::init_fund_table()
         m_fund_table_name
     );
 
-    m_exec_code = sqlite3_prepare_v2(m_db, fund_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &m_insert_funds, nullptr);
+    sqlite3_stmt* raw_insert_funds;
+    m_exec_code = sqlite3_prepare_v2(m_db.get(), fund_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &raw_insert_funds, nullptr);
+
+    m_insert_funds.reset(raw_insert_funds); /// Hand over ownership to m_insert_funds.
 
     if (m_exec_code != SQLITE_OK) {
-        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
+        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db.get()))));
     }
 }
 
@@ -268,10 +266,13 @@ void trade::holder::SQLiteHolder::init_query_fund_stmts()
         m_fund_table_name
     );
 
-    m_exec_code = sqlite3_prepare_v2(m_db, sql.c_str(), SQLITE_AUTO_LENGTH, &m_query_funds_by_account_id, nullptr);
+    sqlite3_stmt* raw_query_funds_by_account_id;
+    m_exec_code = sqlite3_prepare_v2(m_db.get(), sql.c_str(), SQLITE_AUTO_LENGTH, &raw_query_funds_by_account_id, nullptr);
+
+    m_query_funds_by_account_id.reset(raw_query_funds_by_account_id); /// Hand over ownership to m_query_funds_by_account_id.
 
     if (m_exec_code != SQLITE_OK) {
-        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
+        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db.get()))));
     }
 }
 
@@ -297,7 +298,7 @@ void trade::holder::SQLiteHolder::init_position_table()
 
     start_transaction();
 
-    auto m_exec_code = sqlite3_exec(m_db, create_positions_table_sql.c_str(), nullptr, nullptr, nullptr);
+    auto m_exec_code = sqlite3_exec(m_db.get(), create_positions_table_sql.c_str(), nullptr, nullptr, nullptr);
 
     commit_or_rollback(m_exec_code);
 
@@ -307,10 +308,13 @@ void trade::holder::SQLiteHolder::init_position_table()
         m_position_table_name
     );
 
-    m_exec_code = sqlite3_prepare_v2(m_db, position_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &m_insert_positions, nullptr);
+    sqlite3_stmt* raw_insert_positions;
+    m_exec_code = sqlite3_prepare_v2(m_db.get(), position_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &raw_insert_positions, nullptr);
+
+    m_insert_positions.reset(raw_insert_positions); /// Hand over ownership to m_insert_positions.
 
     if (m_exec_code != SQLITE_OK) {
-        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
+        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db.get()))));
     }
 }
 
@@ -321,10 +325,13 @@ void trade::holder::SQLiteHolder::init_query_position_stmts()
         m_position_table_name
     );
 
-    m_exec_code = sqlite3_prepare_v2(m_db, sql.c_str(), SQLITE_AUTO_LENGTH, &m_query_positions_by_symbol, nullptr);
+    sqlite3_stmt* raw_query_positions_by_symbol;
+    m_exec_code = sqlite3_prepare_v2(m_db.get(), sql.c_str(), SQLITE_AUTO_LENGTH, &raw_query_positions_by_symbol, nullptr);
+
+    m_query_positions_by_symbol.reset(raw_query_positions_by_symbol); /// Hand over ownership to m_query_positions_by_symbol.
 
     if (m_exec_code != SQLITE_OK) {
-        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
+        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db.get()))));
     }
 }
 
@@ -351,7 +358,7 @@ void trade::holder::SQLiteHolder::init_order_table()
 
     start_transaction();
 
-    auto m_exec_code = sqlite3_exec(m_db, create_orders_table_sql.c_str(), nullptr, nullptr, nullptr);
+    auto m_exec_code = sqlite3_exec(m_db.get(), create_orders_table_sql.c_str(), nullptr, nullptr, nullptr);
 
     commit_or_rollback(m_exec_code);
 
@@ -361,10 +368,13 @@ void trade::holder::SQLiteHolder::init_order_table()
         m_order_table_name
     );
 
-    m_exec_code = sqlite3_prepare_v2(m_db, order_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &m_insert_orders, nullptr);
+    sqlite3_stmt* raw_insert_orders;
+    m_exec_code = sqlite3_prepare_v2(m_db.get(), order_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &raw_insert_orders, nullptr);
+
+    m_insert_orders.reset(raw_insert_orders); /// Hand over ownership to m_insert_orders.
 
     if (m_exec_code != SQLITE_OK) {
-        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
+        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db.get()))));
     }
 }
 
@@ -381,10 +391,13 @@ void trade::holder::SQLiteHolder::init_query_order_stmts()
             by
         );
 
-        const auto m_exec_code = sqlite3_prepare_v2(m_db, sql.c_str(), SQLITE_AUTO_LENGTH, &stmt, nullptr);
+        sqlite3_stmt* raw_stmt;
+        const auto m_exec_code = sqlite3_prepare_v2(m_db.get(), sql.c_str(), SQLITE_AUTO_LENGTH, &raw_stmt, nullptr);
+
+        stmt.reset(raw_stmt); /// Hand over ownership to stmt.
 
         if (m_exec_code != SQLITE_OK) {
-            throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
+            throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db.get()))));
         }
     }
 }
@@ -398,7 +411,7 @@ std::shared_ptr<trade::types::Orders> trade::holder::SQLiteHolder::query_orders_
 
     sqlite3_stmt* tp_stmt;
 
-    tp_stmt = m_query_orders_by.at(by); /// If no such by type, throw exception immediately.
+    tp_stmt = m_query_orders_by.at(by).get(); /// If no such by type, throw exception immediately.
 
     sqlite3_reset(tp_stmt);
 
@@ -443,7 +456,7 @@ void trade::holder::SQLiteHolder::prepare_database()
     init_query_order_stmts();
 }
 
-std::string trade::holder::SQLiteHolder::to_exchange(types::ExchangeType exchange)
+std::string trade::holder::SQLiteHolder::to_exchange(const types::ExchangeType exchange)
 {
     switch (exchange) {
     case types::ExchangeType::bse: return "BSE";

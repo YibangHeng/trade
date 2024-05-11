@@ -10,11 +10,29 @@
 namespace trade::holder
 {
 
-class SQLiteHolder final: public IHolder, private AppBase<>
+struct SQLite3PtrDeleter {
+    void operator()(sqlite3* db) const
+    {
+        sqlite3_close(db);
+    }
+};
+
+using SQLite3Ptr = std::unique_ptr<sqlite3, SQLite3PtrDeleter>;
+
+struct SQLite3StmtPtrDeleter {
+    void operator()(sqlite3_stmt* stmt) const
+    {
+        sqlite3_finalize(stmt);
+    }
+};
+
+using SQLite3StmtPtr = std::unique_ptr<sqlite3_stmt, SQLite3StmtPtrDeleter>;
+
+class PUBLIC_API SQLiteHolder final: public IHolder, private AppBase<>
 {
 public:
     explicit SQLiteHolder(const std::string& db_path = ":memory:");
-    ~SQLiteHolder() override;
+    ~SQLiteHolder() override = default;
 
 public:
     int64_t update_funds(std::shared_ptr<types::Funds> funds) override;
@@ -54,20 +72,20 @@ private:
     [[nodiscard]] static types::PositionSideType to_position_side(const std::string& position_side);
 
 private:
-    sqlite3* m_db;
+    SQLite3Ptr m_db;
     decltype(SQLITE_OK) m_exec_code;
     /// Funds table.
     const std::string m_fund_table_name;
-    sqlite3_stmt* m_insert_funds;
-    sqlite3_stmt* m_query_funds_by_account_id;
+    SQLite3StmtPtr m_insert_funds;
+    SQLite3StmtPtr m_query_funds_by_account_id;
     /// Positions table.
     const std::string m_position_table_name;
-    sqlite3_stmt* m_insert_positions;
-    sqlite3_stmt* m_query_positions_by_symbol;
+    SQLite3StmtPtr m_insert_positions;
+    SQLite3StmtPtr m_query_positions_by_symbol;
     /// Orders table.
     const std::string m_order_table_name;
-    sqlite3_stmt* m_insert_orders;
-    std::unordered_map<std::string, sqlite3_stmt*> m_query_orders_by;
+    SQLite3StmtPtr m_insert_orders;
+    std::unordered_map<std::string, SQLite3StmtPtr> m_query_orders_by;
 };
 
 } // namespace trade::holder
