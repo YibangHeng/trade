@@ -86,7 +86,7 @@ int64_t trade::holder::SQLLiteHolder::init_positions(const std::shared_ptr<types
         sqlite3_bind_double(m_position_insert_stmt, 8, position.used_margin());
         sqlite3_bind_double(m_position_insert_stmt, 9, position.frozen_margin());
         sqlite3_bind_double(m_position_insert_stmt, 10, position.open_cost());
-        sqlite3_bind_text(m_position_insert_stmt, 11, utilities::ProtobufTimeToSQLiteDatetime()(position.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_position_insert_stmt, 11, utilities::ToTime<std::string>()(position.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
 
         m_exec_code = sqlite3_step(m_position_insert_stmt);
         if (m_exec_code != SQLITE_DONE) {
@@ -121,8 +121,8 @@ int64_t trade::holder::SQLLiteHolder::update_orders(const std::shared_ptr<types:
         sqlite3_bind_text(m_order_insert_stmt, 6, order.has_position_side() ? to_position_side(order.position_side()).c_str() : "NULL", SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
         sqlite3_bind_double(m_order_insert_stmt, 7, order.price());
         sqlite3_bind_int64(m_order_insert_stmt, 8, order.quantity());
-        sqlite3_bind_text(m_order_insert_stmt, 9, utilities::ProtobufTimeToSQLiteDatetime()(order.creation_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
-        sqlite3_bind_text(m_order_insert_stmt, 10, utilities::ProtobufTimeToSQLiteDatetime()(order.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_order_insert_stmt, 9, utilities::ToTime<std::string>()(order.creation_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_order_insert_stmt, 10, utilities::ToTime<std::string>()(order.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
 
         m_exec_code = sqlite3_step(m_order_insert_stmt);
         if (m_exec_code != SQLITE_DONE) {
@@ -345,7 +345,7 @@ std::shared_ptr<trade::types::Orders> trade::holder::SQLLiteHolder::query_orders
         order.set_position_side(to_position_side(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 6))));
         order.set_price(sqlite3_column_double(tp_stmt, 7));
         order.set_quantity(sqlite3_column_int64(tp_stmt, 8));
-        order.set_allocated_creation_time(utilities::SQLiteDatetimeToProtobufTime()(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 9))));
+        order.set_allocated_creation_time(utilities::ToTime<google::protobuf::Timestamp*>()(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 9))));
 
         orders->add_orders()->CopyFrom(order);
     }

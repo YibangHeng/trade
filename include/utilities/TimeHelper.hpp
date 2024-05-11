@@ -11,36 +11,15 @@
 namespace trade::utilities
 {
 
-class ProtobufTimeToSQLiteDatetime
+template<typename T>
+class ToTime
 {
 public:
-    /// Convert google::protobuf::Timestamp to SQLite datetime string with timezone support.
-    /// @param timestamp The timestamp to convert.
-    /// @param timezone The timezone to use for conversion.
-    /// @return The converted string in SQLite datetime format.
-    std::string operator()(
-        const google::protobuf::Timestamp& timestamp,
-        const std::string& timezone = "Asia/Shanghai"
-    ) const
-    {
-        const auto zoned_time = make_zoned(
-            date::locate_zone(timezone),
-            std::chrono::system_clock::from_time_t(timestamp.seconds())
-        );
-
-        auto local_time = zoned_time.get_local_time();
-        local_time += std::chrono::nanoseconds(timestamp.nanos());
-
-        /// In format 2000-01-01 08:00:00.000000000.
-        std::stringstream date_time;
-        date_time << format("%Y-%m-%d %H:%M:%S", local_time);
-
-        /// Remove nanoseconds part.
-        return date_time.str().substr(0, date_time.str().size() - 6);
-    }
+    ToTime() = delete;
 };
 
-class SQLiteDatetimeToProtobufTime
+template<>
+class ToTime<google::protobuf::Timestamp*>
 {
 public:
     /// Convert SQLite datetime string to google::protobuf::Timestamp with timezone support.
@@ -67,6 +46,36 @@ public:
         timestamp->set_nanos(static_cast<int>(nanoseconds));
 
         return timestamp;
+    }
+};
+
+template<>
+class ToTime<std::string>
+{
+public:
+    /// Convert google::protobuf::Timestamp to SQLite datetime string with timezone support.
+    /// @param timestamp The timestamp to convert.
+    /// @param timezone The timezone to use for conversion.
+    /// @return The converted string in SQLite datetime format.
+    std::string operator()(
+        const google::protobuf::Timestamp& timestamp,
+        const std::string& timezone = "Asia/Shanghai"
+    ) const
+    {
+        const auto zoned_time = make_zoned(
+            date::locate_zone(timezone),
+            std::chrono::system_clock::from_time_t(timestamp.seconds())
+        );
+
+        auto local_time = zoned_time.get_local_time();
+        local_time += std::chrono::nanoseconds(timestamp.nanos());
+
+        /// In format 2000-01-01 08:00:00.000000000.
+        std::stringstream date_time;
+        date_time << format("%Y-%m-%d %H:%M:%S", local_time);
+
+        /// Remove nanoseconds part.
+        return date_time.str().substr(0, date_time.str().size() - 6);
     }
 };
 
