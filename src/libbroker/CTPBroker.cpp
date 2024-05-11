@@ -438,7 +438,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryTradingAccount(
 
     if (bIsLast) {
         logger->info("Loaded {} trading accounts for request {}", m_trading_account.size(), request_id.value_or(INVALID_ID));
-        m_holder->init_funds(funds);
+        m_holder->update_funds(funds);
         fund_cache.erase(request_id.value_or(INVALID_ID));
     }
 }

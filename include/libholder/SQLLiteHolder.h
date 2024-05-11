@@ -17,7 +17,9 @@ public:
     ~SQLLiteHolder() override;
 
 public:
-    int64_t init_funds(std::shared_ptr<types::Funds> funds) override;
+    int64_t update_funds(std::shared_ptr<types::Funds> funds) override;
+    std::shared_ptr<types::Funds> query_funds_by_account_id(const std::string& account_id) override;
+
     int64_t init_positions(std::shared_ptr<types::Positions> positions) override;
 
     int64_t update_orders(std::shared_ptr<types::Orders> orders) override;
@@ -31,6 +33,8 @@ private:
 
 private:
     void init_funds_table();
+    void init_query_fund_by_account_id_stmt();
+
     void init_positions_table();
 
     void init_orders_table();
@@ -53,6 +57,7 @@ private:
     /// Funds table.
     const std::string m_fund_table_name;
     sqlite3_stmt* m_fund_insert_stmt;
+    sqlite3_stmt* m_query_fund_by_account_id_stmt;
     /// Positions table.
     const std::string m_position_table_name;
     sqlite3_stmt* m_position_insert_stmt;

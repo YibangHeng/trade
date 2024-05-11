@@ -44,7 +44,7 @@ trade::holder::SQLLiteHolder::~SQLLiteHolder()
     sqlite3_close(m_db);
 }
 
-int64_t trade::holder::SQLLiteHolder::init_funds(const std::shared_ptr<types::Funds> funds)
+int64_t trade::holder::SQLLiteHolder::update_funds(const std::shared_ptr<types::Funds> funds)
 {
     start_transaction();
 
@@ -67,6 +67,34 @@ int64_t trade::holder::SQLLiteHolder::init_funds(const std::shared_ptr<types::Fu
     commit_or_rollback(SQLITE_OK);
 
     return funds->funds_size();
+}
+
+std::shared_ptr<trade::types::Funds> trade::holder::SQLLiteHolder::query_funds_by_account_id(const std::string& account_id)
+{
+    start_transaction();
+
+    sqlite3_reset(m_query_fund_by_account_id_stmt);
+
+    sqlite3_bind_text(m_query_fund_by_account_id_stmt, 1, account_id.c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+
+    sqlite3_step(m_query_fund_by_account_id_stmt);
+
+    const auto funds = std::make_shared<types::Funds>();
+
+    while (sqlite3_step(m_query_fund_by_account_id_stmt) == SQLITE_ROW) {
+        types::Fund fund;
+
+        fund.set_account_id(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_query_fund_by_account_id_stmt, 0))));
+        fund.set_available_fund(sqlite3_column_double(m_query_fund_by_account_id_stmt, 1));
+        fund.set_withdrawn_fund(sqlite3_column_double(m_query_fund_by_account_id_stmt, 2));
+        fund.set_frozen_fund(sqlite3_column_double(m_query_fund_by_account_id_stmt, 3));
+        fund.set_frozen_margin(sqlite3_column_double(m_query_fund_by_account_id_stmt, 4));
+        fund.set_frozen_commission(sqlite3_column_double(m_query_fund_by_account_id_stmt, 5));
+
+        funds->add_funds()->CopyFrom(fund);
+    }
+
+    return funds;
 }
 
 int64_t trade::holder::SQLLiteHolder::init_positions(const std::shared_ptr<types::Positions> positions)
@@ -194,6 +222,20 @@ void trade::holder::SQLLiteHolder::init_funds_table()
     );
 
     m_exec_code = sqlite3_prepare_v2(m_db, fund_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &m_fund_insert_stmt, nullptr);
+
+    if (m_exec_code != SQLITE_OK) {
+        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
+    }
+}
+
+void trade::holder::SQLLiteHolder::init_query_fund_by_account_id_stmt()
+{
+    const std::string& sql = fmt::format(
+        "SELECT * FROM {} WHERE account_id = ?;",
+        m_fund_table_name
+    );
+
+    m_exec_code = sqlite3_prepare_v2(m_db, sql.c_str(), SQLITE_AUTO_LENGTH, &m_query_fund_by_account_id_stmt, nullptr);
 
     if (m_exec_code != SQLITE_OK) {
         throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db))));
