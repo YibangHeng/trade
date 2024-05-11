@@ -3,7 +3,7 @@
 
 #include "info.h"
 #include "libbroker/CTPBroker.h"
-#include "libholder/SQLLiteHolder.h"
+#include "libholder/SQLiteHolder.h"
 #include "libreporter/LogReporter.h"
 #include "trade/trade.h"
 
@@ -33,7 +33,7 @@ int trade::Trade::run()
 
     auto reporter = std::make_shared<reporter::LogReporter>();
 
-    auto holder   = std::make_shared<holder::SQLLiteHolder>();
+    auto holder   = std::make_shared<holder::SQLiteHolder>();
 
     std::shared_ptr<broker::IBroker> broker;
 

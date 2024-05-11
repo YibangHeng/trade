@@ -494,7 +494,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestorPosition(
 
     if (bIsLast) {
         logger->info("Loaded {} positions for request {}", m_positions.size(), request_id.value_or(INVALID_ID));
-        m_holder->init_positions(positions);
+        m_holder->update_positions(positions);
         position_cache.erase(request_id.value_or(INVALID_ID));
     }
 }
