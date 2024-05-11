@@ -8,7 +8,7 @@
 #include "trade/trade.h"
 
 trade::Trade::Trade(const int argc, char* argv[])
-    : AppBase<>("trade")
+    : AppBase("trade")
 {
     m_instances.emplace(this);
     m_is_running = argv_parse(argc, argv);

@@ -21,22 +21,24 @@ TEST_CASE("ProtobufTime to SQLiteDatetime", "[TimeHelper]")
 
 TEST_CASE("SQLiteDatetime to ProtobufTime", "[TimeHelper]")
 {
-    auto timestamp = std::shared_ptr<google::protobuf::Timestamp>(trade::utilities::ToTime<google::protobuf::Timestamp*>()("2000-01-01 08:00:00.000", "Asia/Shanghai"));
+    std::shared_ptr<google::protobuf::Timestamp> timestamp;
+
+    timestamp.reset(trade::utilities::ToTime<google::protobuf::Timestamp*>()("2000-01-01 08:00:00.000", "Asia/Shanghai"));
 
     CHECK(timestamp->seconds() == 946684800); /// 2000-01-01 00:00:00.
     CHECK(timestamp->nanos() == 0);           /// 000 milliseconds.
 
-    timestamp = std::shared_ptr<google::protobuf::Timestamp>(trade::utilities::ToTime<google::protobuf::Timestamp*>()("2000-01-01 09:00:00.000", "Asia/Tokyo"));
+    timestamp.reset(trade::utilities::ToTime<google::protobuf::Timestamp*>()("2000-01-01 09:00:00.000", "Asia/Tokyo"));
 
     CHECK(timestamp->seconds() == 946684800); /// 2000-01-01 00:00:00.
     CHECK(timestamp->nanos() == 0);           /// 000 milliseconds.
 
-    timestamp = std::shared_ptr<google::protobuf::Timestamp>(trade::utilities::ToTime<google::protobuf::Timestamp*>()("2000-01-02 03:04:05.678", "Asia/Shanghai"));
+    timestamp.reset(trade::utilities::ToTime<google::protobuf::Timestamp*>()("2000-01-02 03:04:05.678", "Asia/Shanghai"));
 
     CHECK(timestamp->seconds() == 946753445); /// 2000-01-02 03:04:05.
     CHECK(timestamp->nanos() == 678000000);   /// 678 milliseconds.
 
-    timestamp = std::shared_ptr<google::protobuf::Timestamp>(trade::utilities::ToTime<google::protobuf::Timestamp*>()("2000-01-02 04:04:05.678", "Asia/Tokyo"));
+    timestamp.reset(trade::utilities::ToTime<google::protobuf::Timestamp*>()("2000-01-02 04:04:05.678", "Asia/Tokyo"));
 
     CHECK(timestamp->seconds() == 946753445); /// 2000-01-02 03:04:05.
     CHECK(timestamp->nanos() == 678000000);   /// 678 milliseconds.

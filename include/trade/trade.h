@@ -5,11 +5,12 @@
 #include <set>
 
 #include "AppBase.hpp"
+#include "visibility.h"
 
 namespace trade
 {
 
-class Trade: private AppBase<>
+class PUBLIC_API Trade final: private AppBase<>
 {
 public:
     Trade(int argc, char* argv[]);
