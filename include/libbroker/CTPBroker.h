@@ -119,7 +119,6 @@ private:
     /// @return std::tuple<exchange, order_sys_id>. Empty string if exchange_id
     /// is not in format.
     [[nodiscard]] static std::tuple<std::string, std::string> from_exchange_id(const std::string& exchange_id);
-    [[nodiscard]] static google::protobuf::Timestamp* now();
 
 private:
     CThostFtdcTraderApi* m_api;

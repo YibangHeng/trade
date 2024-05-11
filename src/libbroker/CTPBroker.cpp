@@ -102,7 +102,7 @@ int64_t trade::broker::CTPBrokerImpl::cancel_order(const std::shared_ptr<types::
             cancel_order_rejection->clear_original_exchange_id();
             cancel_order_rejection->set_rejection_code(types::RejectionCode::unknown);
             cancel_order_rejection->set_rejection_reason(fmt::format("Order {} not found", new_cancel_req->original_unique_id()));
-            cancel_order_rejection->set_allocated_rejection_time(now());
+            cancel_order_rejection->set_allocated_rejection_time(utilities::Now<google::protobuf::Timestamp*>()());
 
             m_reporter->cancel_order_rejected(cancel_order_rejection);
 
@@ -488,7 +488,7 @@ void trade::broker::CTPBrokerImpl::OnRspQryInvestorPosition(
     position.set_used_margin(pInvestorPosition->UseMargin);
     position.set_frozen_margin(pInvestorPosition->FrozenMargin);
     position.set_open_cost(pInvestorPosition->OpenCost);
-    position.set_allocated_update_time(now());
+    position.set_allocated_update_time(utilities::Now<google::protobuf::Timestamp*>()());
 
     positions->add_positions()->CopyFrom(position);
 
@@ -528,7 +528,7 @@ void trade::broker::CTPBrokerImpl::OnRspOrderInsert(
     }
     order_rejection->set_rejection_code(types::RejectionCode::unknown);
     order_rejection->set_rejection_reason(utilities::GB2312ToUTF8()(pRspInfo->ErrorMsg));
-    order_rejection->set_allocated_rejection_time(now());
+    order_rejection->set_allocated_rejection_time(utilities::Now<google::protobuf::Timestamp*>()());
 
     m_reporter->order_rejected(order_rejection);
 }
@@ -574,7 +574,7 @@ void trade::broker::CTPBrokerImpl::OnRspOrderAction(
     }
     cancel_order_rejection->set_rejection_code(types::RejectionCode::unknown);
     cancel_order_rejection->set_rejection_reason(utilities::GB2312ToUTF8()(pRspInfo->ErrorMsg));
-    cancel_order_rejection->set_allocated_rejection_time(now());
+    cancel_order_rejection->set_allocated_rejection_time(utilities::Now<google::protobuf::Timestamp*>()());
 
     m_reporter->cancel_order_rejected(cancel_order_rejection);
 }
@@ -630,7 +630,7 @@ void trade::broker::CTPBrokerImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
             order.set_position_side(to_position_side(pOrder->CombOffsetFlag[0]));
             order.set_price(pOrder->LimitPrice);
             order.set_quantity(pOrder->VolumeTotalOriginal);
-            order.set_allocated_creation_time(now());
+            order.set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
 
             orders->add_orders()->CopyFrom(order);
 
@@ -656,7 +656,7 @@ void trade::broker::CTPBrokerImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
 
             broker_acceptance->set_unique_id(unique_id.value());
             broker_acceptance->set_broker_id(order.broker_id());
-            broker_acceptance->set_allocated_broker_acceptance_time(now());
+            broker_acceptance->set_allocated_broker_acceptance_time(utilities::Now<google::protobuf::Timestamp*>()());
 
             m_reporter->broker_accepted(broker_acceptance);
 
@@ -664,14 +664,14 @@ void trade::broker::CTPBrokerImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
 
             exchange_acceptance->set_unique_id(unique_id.value());
             exchange_acceptance->set_exchange_id(order.exchange_id());
-            exchange_acceptance->set_allocated_exchange_acceptance_time(now());
+            exchange_acceptance->set_allocated_exchange_acceptance_time(utilities::Now<google::protobuf::Timestamp*>()());
 
             m_reporter->exchange_accepted(exchange_acceptance);
 
             /// Update broker_id/exchange_id.
             order.set_broker_id(to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
             order.set_exchange_id(to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID));
-            order.set_allocated_update_time(now());
+            order.set_allocated_update_time(utilities::Now<google::protobuf::Timestamp*>()());
 
             m_holder->update_orders(orders);
         }
@@ -689,7 +689,7 @@ void trade::broker::CTPBrokerImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
             order_rejection->set_original_exchange_id(to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
             order_rejection->set_rejection_code(types::RejectionCode::unknown);
             order_rejection->set_rejection_reason(utilities::GB2312ToUTF8()(pOrder->StatusMsg));
-            order_rejection->set_allocated_rejection_time(now());
+            order_rejection->set_allocated_rejection_time(utilities::Now<google::protobuf::Timestamp*>()());
 
             m_reporter->order_rejected(order_rejection);
 
@@ -704,7 +704,7 @@ void trade::broker::CTPBrokerImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
             cancel_order_rejection->set_original_exchange_id(to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
             cancel_order_rejection->set_rejection_code(types::RejectionCode::unknown);
             cancel_order_rejection->set_rejection_reason(utilities::GB2312ToUTF8()(pOrder->StatusMsg));
-            cancel_order_rejection->set_allocated_rejection_time(now());
+            cancel_order_rejection->set_allocated_rejection_time(utilities::Now<google::protobuf::Timestamp*>()());
 
             m_reporter->cancel_order_rejected(cancel_order_rejection);
 
@@ -839,15 +839,6 @@ std::tuple<std::string, std::string> trade::broker::CTPBrokerImpl::from_exchange
     std::getline(iss, order_sys_id, ':');
 
     return std::make_tuple(exchange, order_sys_id);
-}
-
-/// Returns the current time with nanosecond precision.
-///
-/// Note: Set the returned value to a protobuf message will hand over the
-/// ownership to the message, which takes the responsibility of freeing it.
-google::protobuf::Timestamp* trade::broker::CTPBrokerImpl::now()
-{
-    return new google::protobuf::Timestamp(google::protobuf::util::TimeUtil::GetCurrentTime());
 }
 
 trade::broker::CTPBroker::CTPBroker(
