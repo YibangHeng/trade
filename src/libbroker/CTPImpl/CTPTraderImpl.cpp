@@ -15,11 +15,6 @@ trade::broker::CTPTraderImpl::CTPTraderImpl(
 )
     : AppBase("CTPTraderImpl", std::move(config)),
       m_trader_api(CThostFtdcTraderApi::CreateFtdcTraderApi()),
-      m_broker_id(),
-      m_user_id(),
-      m_investor_id(),
-      m_front_id(0),
-      m_session_id(0),
       m_holder(std::move(holder)),
       m_reporter(std::move(reporter)),
       m_parent(parent)
@@ -37,8 +32,8 @@ trade::broker::CTPTraderImpl::~CTPTraderImpl()
 {
     CThostFtdcUserLogoutField user_logout_field {};
 
-    M_A {user_logout_field.BrokerID} = m_broker_id;
-    M_A {user_logout_field.UserID}   = m_user_id;
+    M_A {user_logout_field.BrokerID} = m_common_data.m_broker_id;
+    M_A {user_logout_field.UserID}   = m_common_data.m_user_id;
 
     m_trader_api->ReqUserLogout(&user_logout_field, ticker_taper());
 
@@ -61,9 +56,9 @@ int64_t trade::broker::CTPTraderImpl::new_order(const std::shared_ptr<types::New
 
     /// Fields in NewOrderReq.
     M_A {input_order_field.InstrumentID}  = new_order_req->symbol();
-    M_A {input_order_field.ExchangeID}    = to_exchange(new_order_req->exchange());
-    input_order_field.Direction           = to_side(new_order_req->side());
-    input_order_field.CombOffsetFlag[0]   = to_position_side(new_order_req->position_side());
+    M_A {input_order_field.ExchangeID}    = CTPCommonData::to_exchange(new_order_req->exchange());
+    input_order_field.Direction           = CTPCommonData::to_side(new_order_req->side());
+    input_order_field.CombOffsetFlag[0]   = CTPCommonData::to_position_side(new_order_req->position_side());
     input_order_field.LimitPrice          = new_order_req->price();
     input_order_field.VolumeTotalOriginal = static_cast<TThostFtdcVolumeType>(new_order_req->quantity());
 
@@ -71,8 +66,8 @@ int64_t trade::broker::CTPTraderImpl::new_order(const std::shared_ptr<types::New
     input_order_field.OrderPriceType      = THOST_FTDC_OPT_LimitPrice; /// 限价单
     input_order_field.TimeCondition       = THOST_FTDC_TC_GFD;         /// 当日有效
 
-    M_A {input_order_field.BrokerID}      = m_broker_id;
-    M_A {input_order_field.InvestorID}    = m_investor_id;
+    M_A {input_order_field.BrokerID}      = m_common_data.m_broker_id;
+    M_A {input_order_field.InvestorID}    = m_common_data.m_investor_id;
 
     input_order_field.ContingentCondition = THOST_FTDC_CC_Immediately;
     input_order_field.CombHedgeFlag[0]    = THOST_FTDC_HF_Speculation;
@@ -119,7 +114,7 @@ int64_t trade::broker::CTPTraderImpl::cancel_order(const std::shared_ptr<types::
         new_cancel_req->set_original_raw_order_id(orders->orders().at(0).exchange_id());
     }
 
-    const auto [exchange_id, order_sys_id] = from_exchange_id(new_cancel_req->original_raw_order_id());
+    const auto [exchange_id, order_sys_id] = CTPCommonData::from_exchange_id(new_cancel_req->original_raw_order_id());
 
     CThostFtdcInputOrderActionField input_order_action_field {};
 
@@ -134,8 +129,8 @@ int64_t trade::broker::CTPTraderImpl::cancel_order(const std::shared_ptr<types::
     /// Fields required in docs.
     input_order_action_field.ActionFlag       = THOST_FTDC_AF_Delete;
 
-    M_A {input_order_action_field.BrokerID}   = m_broker_id;
-    M_A {input_order_action_field.InvestorID} = m_investor_id;
+    M_A {input_order_action_field.BrokerID}   = m_common_data.m_broker_id;
+    M_A {input_order_action_field.InvestorID} = m_common_data.m_investor_id;
 
     /// @OnRspOrderAction.
     const auto code = m_trader_api->ReqOrderAction(&input_order_action_field, request_seq);
@@ -222,7 +217,7 @@ void trade::broker::CTPTraderImpl::OnFrontConnected()
 {
     CThostFtdcTraderSpi::OnFrontConnected();
 
-    logger->info("Connected to CTP server {} with version {}", config->get<std::string>("Server.TradeAddress"), CThostFtdcTraderApi::GetApiVersion());
+    logger->info("Connected to CTP Trader server {} with version {}", config->get<std::string>("Server.TradeAddress"), CThostFtdcTraderApi::GetApiVersion());
 
     CThostFtdcReqUserLoginField req_user_login_field {};
 
@@ -252,10 +247,10 @@ void trade::broker::CTPTraderImpl::OnRspUserLogin(
         return;
     }
 
-    M_A {m_broker_id} = pRspUserLogin->BrokerID;
-    M_A {m_user_id}   = pRspUserLogin->UserID;
-    m_front_id        = pRspUserLogin->FrontID;
-    m_session_id      = pRspUserLogin->SessionID;
+    M_A {m_common_data.m_broker_id} = pRspUserLogin->BrokerID;
+    M_A {m_common_data.m_user_id}   = pRspUserLogin->UserID;
+    m_common_data.m_front_id        = pRspUserLogin->FrontID;
+    m_common_data.m_session_id      = pRspUserLogin->SessionID;
 
     try {
         /// Set OrderRef starts from MaxOrderRef for avoiding duplicated
@@ -291,7 +286,7 @@ void trade::broker::CTPTraderImpl::OnRspUserLogout(
         return;
     }
 
-    logger->info("Logged out successfully as BrokerID/UserID {}/{} with FrontID/SessionID {}/{}", pUserLogout->BrokerID, pUserLogout->UserID, m_front_id, m_session_id);
+    logger->info("Logged out successfully as BrokerID/UserID {}/{} with FrontID/SessionID {}/{}", pUserLogout->BrokerID, pUserLogout->UserID, m_common_data.m_front_id, m_common_data.m_session_id);
 
     m_parent->notify_logout_success();
 }
@@ -314,10 +309,10 @@ void trade::broker::CTPTraderImpl::OnRspQryInvestor(
         return;
     }
 
-    M_A {m_investor_id} = pInvestor->InvestorID;
+    M_A {m_common_data.m_investor_id} = pInvestor->InvestorID;
 
     if (bIsLast) {
-        logger->info("Loaded investor id {} for request {}", m_investor_id, request_id.value_or(INVALID_ID));
+        logger->info("Loaded investor id {} for request {}", m_common_data.m_investor_id, request_id.value_or(INVALID_ID));
     }
 }
 
@@ -530,8 +525,8 @@ void trade::broker::CTPTraderImpl::OnRspOrderInsert(
 
     order_rejection->set_original_unique_id(unique_id.value_or(INVALID_ID));
     if (pInputOrder != nullptr) {
-        order_rejection->set_original_broker_id(to_broker_id(m_front_id, m_session_id, pInputOrder->OrderRef));
-        order_rejection->set_original_exchange_id(to_exchange_id(pInputOrder->ExchangeID, "")); /// No OrderSysRef here.
+        order_rejection->set_original_broker_id(CTPCommonData::to_broker_id(m_common_data.m_front_id, m_common_data.m_session_id, pInputOrder->OrderRef));
+        order_rejection->set_original_exchange_id(CTPCommonData::to_exchange_id(pInputOrder->ExchangeID, "")); /// No OrderSysRef here.
     }
     order_rejection->set_rejection_code(types::RejectionCode::unknown);
     order_rejection->set_rejection_reason(utilities::GB2312ToUTF8()(pRspInfo->ErrorMsg));
@@ -576,8 +571,8 @@ void trade::broker::CTPTraderImpl::OnRspOrderAction(
 
     cancel_order_rejection->set_original_unique_id(request_id.value_or(INVALID_ID));
     if (pInputOrderAction != nullptr) {
-        cancel_order_rejection->set_original_broker_id(to_broker_id(pInputOrderAction->FrontID, pInputOrderAction->SessionID, pInputOrderAction->OrderRef));
-        cancel_order_rejection->set_original_exchange_id(to_exchange_id(pInputOrderAction->ExchangeID, pInputOrderAction->OrderSysID));
+        cancel_order_rejection->set_original_broker_id(CTPCommonData::to_broker_id(pInputOrderAction->FrontID, pInputOrderAction->SessionID, pInputOrderAction->OrderRef));
+        cancel_order_rejection->set_original_exchange_id(CTPCommonData::to_exchange_id(pInputOrderAction->ExchangeID, pInputOrderAction->OrderSysID));
     }
     cancel_order_rejection->set_rejection_code(types::RejectionCode::unknown);
     cancel_order_rejection->set_rejection_reason(utilities::GB2312ToUTF8()(pRspInfo->ErrorMsg));
@@ -594,7 +589,7 @@ void trade::broker::CTPTraderImpl::OnErrRtnOrderAction(CThostFtdcOrderActionFiel
 
     assert(pRspInfo->ErrorID != 0);
 
-    logger->warn("An outside cancel {} from ip {} mac {} is rejected by exchange: {}", to_exchange_id(pOrderAction->ExchangeID, pOrderAction->OrderSysID), pOrderAction->IPAddress, pOrderAction->MacAddress, pRspInfo->ErrorMsg);
+    logger->warn("An outside cancel {} from ip {} mac {} is rejected by exchange: {}", CTPCommonData::to_exchange_id(pOrderAction->ExchangeID, pOrderAction->OrderSysID), pOrderAction->IPAddress, pOrderAction->MacAddress, pRspInfo->ErrorMsg);
 }
 
 void trade::broker::CTPTraderImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
@@ -602,7 +597,7 @@ void trade::broker::CTPTraderImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
     CThostFtdcTraderSpi::OnRtnOrder(pOrder);
 
     NULLPTR_CHECKER(pOrder);
-    logger->debug("New CThostFtdcOrder {} arrived with status {} and submit status {}", to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID), pOrder->OrderStatus, pOrder->OrderSubmitStatus);
+    logger->debug("New CThostFtdcOrder {} arrived with status {} and submit status {}", CTPCommonData::to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID), pOrder->OrderStatus, pOrder->OrderSubmitStatus);
 
     using OrderRefType = std::tuple_element_t<0, decltype(new_id_pair())>;
     OrderRefType order_ref;
@@ -626,15 +621,15 @@ void trade::broker::CTPTraderImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
     /// instance.
     if (!unique_id.has_value()) {
         /// Check if the order is already in holder.
-        orders = m_holder->query_orders_by_exchange_id(to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID));
+        orders = m_holder->query_orders_by_exchange_id(CTPCommonData::to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID));
         if (orders->orders().empty()) {
             /// Insert the new outside order into holder.
             order.set_unique_id(snow_flaker());
-            order.set_broker_id(to_broker_id(m_front_id, m_session_id, pOrder->OrderRef));
-            order.set_exchange_id(to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID));
+            order.set_broker_id(CTPCommonData::to_broker_id(m_common_data.m_front_id, m_common_data.m_session_id, pOrder->OrderRef));
+            order.set_exchange_id(CTPCommonData::to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID));
             order.set_symbol(pOrder->InstrumentID);
-            order.set_side(to_side(pOrder->Direction));
-            order.set_position_side(to_position_side(pOrder->CombOffsetFlag[0]));
+            order.set_side(CTPCommonData::to_side(pOrder->Direction));
+            order.set_position_side(CTPCommonData::to_position_side(pOrder->CombOffsetFlag[0]));
             order.set_price(pOrder->LimitPrice);
             order.set_quantity(pOrder->VolumeTotalOriginal);
             order.set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
@@ -643,7 +638,7 @@ void trade::broker::CTPTraderImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
 
             m_holder->update_orders(orders);
 
-            logger->info("Assigned new unique_id {} to new outside order {} from ip {} mac {} and inserted into holder", order.unique_id(), to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID), pOrder->IPAddress, pOrder->MacAddress);
+            logger->info("Assigned new unique_id {} to new outside order {} from ip {} mac {} and inserted into holder", order.unique_id(), CTPCommonData::to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID), pOrder->IPAddress, pOrder->MacAddress);
         }
         else {
             /// Use queried order from holder.
@@ -676,8 +671,8 @@ void trade::broker::CTPTraderImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
             m_reporter->exchange_accepted(exchange_acceptance);
 
             /// Update broker_id/exchange_id.
-            order.set_broker_id(to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
-            order.set_exchange_id(to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID));
+            order.set_broker_id(CTPCommonData::to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
+            order.set_exchange_id(CTPCommonData::to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID));
             order.set_allocated_update_time(utilities::Now<google::protobuf::Timestamp*>()());
 
             m_holder->update_orders(orders);
@@ -692,8 +687,8 @@ void trade::broker::CTPTraderImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
             const auto order_rejection = std::make_shared<types::OrderRejection>();
 
             order_rejection->set_original_unique_id(unique_id.value());
-            order_rejection->set_original_broker_id(to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
-            order_rejection->set_original_exchange_id(to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
+            order_rejection->set_original_broker_id(CTPCommonData::to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
+            order_rejection->set_original_exchange_id(CTPCommonData::to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
             order_rejection->set_rejection_code(types::RejectionCode::unknown);
             order_rejection->set_rejection_reason(utilities::GB2312ToUTF8()(pOrder->StatusMsg));
             order_rejection->set_allocated_rejection_time(utilities::Now<google::protobuf::Timestamp*>()());
@@ -707,8 +702,8 @@ void trade::broker::CTPTraderImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
             const auto cancel_order_rejection = std::make_shared<types::CancelOrderRejection>();
 
             cancel_order_rejection->set_original_unique_id(unique_id.value());
-            cancel_order_rejection->set_original_broker_id(to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
-            cancel_order_rejection->set_original_exchange_id(to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
+            cancel_order_rejection->set_original_broker_id(CTPCommonData::to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
+            cancel_order_rejection->set_original_exchange_id(CTPCommonData::to_broker_id(pOrder->FrontID, pOrder->SessionID, pOrder->OrderRef));
             cancel_order_rejection->set_rejection_code(types::RejectionCode::unknown);
             cancel_order_rejection->set_rejection_reason(utilities::GB2312ToUTF8()(pOrder->StatusMsg));
             cancel_order_rejection->set_allocated_rejection_time(utilities::Now<google::protobuf::Timestamp*>()());
@@ -722,128 +717,4 @@ void trade::broker::CTPTraderImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
     default: break;
     }
     }
-}
-
-std::string trade::broker::CTPTraderImpl::to_exchange(const types::ExchangeType exchange)
-{
-    switch (exchange) {
-    case types::ExchangeType::bse: return "BSE";
-    case types::ExchangeType::cffex: return "CFFEX";
-    case types::ExchangeType::cme: return "CME";
-    case types::ExchangeType::czce: return "CZCE";
-    case types::ExchangeType::dce: return "DCE";
-    case types::ExchangeType::gfex: return "GFEX";
-    case types::ExchangeType::hkex: return "HKEX";
-    case types::ExchangeType::ine: return "INE";
-    case types::ExchangeType::nasd: return "NASD";
-    case types::ExchangeType::nyse: return "NYSE";
-    case types::ExchangeType::shfe: return "SHFE";
-    case types::ExchangeType::sse: return "SSE";
-    case types::ExchangeType::szse: return "SZSE";
-    default: return "";
-    }
-}
-
-trade::types::ExchangeType trade::broker::CTPTraderImpl::to_exchange(const std::string& exchange)
-{
-    if (exchange == "BSE") return types::ExchangeType::bse;
-    if (exchange == "CFFEX") return types::ExchangeType::cffex;
-    if (exchange == "CME") return types::ExchangeType::cme;
-    if (exchange == "CZCE") return types::ExchangeType::czce;
-    if (exchange == "DCE") return types::ExchangeType::dce;
-    if (exchange == "GFEX") return types::ExchangeType::gfex;
-    if (exchange == "HKEX") return types::ExchangeType::hkex;
-    if (exchange == "INE") return types::ExchangeType::ine;
-    if (exchange == "NASD") return types::ExchangeType::nasd;
-    if (exchange == "NYSE") return types::ExchangeType::nyse;
-    if (exchange == "SHFE") return types::ExchangeType::shfe;
-    if (exchange == "SSE") return types::ExchangeType::sse;
-    if (exchange == "SZSE") return types::ExchangeType::szse;
-    return types::ExchangeType::invalid_exchange;
-}
-
-TThostFtdcDirectionType trade::broker::CTPTraderImpl::to_side(const types::SideType side)
-{
-    switch (side) {
-    case types::SideType::buy: return THOST_FTDC_DEN_Buy;
-    case types::SideType::sell: return THOST_FTDC_DEN_Sell;
-    default: return '\0';
-    }
-}
-
-trade::types::SideType trade::broker::CTPTraderImpl::to_side(const TThostFtdcDirectionType side)
-{
-    switch (side) {
-    case THOST_FTDC_DEN_Buy: return types::SideType::buy;
-    case THOST_FTDC_DEN_Sell: return types::SideType::sell;
-    default: return types::SideType::invalid_side;
-    }
-}
-
-char trade::broker::CTPTraderImpl::to_position_side(const types::PositionSideType position_side)
-{
-    switch (position_side) {
-    case types::PositionSideType::open: return THOST_FTDC_OFEN_Open;
-    case types::PositionSideType::close: return THOST_FTDC_OFEN_Close;
-    default: return '\0';
-    }
-}
-
-trade::types::PositionSideType trade::broker::CTPTraderImpl::to_position_side(const char position_side)
-{
-    switch (position_side) {
-    case THOST_FTDC_OFEN_Open: return types::PositionSideType::open;
-    case THOST_FTDC_OFEN_Close: return types::PositionSideType::close;
-    default: return types::PositionSideType::invalid_position_side;
-    }
-}
-
-std::string trade::broker::CTPTraderImpl::to_broker_id(
-    TThostFtdcFrontIDType front_id,
-    TThostFtdcSessionIDType session_id,
-    const std::string& order_ref
-)
-{
-    return fmt::format("{}:{}:{}", front_id, session_id, order_ref);
-}
-
-std::tuple<std::string, std::string, std::string> trade::broker::CTPTraderImpl::from_broker_id(const std::string& broker_id)
-{
-    std::string front_id, session_id, order_ref;
-
-    static std::regex re("^([^:]+):([^:]+):([^:]+)$");
-    if (!std::regex_match(broker_id, re)) {
-        return std::make_tuple(std::string(""), std::string(""), std::string(""));
-    }
-
-    std::istringstream iss(broker_id);
-    std::getline(iss, front_id, ':');
-    std::getline(iss, session_id, ':');
-    std::getline(iss, order_ref, ':');
-
-    return std::make_tuple(front_id, session_id, order_ref);
-}
-
-std::string trade::broker::CTPTraderImpl::to_exchange_id(
-    const std::string& exchange,
-    const std::string& order_sys_id
-)
-{
-    return fmt::format("{}:{}", exchange, order_sys_id);
-}
-
-std::tuple<std::string, std::string> trade::broker::CTPTraderImpl::from_exchange_id(const std::string& exchange_id)
-{
-    std::string exchange, order_sys_id;
-
-    static std::regex re("^([^:]+):([^:]+)$");
-    if (!std::regex_match(exchange_id, re)) {
-        return std::make_tuple(std::string(""), std::string(""));
-    }
-
-    std::istringstream iss(exchange_id);
-    std::getline(iss, exchange, ':');
-    std::getline(iss, order_sys_id, ':');
-
-    return std::make_tuple(exchange, order_sys_id);
 }
