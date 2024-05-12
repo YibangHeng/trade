@@ -16,6 +16,7 @@ void trade::broker::CTPBroker::start_login() noexcept
 {
     BrokerProxy::start_login();
 
+    m_md_impl     = std::make_unique<CTPMdImpl>(config, m_holder, m_reporter);
     m_trader_impl = std::make_unique<CTPTraderImpl>(config, m_holder, m_reporter, this);
 }
 
@@ -23,6 +24,7 @@ void trade::broker::CTPBroker::start_logout() noexcept
 {
     BrokerProxy::start_logout();
 
+    m_md_impl.reset();
     m_trader_impl.reset();
 }
 

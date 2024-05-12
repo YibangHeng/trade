@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "BrokerProxy.hpp"
+#include "CTPImpl/CTPMdImpl.h"
 #include "CTPImpl/CTPTraderImpl.h"
 
 namespace trade::broker
@@ -27,6 +28,7 @@ public:
     int64_t cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req) override;
 
 private:
+    std::unique_ptr<CTPMdImpl> m_md_impl;
     std::unique_ptr<CTPTraderImpl> m_trader_impl;
 };
 
