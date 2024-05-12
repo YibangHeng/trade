@@ -4,7 +4,6 @@
 #include "IBroker.h"
 #include "libholder/IHolder.h"
 #include "libreporter/IReporter.hpp"
-#include "utilities/LoginSyncer.hpp"
 #include "utilities/TimeHelper.hpp"
 #include "utilities/ToJSON.hpp"
 
@@ -14,7 +13,6 @@ namespace trade::broker
 template<typename TickerTaperT = int64_t, utilities::ConfigFileType ConfigFileType = utilities::ConfigFileType::INI>
 class BrokerProxy
     : public IBroker,
-      public utilities::LoginSyncer,
       public AppBase<TickerTaperT, ConfigFileType>
 {
 public:
@@ -32,13 +30,6 @@ public:
     ~BrokerProxy() override = default;
 
 public:
-    void login() noexcept override { start_login(); }
-    void wait_login() noexcept(false) override { wait_login_reasult(); }
-
-    void logout() noexcept override { start_logout(); }
-    void wait_logout() noexcept(false) override { wait_logout_reasult(); }
-
-public:
     int64_t new_order(std::shared_ptr<types::NewOrderReq> new_order_req) override
     {
         if (!new_order_req->has_request_id()) {
@@ -51,11 +42,12 @@ public:
 
         /// Pre-create order in holder.
         if (!pre_insert_order(new_order_req)) {
-            logger->error("Failed to pre-create order due to holder error: {}", utilities::ToJSON()(*new_order_req));
+            AppBase<TickerTaperT, ConfigFileType>::logger->error("Failed to pre-create order due to holder error: {}", utilities::ToJSON()(*new_order_req));
             return INVALID_ID;
         }
 
-        logger->info("New order pre-created: {}", utilities::ToJSON()(*new_order_req));
+        AppBase<TickerTaperT, ConfigFileType>::logger->info("New order pre-created: {}", utilities::ToJSON()(*new_order_req));
+
         return new_order_req->unique_id();
     }
 
@@ -65,7 +57,7 @@ public:
             new_cancel_req->set_request_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
         }
 
-        logger->info("New cancel pre-created: {}", utilities::ToJSON()(*new_cancel_req));
+        AppBase<TickerTaperT, ConfigFileType>::logger->info("New cancel pre-created: {}", utilities::ToJSON()(*new_cancel_req));
 
         return new_cancel_req->request_id();
     }
@@ -99,9 +91,6 @@ private:
 protected:
     std::shared_ptr<holder::IHolder> m_holder;
     std::shared_ptr<reporter::IReporter> m_reporter;
-
-private:
-    decltype(AppBase<TickerTaperT, ConfigFileType>::logger) logger = AppBase<TickerTaperT, ConfigFileType>::logger;
 };
 
 } // namespace trade::broker

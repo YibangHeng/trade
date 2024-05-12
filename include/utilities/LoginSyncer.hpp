@@ -4,6 +4,8 @@
 #include <condition_variable>
 #include <fmt/format.h>
 
+#include "visibility.h"
+
 /// TODO: Add timeout support.
 
 namespace trade::utilities
@@ -61,7 +63,7 @@ private:
 };
 
 /// Helper class for synchronizing login/logout attempts.
-class LoginSyncer
+class PUBLIC_API LoginSyncer
 {
 public:
     LoginSyncer()          = default;
@@ -69,31 +71,32 @@ public:
 
 public:
     /// Start the login process.
-    void start_login()
+    virtual void start_login()
     {
         m_login_syncer.start();
     }
 
     /// Start the logout process.
-    void start_logout()
+    virtual void start_logout()
     {
         m_logout_syncer.start();
     }
 
     /// Waits until the login is complete.
     /// @throws std::runtime_error with the error message if the login fails.
-    void wait_login_reasult() noexcept(false)
+    virtual void wait_login() noexcept(false)
     {
         m_login_syncer.wait();
     }
 
     /// Waits until the logout is complete.
     /// @throws std::runtime_error with the error message if the logout fails.
-    void wait_logout_reasult() noexcept(false)
+    virtual void wait_logout() noexcept(false)
     {
         m_logout_syncer.wait();
     }
 
+public:
     /// Notifies that a login attempt has succeeded.
     void notify_login_success()
     {

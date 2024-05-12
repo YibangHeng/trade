@@ -40,7 +40,7 @@ int trade::Trade::run()
     if (config->get<std::string>("Broker.Type") == "CTP") {
         broker = std::make_shared<broker::CTPBroker>(
             config->get<std::string>("Broker.Config"),
-            holder, 
+            holder,
             reporter
         );
     }
@@ -49,7 +49,7 @@ int trade::Trade::run()
         return 1;
     }
 
-    broker->login();
+    broker->start_login();
 
     try {
         broker->wait_login();
@@ -60,8 +60,9 @@ int trade::Trade::run()
     }
 
     /// TODO: Start networking event loop here.
+    std::this_thread::sleep_for(std::chrono::minutes(1));
 
-    broker->logout();
+    broker->start_logout();
 
     try {
         broker->wait_logout();

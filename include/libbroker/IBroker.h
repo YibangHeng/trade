@@ -1,29 +1,17 @@
 #pragma once
 
-#include <memory>
-
 #include "networks.pb.h"
-#include "visibility.h"
+#include "utilities/LoginSyncer.hpp"
 
 namespace trade::broker
 {
 
 class PUBLIC_API IBroker
+    : public utilities::LoginSyncer /// A broker also provides a login syncer.
 {
 public:
-    explicit IBroker() = default;
-    virtual ~IBroker() = default;
-
-public:
-    /// Initialize SDK and login.
-    virtual void login() noexcept = 0;
-    /// Wait until SDK and login is finished.
-    virtual void wait_login() noexcept(false) = 0;
-
-    /// Logout from SDK.
-    virtual void logout() noexcept = 0;
-    /// Wait until logout is finished.
-    virtual void wait_logout() noexcept(false) = 0;
+    explicit IBroker()  = default;
+    ~IBroker() override = default;
 
 public:
     virtual int64_t new_order(std::shared_ptr<types::NewOrderReq> new_order_req)           = 0;

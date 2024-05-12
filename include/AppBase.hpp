@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/core/noncopyable.hpp>
+#include <memory>
 #include <optional>
 #include <spdlog/spdlog.h>
 #include <utility>
