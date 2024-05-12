@@ -1,6 +1,7 @@
 #include <google/protobuf/util/time_util.h>
 #include <regex>
 #include <utility>
+#include <vector>
 
 #include "libbroker/CTPImpl/CTPMdImpl.h"
 #include "utilities/GB2312ToUTF8.hpp"
@@ -39,6 +40,38 @@ trade::broker::CTPMdImpl::~CTPMdImpl()
 
     m_md_api->RegisterSpi(nullptr);
     m_md_api->Release();
+}
+
+void trade::broker::CTPMdImpl::subscribe(const std::unordered_set<std::string>& symbols) const
+{
+    std::vector<char*> symbol_vector;
+    for (const auto& symbol : symbols) {
+        const auto symbol_c_array = new char[symbol.size() + 1];
+        std::strcpy(symbol_c_array, symbol.c_str());
+        symbol_vector.push_back(symbol_c_array);
+    }
+
+    m_md_api->SubscribeMarketData(symbol_vector.data(), static_cast<int>(symbol_vector.size()));
+
+    for (const auto& cstr : symbol_vector) {
+        delete[] cstr;
+    }
+}
+
+void trade::broker::CTPMdImpl::unsubscribe(const std::unordered_set<std::string>& symbols) const
+{
+    std::vector<char*> symbol_vector;
+    for (const auto& symbol : symbols) {
+        const auto symbol_c_array = new char[symbol.size() + 1];
+        std::strcpy(symbol_c_array, symbol.c_str());
+        symbol_vector.push_back(symbol_c_array);
+    }
+
+    m_md_api->UnSubscribeMarketData(symbol_vector.data(), static_cast<int>(symbol_vector.size()));
+
+    for (const auto& cstr : symbol_vector) {
+        delete[] cstr;
+    }
 }
 
 #define NULLPTR_CHECKER(ptr)                                      \
@@ -109,4 +142,49 @@ void trade::broker::CTPMdImpl::OnRspUserLogout(
     }
 
     m_login_syncer.notify_logout_success();
+}
+
+void trade::broker::CTPMdImpl::OnRspSubMarketData(
+    CThostFtdcSpecificInstrumentField* pSpecificInstrument,
+    CThostFtdcRspInfoField* pRspInfo,
+    const int nRequestID, const bool bIsLast
+)
+{
+    CThostFtdcMdSpi::OnRspSubMarketData(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
+
+    NULLPTR_CHECKER(pRspInfo);
+
+    if (pRspInfo->ErrorID != 0) {
+        logger->error("Failed to subscribe to {} with code {}: {}", pSpecificInstrument->InstrumentID, pRspInfo->ErrorID, pRspInfo->ErrorMsg);
+    }
+    else {
+        logger->info("Subscribed to {} successfully", pSpecificInstrument->InstrumentID);
+    }
+}
+
+void trade::broker::CTPMdImpl::OnRspUnSubMarketData(
+    CThostFtdcSpecificInstrumentField* pSpecificInstrument,
+    CThostFtdcRspInfoField* pRspInfo,
+    const int nRequestID, const bool bIsLast
+)
+{
+    CThostFtdcMdSpi::OnRspUnSubMarketData(pSpecificInstrument, pRspInfo, nRequestID, bIsLast);
+
+    NULLPTR_CHECKER(pRspInfo);
+
+    if (pRspInfo->ErrorID != 0) {
+        logger->error("Failed to unsubscribe from {} with code {}: {}", pSpecificInstrument->InstrumentID, pRspInfo->ErrorID, pRspInfo->ErrorMsg);
+    }
+    else {
+        logger->info("Unsubscribed from {} successfully", pSpecificInstrument->InstrumentID);
+    }
+}
+
+void trade::broker::CTPMdImpl::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField* pDepthMarketData)
+{
+    CThostFtdcMdSpi::OnRtnDepthMarketData(pDepthMarketData);
+
+    NULLPTR_CHECKER(pDepthMarketData);
+
+    logger->debug("Received market data for {} with BidPrice1: {}, AskPrice1: {} at {}.{:0>3}", pDepthMarketData->InstrumentID, pDepthMarketData->BidPrice1, pDepthMarketData->AskPrice1, pDepthMarketData->UpdateTime, pDepthMarketData->UpdateMillisec);
 }

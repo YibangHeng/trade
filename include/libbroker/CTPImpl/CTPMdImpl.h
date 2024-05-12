@@ -20,6 +20,10 @@ public:
     );
     ~CTPMdImpl() override;
 
+public:
+    void subscribe(const std::unordered_set<std::string>& symbols) const;
+    void unsubscribe(const std::unordered_set<std::string>& symbols) const;
+
 private:
     void OnFrontConnected() override;
     void OnRspUserLogin(
@@ -32,6 +36,17 @@ private:
         CThostFtdcRspInfoField* pRspInfo,
         int nRequestID, bool bIsLast
     ) override;
+    void OnRspSubMarketData(
+        CThostFtdcSpecificInstrumentField* pSpecificInstrument,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
+    void OnRspUnSubMarketData(
+        CThostFtdcSpecificInstrumentField* pSpecificInstrument,
+        CThostFtdcRspInfoField* pRspInfo,
+        int nRequestID, bool bIsLast
+    ) override;
+    void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData) override;
 
 private:
     CThostFtdcMdApi* m_md_api;

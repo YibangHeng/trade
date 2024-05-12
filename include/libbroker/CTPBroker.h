@@ -27,6 +27,10 @@ public:
     int64_t new_order(std::shared_ptr<types::NewOrderReq> new_order_req) override;
     int64_t cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req) override;
 
+public:
+    void subscribe(const std::unordered_set<std::string>& symbols) override;
+    void unsubscribe(const std::unordered_set<std::string>& symbols) override;
+
 private:
     std::unique_ptr<CTPMdImpl> m_md_impl;
     std::unique_ptr<CTPTraderImpl> m_trader_impl;

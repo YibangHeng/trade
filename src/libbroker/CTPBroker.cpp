@@ -43,3 +43,13 @@ int64_t trade::broker::CTPBroker::cancel_order(const std::shared_ptr<types::NewC
 
     return m_trader_impl->cancel_order(new_cancel_req);
 }
+
+void trade::broker::CTPBroker::subscribe(const std::unordered_set<std::string>& symbols)
+{
+    m_md_impl->subscribe(symbols);
+}
+
+void trade::broker::CTPBroker::unsubscribe(const std::unordered_set<std::string>& symbols)
+{
+    m_md_impl->unsubscribe(symbols);
+}
