@@ -1,7 +1,15 @@
 #pragma once
 
-#include <date/date.h>
-#include <date/tz.h>
+/// Disable date support on Windows platforms.
+#ifndef WIN32
+    #define LIB_DATE_SUPPORT
+#endif
+
+#ifdef LIB_DATE_SUPPORT
+    #include <date/date.h>
+    #include <date/tz.h>
+#endif
+
 #include <google/protobuf/timestamp.pb.h>
 #include <google/protobuf/util/time_util.h>
 #include <iomanip>
@@ -31,6 +39,7 @@ public:
         const std::string& timezone = "Asia/Shanghai"
     ) const
     {
+#ifdef LIB_DATE_SUPPORT
         date::local_time<std::chrono::nanoseconds> ls;
         std::istringstream {datetime} >> parse("%Y-%m-%d %H:%M:%S", ls);
 
@@ -46,6 +55,9 @@ public:
         timestamp->set_nanos(static_cast<int>(nanoseconds));
 
         return timestamp;
+#else
+        return new google::protobuf::Timestamp();
+#endif
     }
 };
 
@@ -62,6 +74,7 @@ public:
         const std::string& timezone = "Asia/Shanghai"
     ) const
     {
+#ifdef LIB_DATE_SUPPORT
         const auto zoned_time = make_zoned(
             date::locate_zone(timezone),
             std::chrono::system_clock::from_time_t(timestamp.seconds())
@@ -76,6 +89,9 @@ public:
 
         /// Remove nanoseconds part.
         return date_time.str().substr(0, date_time.str().size() - 6);
+#else
+        return "2000-01-01 08:00:00.000";
+#endif
     }
 };
 

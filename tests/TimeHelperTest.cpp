@@ -2,6 +2,12 @@
 
 #include "utilities/TimeHelper.hpp"
 
+#ifndef LIB_DATE_SUPPORT
+TEST_CASE("TimeHelper support warning", "[TimeHelper]")
+{
+    WARN("TimeHelper is not supported on Windows platform yet");
+}
+#else
 TEST_CASE("ProtobufTime to SQLiteDatetime", "[TimeHelper]")
 {
     google::protobuf::Timestamp timestamp;
@@ -43,3 +49,4 @@ TEST_CASE("SQLiteDatetime to ProtobufTime", "[TimeHelper]")
     CHECK(timestamp->seconds() == 946753445); /// 2000-01-02 03:04:05.
     CHECK(timestamp->nanos() == 678000000);   /// 678 milliseconds.
 }
+#endif

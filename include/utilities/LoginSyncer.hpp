@@ -1,5 +1,11 @@
 #pragma once
 
+/// Disable condition variable support on Windows platforms.
+#ifndef WIN32
+    #define CV_SUPPORT
+#endif
+
+#include <atomic>
 #include <boost/logic/tribool.hpp>
 #include <condition_variable>
 #include <fmt/format.h>
@@ -14,17 +20,24 @@ namespace trade::utilities
 class LoginSyncerImpl
 {
 public:
-    LoginSyncerImpl() : m_attempting(boost::logic::tribool::indeterminate_value) {}
+#ifdef CV_SUPPORT
+    LoginSyncerImpl() : m_attempting(boost::tribool::indeterminate_value) {}
+#else
+    LoginSyncerImpl() = default;
+#endif
     ~LoginSyncerImpl() = default;
 
 public:
     void start()
     {
+#ifdef CV_SUPPORT
         m_mutex.lock();
+#endif
     }
 
     void wait() noexcept(false)
     {
+#ifdef CV_SUPPORT
         std::unique_lock lock(m_mutex);
 
         /// Wait until attempting is finished.
@@ -32,32 +45,49 @@ public:
             return !indeterminate(m_attempting);
         });
 
-        /// Throw exception if attemption failed.
+        /// Throw exception if attempting failed.
         if (!m_attempting.load()) {
             throw std::runtime_error(m_message);
         }
+#else
+        /// TODO: Temporary solution. Use condition variable instead.
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+
+        if (!m_message.empty()) {
+            throw std::runtime_error(m_message);
+        }
+#endif
     }
 
     void notify_success()
     {
-        m_attempting.store(boost::logic::tribool::true_value);
+#ifdef CV_SUPPORT
+        m_attempting.store(boost::tribool::true_value);
         m_mutex.unlock();
         m_cv.notify_all();
+        m_attempting.store(boost::tribool::true_value);
+#endif
     }
 
     template<typename... T>
     void notify_failure(fmt::format_string<T...> fmt, T&&... args)
     {
-        m_attempting.store(boost::logic::tribool::false_value);
+#ifdef CV_SUPPORT
+        m_attempting.store(boost::tribool::false_value);
         m_message = fmt::format(fmt, std::forward<T>(args)...);
         m_mutex.unlock();
         m_cv.notify_all();
+#else
+        m_message = fmt::format(fmt, std::forward<T>(args)...);
+#endif
     }
 
 private:
+#ifdef CV_SUPPORT
     std::mutex m_mutex;
     std::condition_variable m_cv;
-    std::atomic<boost::logic::tribool> m_attempting;
+    std::atomic<boost::tribool> m_attempting;
+#endif
     /// Store message about failure reason (if the caller could provide it).
     std::string m_message;
 };

@@ -126,6 +126,11 @@ bool trade::Trade::argv_parse(const int argc, char* argv[])
 
     notify(m_arguments);
 
+    /// contains() is not support on Windows platforms.
+#if WIN32
+    #define contains(s) count(s) > 1
+#endif
+
     if (m_arguments.contains("help")) {
         std::cout << desc;
         return false;

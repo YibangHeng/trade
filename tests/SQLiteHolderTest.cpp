@@ -75,7 +75,9 @@ TEST_CASE("Position inserting", "[SQLiteHolder]")
             position.set_used_margin(counter);
             position.set_frozen_margin(counter);
             position.set_open_cost(counter);
+#ifdef LIB_DATE_SUPPORT
             position.set_allocated_update_time(trade::utilities::ToTime<google::protobuf::Timestamp*>()(fmt::format("2000-01-01 08:00:00.{:0>3}", counter % 100)));
+#endif
 
             counter++;
 
@@ -105,7 +107,9 @@ TEST_CASE("Position querying", "[SQLiteHolder]")
         CHECK(positions->positions(0).used_margin() == counter);
         CHECK(positions->positions(0).frozen_margin() == counter);
         CHECK(positions->positions(0).open_cost() == counter);
+#ifdef LIB_DATE_SUPPORT
         CHECK(trade::utilities::ToTime<std::string>()(positions->positions(0).update_time()) == fmt::format("2000-01-01 08:00:00.{:0>3}", counter % 100));
+#endif
 
         counter++;
     }
@@ -131,8 +135,10 @@ TEST_CASE("Order inserting", "[SQLiteHolder]")
             order.set_position_side(trade::types::PositionSideType::open);
             order.set_price(counter);
             order.set_quantity(counter);
+#ifdef LIB_DATE_SUPPORT
             order.set_allocated_creation_time(trade::utilities::ToTime<google::protobuf::Timestamp*>()("2000-01-01 08:00:00.000"));
             order.set_allocated_update_time(trade::utilities::ToTime<google::protobuf::Timestamp*>()(fmt::format("2000-01-01 08:00:00.{:0>3}", counter % 100)));
+#endif
 
             counter++;
 
@@ -162,8 +168,10 @@ TEST_CASE("Order querying", "[SQLiteHolder]")
         CHECK(orders->orders(0).position_side() == trade::types::PositionSideType::open);
         CHECK(orders->orders(0).price() == counter);
         CHECK(orders->orders(0).quantity() == counter);
+#ifdef LIB_DATE_SUPPORT
         CHECK(trade::utilities::ToTime<std::string>()(orders->orders(0).creation_time()) == "2000-01-01 08:00:00.000");
         CHECK(trade::utilities::ToTime<std::string>()(orders->orders(0).update_time()) == fmt::format("2000-01-01 08:00:00.{:0>3}", counter % 100));
+#endif
 
         counter++;
     }
