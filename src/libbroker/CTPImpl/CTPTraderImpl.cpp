@@ -326,7 +326,7 @@ void trade::broker::CTPTraderImpl::OnRspQryExchange(
     CThostFtdcTraderSpi::OnRspQryExchange(pExchange, pRspInfo, nRequestID, bIsLast);
 
     NULLPTR_CHECKER(pRspInfo);
-    logger->debug("Loaded exchange {} - {}", pExchange->ExchangeID, utilities::GB2312ToUTF8()(pExchange->ExchangeName));
+    logger->debug("Loaded exchange {}({}) with property {}",  utilities::GB2312ToUTF8()(pExchange->ExchangeName), pExchange->ExchangeID, pExchange->ExchangeProperty);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -352,7 +352,7 @@ void trade::broker::CTPTraderImpl::OnRspQryProduct(
     CThostFtdcTraderSpi::OnRspQryProduct(pProduct, pRspInfo, nRequestID, bIsLast);
 
     NULLPTR_CHECKER(pRspInfo);
-    logger->debug("Loaded product {} - {}", pProduct->ProductID, utilities::GB2312ToUTF8()(pProduct->ProductName));
+    logger->debug("Loaded product {}({})", utilities::GB2312ToUTF8()(pProduct->ProductName), pProduct->ProductID);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -378,7 +378,7 @@ void trade::broker::CTPTraderImpl::OnRspQryInstrument(
     CThostFtdcTraderSpi::OnRspQryInstrument(pInstrument, pRspInfo, nRequestID, bIsLast);
 
     NULLPTR_CHECKER(pRspInfo);
-    logger->debug("Loaded instrument {} - {}", pInstrument->InstrumentID, utilities::GB2312ToUTF8()(pInstrument->InstrumentName));
+    logger->debug("Loaded instrument {}({})", utilities::GB2312ToUTF8()(pInstrument->InstrumentName), pInstrument->InstrumentID);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
