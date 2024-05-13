@@ -388,7 +388,7 @@ void trade::broker::CTPTraderImpl::OnRspQryInstrument(
         return;
     }
 
-    logger->debug("Loaded instrument {}({})", utilities::GB2312ToUTF8()(pInstrument->InstrumentName), pInstrument->InstrumentID);
+    logger->debug("Loaded instrument {}({}) whose underlying is {}", utilities::GB2312ToUTF8()(pInstrument->InstrumentName), pInstrument->InstrumentID, pInstrument->UnderlyingInstrID);
 
     /// For caching between multiple calls.
     static std::unordered_map<decltype(snow_flaker()), std::shared_ptr<types::Symbols>> symbol_cache;

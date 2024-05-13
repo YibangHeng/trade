@@ -8,8 +8,10 @@ import "enums.proto";
 
 message Symbol
 {
-    string symbol         = 1; /// 合约代码
-    ExchangeType exchange = 2; /// 交易所
+    string symbol              = 1; /// 合约代码
+    string symbol_name         = 2; /// 合约名称
+    ExchangeType exchange      = 3; /// 交易所
+    optional string underlying = 4; /// 基础合约
 }
 
 message Symbols

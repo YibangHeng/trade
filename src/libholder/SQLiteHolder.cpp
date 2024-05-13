@@ -48,7 +48,10 @@ int64_t trade::holder::SQLiteHolder::update_symbols(const std::shared_ptr<types:
         sqlite3_reset(m_insert_symbols.get());
 
         sqlite3_bind_text(m_insert_symbols.get(), 1, symbol.symbol().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
-        sqlite3_bind_text(m_insert_symbols.get(), 2, to_exchange(symbol.exchange()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_insert_symbols.get(), 2, symbol.symbol_name().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_insert_symbols.get(), 3, to_exchange(symbol.exchange()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        symbol.has_underlying() ? sqlite3_bind_text(m_insert_symbols.get(), 4, symbol.underlying().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT)
+                                : sqlite3_bind_null(m_insert_symbols.get(), 4);
 
         m_exec_code = sqlite3_step(m_insert_symbols.get());
         if (m_exec_code != SQLITE_DONE) {
@@ -134,13 +137,20 @@ int64_t trade::holder::SQLiteHolder::update_positions(const std::shared_ptr<type
         sqlite3_bind_text(m_insert_positions.get(), 1, position.symbol().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
         sqlite3_bind_int64(m_insert_positions.get(), 2, position.yesterday_position());
         sqlite3_bind_int64(m_insert_positions.get(), 3, position.today_position());
-        sqlite3_bind_int64(m_insert_positions.get(), 4, position.open_volume());
-        sqlite3_bind_int64(m_insert_positions.get(), 5, position.close_volume());
-        sqlite3_bind_double(m_insert_positions.get(), 6, position.position_cost());
-        sqlite3_bind_double(m_insert_positions.get(), 7, position.pre_margin());
-        sqlite3_bind_double(m_insert_positions.get(), 8, position.used_margin());
-        sqlite3_bind_double(m_insert_positions.get(), 9, position.frozen_margin());
-        sqlite3_bind_double(m_insert_positions.get(), 10, position.open_cost());
+        position.has_open_volume() ? sqlite3_bind_int64(m_insert_positions.get(), 4, position.open_volume())
+                                   : sqlite3_bind_null(m_insert_positions.get(), 4);
+        position.has_close_volume() ? sqlite3_bind_int64(m_insert_positions.get(), 5, position.close_volume())
+                                    : sqlite3_bind_null(m_insert_positions.get(), 5);
+        position.has_position_cost() ? sqlite3_bind_double(m_insert_positions.get(), 6, position.position_cost())
+                                     : sqlite3_bind_null(m_insert_positions.get(), 6);
+        position.has_pre_margin() ? sqlite3_bind_double(m_insert_positions.get(), 7, position.pre_margin())
+                                  : sqlite3_bind_null(m_insert_positions.get(), 7);
+        position.has_used_margin() ? sqlite3_bind_double(m_insert_positions.get(), 8, position.used_margin())
+                                   : sqlite3_bind_null(m_insert_positions.get(), 8);
+        position.has_frozen_margin() ? sqlite3_bind_double(m_insert_positions.get(), 9, position.frozen_margin())
+                                     : sqlite3_bind_null(m_insert_positions.get(), 9);
+        position.has_open_cost() ? sqlite3_bind_double(m_insert_positions.get(), 10, position.open_cost())
+                                 : sqlite3_bind_null(m_insert_positions.get(), 10);
         sqlite3_bind_text(m_insert_positions.get(), 11, utilities::ToTime<std::string>()(position.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
 
         m_exec_code = sqlite3_step(m_insert_positions.get());
@@ -170,13 +180,20 @@ std::shared_ptr<trade::types::Positions> trade::holder::SQLiteHolder::query_posi
         position.set_symbol(std::string(reinterpret_cast<const char*>(sqlite3_column_text(m_query_positions_by_symbol.get(), 0))));
         position.set_yesterday_position(sqlite3_column_int64(m_query_positions_by_symbol.get(), 1));
         position.set_today_position(sqlite3_column_int64(m_query_positions_by_symbol.get(), 2));
-        position.set_open_volume(sqlite3_column_int64(m_query_positions_by_symbol.get(), 3));
-        position.set_close_volume(sqlite3_column_int64(m_query_positions_by_symbol.get(), 4));
-        position.set_position_cost(sqlite3_column_double(m_query_positions_by_symbol.get(), 5));
-        position.set_pre_margin(sqlite3_column_double(m_query_positions_by_symbol.get(), 6));
-        position.set_used_margin(sqlite3_column_double(m_query_positions_by_symbol.get(), 7));
-        position.set_frozen_margin(sqlite3_column_double(m_query_positions_by_symbol.get(), 8));
-        position.set_open_cost(sqlite3_column_double(m_query_positions_by_symbol.get(), 9));
+        if (sqlite3_column_type(m_query_positions_by_symbol.get(), 3) != SQLITE_NULL)
+            position.set_open_volume(sqlite3_column_int64(m_query_positions_by_symbol.get(), 3));
+        if (sqlite3_column_type(m_query_positions_by_symbol.get(), 4) != SQLITE_NULL)
+            position.set_close_volume(sqlite3_column_int64(m_query_positions_by_symbol.get(), 4));
+        if (sqlite3_column_type(m_query_positions_by_symbol.get(), 5) != SQLITE_NULL)
+            position.set_position_cost(sqlite3_column_double(m_query_positions_by_symbol.get(), 5));
+        if (sqlite3_column_type(m_query_positions_by_symbol.get(), 6) != SQLITE_NULL)
+            position.set_pre_margin(sqlite3_column_double(m_query_positions_by_symbol.get(), 6));
+        if (sqlite3_column_type(m_query_positions_by_symbol.get(), 7) != SQLITE_NULL)
+            position.set_used_margin(sqlite3_column_double(m_query_positions_by_symbol.get(), 7));
+        if (sqlite3_column_type(m_query_positions_by_symbol.get(), 8) != SQLITE_NULL)
+            position.set_frozen_margin(sqlite3_column_double(m_query_positions_by_symbol.get(), 8));
+        if (sqlite3_column_type(m_query_positions_by_symbol.get(), 9) != SQLITE_NULL)
+            position.set_open_cost(sqlite3_column_double(m_query_positions_by_symbol.get(), 9));
         position.set_allocated_update_time(utilities::ToTime<google::protobuf::Timestamp*>()(reinterpret_cast<const char*>(sqlite3_column_text(m_query_positions_by_symbol.get(), 10))));
 
         positions->add_positions()->CopyFrom(position);
@@ -206,7 +223,8 @@ int64_t trade::holder::SQLiteHolder::update_orders(const std::shared_ptr<types::
                                 : sqlite3_bind_null(m_insert_orders.get(), 3);
         sqlite3_bind_text(m_insert_orders.get(), 4, order.symbol().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
         sqlite3_bind_text(m_insert_orders.get(), 5, to_side(order.side()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
-        sqlite3_bind_text(m_insert_orders.get(), 6, order.has_position_side() ? to_position_side(order.position_side()).c_str() : "NULL", SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        order.has_position_side() ? sqlite3_bind_text(m_insert_orders.get(), 6, to_position_side(order.position_side()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT)
+                                  : sqlite3_bind_null(m_insert_orders.get(), 6);
         sqlite3_bind_double(m_insert_orders.get(), 7, order.price());
         sqlite3_bind_int64(m_insert_orders.get(), 8, order.quantity());
         sqlite3_bind_text(m_insert_orders.get(), 9, utilities::ToTime<std::string>()(order.creation_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
@@ -259,8 +277,10 @@ void trade::holder::SQLiteHolder::init_symbol_table()
     /// Create table for symbols.
     const std::string& create_symbols_table_sql = fmt::format(
         "CREATE TABLE IF NOT EXISTS {} ("
-        "symbol   TEXT NOT NULL PRIMARY KEY,"
-        "exchange TEXT NOT NULL"
+        "symbol     TEXT NOT NULL PRIMARY KEY,"
+        "name       TEXT NOT NULL,"
+        "exchange   TEXT NOT NULL,"
+        "underlying TEXT"
         ");",
         m_symbol_table_name
     );
@@ -273,7 +293,7 @@ void trade::holder::SQLiteHolder::init_symbol_table()
 
     /// Prepare insert statement.
     const std::string& symbol_insert_sql = fmt::format(
-        "INSERT OR REPLACE INTO {} VALUES (?, ?);",
+        "INSERT OR REPLACE INTO {} VALUES (?, ?, ?, ?);",
         m_symbol_table_name
     );
 
@@ -330,7 +350,10 @@ std::shared_ptr<trade::types::Symbols> trade::holder::SQLiteHolder::query_symbol
         types::Symbol symbol;
 
         symbol.set_symbol(std::string(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 0))));
-        symbol.set_exchange(to_exchange(std::string(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 1)))));
+        symbol.set_symbol_name(std::string(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 1))));
+        symbol.set_exchange(to_exchange(std::string(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 2)))));
+        if (sqlite3_column_type(tp_stmt, 3) != SQLITE_NULL)
+            symbol.set_underlying(std::string(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 3))));
 
         symbols->add_symbols()->CopyFrom(symbol);
     }
@@ -544,11 +567,14 @@ std::shared_ptr<trade::types::Orders> trade::holder::SQLiteHolder::query_orders_
         types::Order order;
 
         order.set_unique_id(sqlite3_column_int64(tp_stmt, 0));
-        order.set_broker_id(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 1)));
-        order.set_exchange_id(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 2)));
+        if (sqlite3_column_type(tp_stmt, 1) != SQLITE_NULL)
+            order.set_broker_id(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 1)));
+        if (sqlite3_column_type(tp_stmt, 2) != SQLITE_NULL)
+            order.set_exchange_id(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 2)));
         order.set_symbol(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 3)));
         order.set_side(to_side(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 4))));
-        order.set_position_side(to_position_side(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 5))));
+        if (sqlite3_column_type(tp_stmt, 5) != SQLITE_NULL)
+            order.set_position_side(to_position_side(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 5))));
         order.set_price(sqlite3_column_double(tp_stmt, 6));
         order.set_quantity(sqlite3_column_int64(tp_stmt, 7));
         order.set_allocated_creation_time(utilities::ToTime<google::protobuf::Timestamp*>()(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 8))));

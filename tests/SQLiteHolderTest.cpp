@@ -9,6 +9,8 @@ constexpr size_t insertion_batch = 1024;
 /// A global holder for testing.
 auto holder = std::make_shared<trade::holder::SQLiteHolder>();
 
+/// All optional fields of odd rows will be null.
+
 TEST_CASE("Symbols inserting", "[SQLiteHolder]")
 {
     int counter = 0;
@@ -20,7 +22,10 @@ TEST_CASE("Symbols inserting", "[SQLiteHolder]")
             trade::types::Symbol symbol;
 
             symbol.set_symbol(fmt::format("symbol_{}", counter));
+            symbol.set_symbol_name(fmt::format("symbol_name_{}", counter));
             symbol.set_exchange(j % 2 ? trade::types::ExchangeType::sse : trade::types::ExchangeType::szse);
+            if (j % 2 == 0)
+                symbol.set_underlying(fmt::format("underlying_{}", counter));
 
             counter++;
 
@@ -41,7 +46,12 @@ TEST_CASE("Symbols querying by symbol", "[SQLiteHolder]")
         REQUIRE(symbols->symbols_size() == 1);
 
         CHECK(symbols->symbols(0).symbol() == fmt::format("symbol_{}", counter));
+        CHECK(symbols->symbols(0).symbol_name() == fmt::format("symbol_name_{}", counter));
         CHECK(symbols->symbols(0).exchange() == (counter % 2 ? trade::types::ExchangeType::sse : trade::types::ExchangeType::szse));
+        if (counter % 2 == 0)
+            CHECK(symbols->symbols(0).underlying() == fmt::format("underlying_{}", counter));
+        else
+            CHECK(symbols->symbols(0).has_underlying() == false);
 
         counter++;
     }
@@ -125,13 +135,15 @@ TEST_CASE("Position inserting", "[SQLiteHolder]")
             position.set_symbol(fmt::format("symbol_{}", counter));
             position.set_yesterday_position(counter);
             position.set_today_position(counter);
-            position.set_open_volume(counter);
-            position.set_close_volume(counter);
-            position.set_position_cost(counter);
-            position.set_pre_margin(counter);
-            position.set_used_margin(counter);
-            position.set_frozen_margin(counter);
-            position.set_open_cost(counter);
+            if (counter % 2 == 0) {
+                position.set_open_volume(counter);
+                position.set_close_volume(counter);
+                position.set_position_cost(counter);
+                position.set_pre_margin(counter);
+                position.set_used_margin(counter);
+                position.set_frozen_margin(counter);
+                position.set_open_cost(counter);
+            }
 #ifdef LIB_DATE_SUPPORT
             position.set_allocated_update_time(trade::utilities::ToTime<google::protobuf::Timestamp*>()(fmt::format("2000-01-01 08:00:00.{:0>3}", counter % 100)));
 #endif
@@ -157,13 +169,24 @@ TEST_CASE("Position querying", "[SQLiteHolder]")
         CHECK(positions->positions(0).symbol() == fmt::format("symbol_{}", counter));
         CHECK(positions->positions(0).yesterday_position() == counter);
         CHECK(positions->positions(0).today_position() == counter);
-        CHECK(positions->positions(0).open_volume() == counter);
-        CHECK(positions->positions(0).close_volume() == counter);
-        CHECK(positions->positions(0).position_cost() == counter);
-        CHECK(positions->positions(0).pre_margin() == counter);
-        CHECK(positions->positions(0).used_margin() == counter);
-        CHECK(positions->positions(0).frozen_margin() == counter);
-        CHECK(positions->positions(0).open_cost() == counter);
+        if (counter % 2 == 0) {
+            CHECK(positions->positions(0).open_volume() == counter);
+            CHECK(positions->positions(0).close_volume() == counter);
+            CHECK(positions->positions(0).position_cost() == counter);
+            CHECK(positions->positions(0).pre_margin() == counter);
+            CHECK(positions->positions(0).used_margin() == counter);
+            CHECK(positions->positions(0).frozen_margin() == counter);
+            CHECK(positions->positions(0).open_cost() == counter);
+        }
+        else {
+            CHECK(positions->positions(0).has_open_volume() == false);
+            CHECK(positions->positions(0).has_close_volume() == false);
+            CHECK(positions->positions(0).has_position_cost() == false);
+            CHECK(positions->positions(0).has_pre_margin() == false);
+            CHECK(positions->positions(0).has_used_margin() == false);
+            CHECK(positions->positions(0).has_frozen_margin() == false);
+            CHECK(positions->positions(0).has_open_cost() == false);
+        }
 #ifdef LIB_DATE_SUPPORT
         CHECK(trade::utilities::ToTime<std::string>()(positions->positions(0).update_time()) == fmt::format("2000-01-01 08:00:00.{:0>3}", counter % 100));
 #endif
@@ -185,11 +208,14 @@ TEST_CASE("Order inserting", "[SQLiteHolder]")
             trade::types::Order order;
 
             order.set_unique_id(counter);
-            order.set_broker_id(fmt::format("broker_id_{}", counter));
-            order.set_exchange_id(fmt::format("exchange_id_{}", counter));
+            if (counter % 2 == 0) {
+                order.set_broker_id(fmt::format("broker_id_{}", counter));
+                order.set_exchange_id(fmt::format("exchange_id_{}", counter));
+            }
             order.set_symbol(fmt::format("symbol_{}", counter));
             order.set_side(trade::types::SideType::buy);
-            order.set_position_side(trade::types::PositionSideType::open);
+            if (counter % 2 == 0)
+                order.set_position_side(trade::types::PositionSideType::open);
             order.set_price(counter);
             order.set_quantity(counter);
 #ifdef LIB_DATE_SUPPORT
@@ -218,11 +244,20 @@ TEST_CASE("Order querying by unique id", "[SQLiteHolder]")
         REQUIRE(orders->orders_size() == 1);
 
         CHECK(orders->orders(0).unique_id() == counter);
-        CHECK(orders->orders(0).broker_id() == fmt::format("broker_id_{}", counter));
-        CHECK(orders->orders(0).exchange_id() == fmt::format("exchange_id_{}", counter));
+        if (counter % 2 == 0) {
+            CHECK(orders->orders(0).broker_id() == fmt::format("broker_id_{}", counter));
+            CHECK(orders->orders(0).exchange_id() == fmt::format("exchange_id_{}", counter));
+        }
+        else {
+            CHECK(orders->orders(0).has_broker_id() == false);
+            CHECK(orders->orders(0).has_exchange_id() == false);
+        }
         CHECK(orders->orders(0).symbol() == fmt::format("symbol_{}", counter));
         CHECK(orders->orders(0).side() == trade::types::SideType::buy);
-        CHECK(orders->orders(0).position_side() == trade::types::PositionSideType::open);
+        if (counter % 2 == 0)
+            CHECK(orders->orders(0).position_side() == trade::types::PositionSideType::open);
+        else
+            CHECK(orders->orders(0).has_position_side() == false);
         CHECK(orders->orders(0).price() == counter);
         CHECK(orders->orders(0).quantity() == counter);
 #ifdef LIB_DATE_SUPPORT
@@ -243,14 +278,29 @@ TEST_CASE("Order querying by broker id", "[SQLiteHolder]")
     for (int i = 0; i < insertion_times * insertion_batch; i++) {
         const auto orders = holder->query_orders_by_broker_id(fmt::format("broker_id_{}", counter));
 
-        REQUIRE(orders->orders_size() == 1);
+        if (counter % 2 == 0) {
+            REQUIRE(orders->orders_size() == 1);
+        }
+        else {
+            REQUIRE(orders->orders_size() == 0);
+            continue;
+        }
 
         CHECK(orders->orders(0).unique_id() == counter);
-        CHECK(orders->orders(0).broker_id() == fmt::format("broker_id_{}", counter));
-        CHECK(orders->orders(0).exchange_id() == fmt::format("exchange_id_{}", counter));
+        if (counter % 2 == 0) {
+            CHECK(orders->orders(0).broker_id() == fmt::format("broker_id_{}", counter));
+            CHECK(orders->orders(0).exchange_id() == fmt::format("exchange_id_{}", counter));
+        }
+        else {
+            CHECK(orders->orders(0).has_broker_id() == false);
+            CHECK(orders->orders(0).has_exchange_id() == false);
+        }
         CHECK(orders->orders(0).symbol() == fmt::format("symbol_{}", counter));
         CHECK(orders->orders(0).side() == trade::types::SideType::buy);
-        CHECK(orders->orders(0).position_side() == trade::types::PositionSideType::open);
+        if (counter % 2 == 0)
+            CHECK(orders->orders(0).position_side() == trade::types::PositionSideType::open);
+        else
+            CHECK(orders->orders(0).has_position_side() == false);
         CHECK(orders->orders(0).price() == counter);
         CHECK(orders->orders(0).quantity() == counter);
 #ifdef LIB_DATE_SUPPORT
@@ -271,14 +321,29 @@ TEST_CASE("Order querying by exchange id", "[SQLiteHolder]")
     for (int i = 0; i < insertion_times * insertion_batch; i++) {
         const auto orders = holder->query_orders_by_exchange_id(fmt::format("exchange_id_{}", counter));
 
-        REQUIRE(orders->orders_size() == 1);
+        if (counter % 2 == 0) {
+            REQUIRE(orders->orders_size() == 1);
+        }
+        else {
+            REQUIRE(orders->orders_size() == 0);
+            continue;
+        }
 
         CHECK(orders->orders(0).unique_id() == counter);
-        CHECK(orders->orders(0).broker_id() == fmt::format("broker_id_{}", counter));
-        CHECK(orders->orders(0).exchange_id() == fmt::format("exchange_id_{}", counter));
+        if (counter % 2 == 0) {
+            CHECK(orders->orders(0).broker_id() == fmt::format("broker_id_{}", counter));
+            CHECK(orders->orders(0).exchange_id() == fmt::format("exchange_id_{}", counter));
+        }
+        else {
+            CHECK(orders->orders(0).has_broker_id() == false);
+            CHECK(orders->orders(0).has_exchange_id() == false);
+        }
         CHECK(orders->orders(0).symbol() == fmt::format("symbol_{}", counter));
         CHECK(orders->orders(0).side() == trade::types::SideType::buy);
-        CHECK(orders->orders(0).position_side() == trade::types::PositionSideType::open);
+        if (counter % 2 == 0)
+            CHECK(orders->orders(0).position_side() == trade::types::PositionSideType::open);
+        else
+            CHECK(orders->orders(0).has_position_side() == false);
         CHECK(orders->orders(0).price() == counter);
         CHECK(orders->orders(0).quantity() == counter);
 #ifdef LIB_DATE_SUPPORT
