@@ -11,7 +11,7 @@ enum MessageID
 {
     invalid_message_id = 0;
 
-    sig_int            = 100; /// 网络终止信号
+    unix_sig           = 100; /// Unix 信号
 
     /// 请求命令。客户端向 trade 发送的操作指令
     new_order_req      = 1000; /// 新委托创建请求
@@ -23,7 +23,7 @@ enum MessageID
     new_cancel_rsp     = 2001; /// 新撤单创建响应
     new_cancel_all_rsp = 2002; /// 新全部撤单创建响应
 
-    /// 状体推送消息。更新来自券商的订单状态推送或查询结果
+        /// 状体推送消息。更新来自券商的订单状态推送或查询结果
 }
 
 ///
@@ -34,7 +34,10 @@ enum MessageID
 message EmptyMessage {}
 
 /// 网络终止信号
-message SigInt {}
+message UnixSig
+{
+    int32 sig = 1;
+}
 
 ///
 /// 请求/响应消息
