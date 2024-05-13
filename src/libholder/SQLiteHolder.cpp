@@ -277,10 +277,10 @@ void trade::holder::SQLiteHolder::init_symbol_table()
     /// Create table for symbols.
     const std::string& create_symbols_table_sql = fmt::format(
         "CREATE TABLE IF NOT EXISTS {} ("
-        "symbol     TEXT NOT NULL PRIMARY KEY,"
-        "name       TEXT NOT NULL,"
-        "exchange   TEXT NOT NULL,"
-        "underlying TEXT"
+        "symbol      TEXT NOT NULL PRIMARY KEY,"
+        "symbol_name TEXT NOT NULL,"
+        "exchange    TEXT NOT NULL,"
+        "underlying  TEXT"
         ");",
         m_symbol_table_name
     );

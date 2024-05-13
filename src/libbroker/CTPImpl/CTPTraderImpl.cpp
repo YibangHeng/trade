@@ -398,7 +398,10 @@ void trade::broker::CTPTraderImpl::OnRspQryInstrument(
     types::Symbol symbol;
 
     symbol.set_symbol(pInstrument->InstrumentID);
+    symbol.set_symbol_name(utilities::GB2312ToUTF8()(pInstrument->InstrumentName));
     symbol.set_exchange(CTPCommonData::to_exchange(pInstrument->ExchangeID));
+    if (!std::string(pInstrument->UnderlyingInstrID).empty())
+        symbol.set_underlying(pInstrument->UnderlyingInstrID);
 
     symbols->add_symbols()->CopyFrom(symbol);
 
