@@ -1,5 +1,4 @@
 #include <google/protobuf/util/time_util.h>
-#include <regex>
 
 #include "libbroker/CTPBroker.h"
 

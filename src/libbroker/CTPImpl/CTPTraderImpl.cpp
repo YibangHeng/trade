@@ -326,7 +326,6 @@ void trade::broker::CTPTraderImpl::OnRspQryExchange(
     CThostFtdcTraderSpi::OnRspQryExchange(pExchange, pRspInfo, nRequestID, bIsLast);
 
     NULLPTR_CHECKER(pRspInfo);
-    logger->debug("Loaded exchange {}({}) with property {}",  utilities::GB2312ToUTF8()(pExchange->ExchangeName), pExchange->ExchangeID, pExchange->ExchangeProperty);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -334,6 +333,8 @@ void trade::broker::CTPTraderImpl::OnRspQryExchange(
         logger->error("Failed to load exchange for request {}: {}", request_id.value_or(INVALID_ID), pRspInfo->ErrorMsg);
         return;
     }
+
+    logger->debug("Loaded exchange {}({}) with property {}", utilities::GB2312ToUTF8()(pExchange->ExchangeName), pExchange->ExchangeID, pExchange->ExchangeProperty);
 
     m_exchanges.emplace(pExchange->ExchangeID, *pExchange);
 
@@ -352,7 +353,6 @@ void trade::broker::CTPTraderImpl::OnRspQryProduct(
     CThostFtdcTraderSpi::OnRspQryProduct(pProduct, pRspInfo, nRequestID, bIsLast);
 
     NULLPTR_CHECKER(pRspInfo);
-    logger->debug("Loaded product {}({})", utilities::GB2312ToUTF8()(pProduct->ProductName), pProduct->ProductID);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -360,6 +360,8 @@ void trade::broker::CTPTraderImpl::OnRspQryProduct(
         logger->error("Failed to load product for request {}: {}", request_id.value_or(INVALID_ID), pRspInfo->ErrorMsg);
         return;
     }
+
+    logger->debug("Loaded product {}({})", utilities::GB2312ToUTF8()(pProduct->ProductName), pProduct->ProductID);
 
     m_products.emplace(pProduct->ProductID, *pProduct);
 
@@ -378,7 +380,6 @@ void trade::broker::CTPTraderImpl::OnRspQryInstrument(
     CThostFtdcTraderSpi::OnRspQryInstrument(pInstrument, pRspInfo, nRequestID, bIsLast);
 
     NULLPTR_CHECKER(pRspInfo);
-    logger->debug("Loaded instrument {}({})", utilities::GB2312ToUTF8()(pInstrument->InstrumentName), pInstrument->InstrumentID);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -387,10 +388,24 @@ void trade::broker::CTPTraderImpl::OnRspQryInstrument(
         return;
     }
 
-    m_instruments.emplace(pInstrument->InstrumentID, *pInstrument);
+    logger->debug("Loaded instrument {}({})", utilities::GB2312ToUTF8()(pInstrument->InstrumentName), pInstrument->InstrumentID);
+
+    /// For caching between multiple calls.
+    static std::unordered_map<decltype(snow_flaker()), std::shared_ptr<types::Symbols>> symbol_cache;
+
+    const auto symbols = symbol_cache.emplace(request_id.value_or(INVALID_ID), std::make_shared<types::Symbols>()).first->second;
+
+    types::Symbol symbol;
+
+    symbol.set_symbol(pInstrument->InstrumentID);
+    symbol.set_exchange(CTPCommonData::to_exchange(pInstrument->ExchangeID));
+
+    symbols->add_symbols()->CopyFrom(symbol);
 
     if (bIsLast) {
-        logger->info("Loaded {} instruments for request {}", m_instruments.size(), request_id.value_or(INVALID_ID));
+        logger->info("Loaded {} instruments for request {}", symbols->symbols_size(), request_id.value_or(INVALID_ID));
+        m_holder->update_symbols(symbols);
+        symbol_cache.erase(request_id.value_or(INVALID_ID));
     }
 }
 
@@ -404,7 +419,6 @@ void trade::broker::CTPTraderImpl::OnRspQryTradingAccount(
     CThostFtdcTraderSpi::OnRspQryTradingAccount(pTradingAccount, pRspInfo, nRequestID, bIsLast);
 
     NULLPTR_CHECKER(pRspInfo);
-    logger->debug("Loaded trading account {} with available funds {} {}", pTradingAccount->AccountID, pTradingAccount->Available, pTradingAccount->CurrencyID);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -419,6 +433,8 @@ void trade::broker::CTPTraderImpl::OnRspQryTradingAccount(
         logger->warn("No trading account loaded for request {}", request_id.value_or(INVALID_ID));
         return;
     }
+
+    logger->debug("Loaded trading account {} with available funds {} {}", pTradingAccount->AccountID, pTradingAccount->Available, pTradingAccount->CurrencyID);
 
     m_trading_account.emplace(pTradingAccount->BrokerID, *pTradingAccount);
 
@@ -455,7 +471,6 @@ void trade::broker::CTPTraderImpl::OnRspQryInvestorPosition(
     CThostFtdcTraderSpi::OnRspQryInvestorPosition(pInvestorPosition, pRspInfo, nRequestID, bIsLast);
 
     NULLPTR_CHECKER(pRspInfo);
-    logger->debug("Loaded position {} - {}", pInvestorPosition->InstrumentID, pInvestorPosition->Position);
 
     const auto request_id = get_by_seq_id(nRequestID);
 
@@ -471,7 +486,7 @@ void trade::broker::CTPTraderImpl::OnRspQryInvestorPosition(
         return;
     }
 
-    m_positions.emplace(pInvestorPosition->InstrumentID, *pInvestorPosition);
+    logger->debug("Loaded position {} - {}", pInvestorPosition->InstrumentID, pInvestorPosition->Position);
 
     /// For caching between multiple calls.
     static std::unordered_map<decltype(snow_flaker()), std::shared_ptr<types::Positions>> position_cache;
@@ -495,7 +510,7 @@ void trade::broker::CTPTraderImpl::OnRspQryInvestorPosition(
     positions->add_positions()->CopyFrom(position);
 
     if (bIsLast) {
-        logger->info("Loaded {} positions for request {}", m_positions.size(), request_id.value_or(INVALID_ID));
+        logger->info("Loaded {} positions for request {}", positions->positions_size(), request_id.value_or(INVALID_ID));
         m_holder->update_positions(positions);
         position_cache.erase(request_id.value_or(INVALID_ID));
     }
@@ -597,6 +612,7 @@ void trade::broker::CTPTraderImpl::OnRtnOrder(CThostFtdcOrderField* pOrder)
     CThostFtdcTraderSpi::OnRtnOrder(pOrder);
 
     NULLPTR_CHECKER(pOrder);
+
     logger->debug("New CThostFtdcOrder {} arrived with status {} and submit status {}", CTPCommonData::to_exchange_id(pOrder->ExchangeID, pOrder->OrderSysID), pOrder->OrderStatus, pOrder->OrderSubmitStatus);
 
     using OrderRefType = std::tuple_element_t<0, decltype(new_id_pair())>;
