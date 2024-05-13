@@ -36,8 +36,10 @@ find_package(
 )
 find_package(date REQUIRED)
 find_package(fmt REQUIRED)
+find_package(nlohmann_json REQUIRED)
 find_package(Protobuf REQUIRED)
-find_package(unofficial-sqlite3 CONFIG REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(unofficial-sqlite3 REQUIRED)
 
 # Include directories.
 include_directories(include)
