@@ -15,6 +15,10 @@ public:
     virtual ~IHolder() = default;
 
 public:
+    virtual int64_t update_symbols(std::shared_ptr<types::Symbols> symbols)                            = 0;
+    virtual std::shared_ptr<types::Symbols> query_symbols_by_symbol(const std::string& symbol)         = 0;
+    virtual std::shared_ptr<types::Symbols> query_symbols_by_exchange(types::ExchangeType exchange)    = 0;
+
     virtual int64_t update_funds(std::shared_ptr<types::Funds> funds)                                  = 0;
     virtual std::shared_ptr<types::Funds> query_funds_by_account_id(const std::string& account_id)     = 0;
 

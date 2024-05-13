@@ -9,6 +9,63 @@ constexpr size_t insertion_batch = 1024;
 /// A global holder for testing.
 auto holder = std::make_shared<trade::holder::SQLiteHolder>();
 
+TEST_CASE("Symbols inserting", "[SQLiteHolder]")
+{
+    int counter = 0;
+
+    for (int i = 0; i < insertion_times; i++) {
+        const auto symbols = std::make_shared<trade::types::Symbols>();
+
+        for (int j = 0; j < insertion_batch; j++) {
+            trade::types::Symbol symbol;
+
+            symbol.set_symbol(fmt::format("symbol_{}", counter));
+            symbol.set_exchange(j % 2 ? trade::types::ExchangeType::sse : trade::types::ExchangeType::szse);
+
+            counter++;
+
+            symbols->add_symbols()->CopyFrom(symbol);
+        }
+
+        CHECK(holder->update_symbols(symbols) == insertion_batch);
+    }
+}
+
+TEST_CASE("Symbols querying by symbol", "[SQLiteHolder]")
+{
+    int counter = 0;
+
+    for (int i = 0; i < insertion_times * insertion_batch; i++) {
+        const auto symbols = holder->query_symbols_by_symbol(fmt::format("symbol_{}", counter));
+
+        REQUIRE(symbols->symbols_size() == 1);
+
+        CHECK(symbols->symbols(0).symbol() == fmt::format("symbol_{}", counter));
+        CHECK(symbols->symbols(0).exchange() == (counter % 2 ? trade::types::ExchangeType::sse : trade::types::ExchangeType::szse));
+
+        counter++;
+    }
+}
+
+TEST_CASE("Symbols querying by exchange", "[SQLiteHolder]")
+{
+    const auto symbols_in_sse = holder->query_symbols_by_exchange(trade::types::ExchangeType::sse);
+
+    REQUIRE(symbols_in_sse->symbols_size() == insertion_times * insertion_batch / 2);
+
+    for (const auto& symbol : symbols_in_sse->symbols()) {
+        CHECK(symbol.exchange() == trade::types::ExchangeType::sse);
+    }
+
+    const auto symbols_in_szse = holder->query_symbols_by_exchange(trade::types::ExchangeType::szse);
+
+    REQUIRE(symbols_in_szse->symbols_size() == insertion_times * insertion_batch / 2);
+
+    for (const auto& symbol : symbols_in_szse->symbols()) {
+        CHECK(symbol.exchange() == trade::types::ExchangeType::szse);
+    }
+}
+
 TEST_CASE("Funds inserting", "[SQLiteHolder]")
 {
     int counter = 0;
@@ -149,7 +206,7 @@ TEST_CASE("Order inserting", "[SQLiteHolder]")
     }
 }
 
-TEST_CASE("Order querying", "[SQLiteHolder]")
+TEST_CASE("Order querying by unique id", "[SQLiteHolder]")
 {
     /// An order with unique_id == INVALID_ID will be ignored, so we start from
     /// INVALID_ID + 1.
@@ -157,6 +214,62 @@ TEST_CASE("Order querying", "[SQLiteHolder]")
 
     for (int i = 0; i < insertion_times * insertion_batch; i++) {
         const auto orders = holder->query_orders_by_unique_id(counter);
+
+        REQUIRE(orders->orders_size() == 1);
+
+        CHECK(orders->orders(0).unique_id() == counter);
+        CHECK(orders->orders(0).broker_id() == fmt::format("broker_id_{}", counter));
+        CHECK(orders->orders(0).exchange_id() == fmt::format("exchange_id_{}", counter));
+        CHECK(orders->orders(0).symbol() == fmt::format("symbol_{}", counter));
+        CHECK(orders->orders(0).side() == trade::types::SideType::buy);
+        CHECK(orders->orders(0).position_side() == trade::types::PositionSideType::open);
+        CHECK(orders->orders(0).price() == counter);
+        CHECK(orders->orders(0).quantity() == counter);
+#ifdef LIB_DATE_SUPPORT
+        CHECK(trade::utilities::ToTime<std::string>()(orders->orders(0).creation_time()) == "2000-01-01 08:00:00.000");
+        CHECK(trade::utilities::ToTime<std::string>()(orders->orders(0).update_time()) == fmt::format("2000-01-01 08:00:00.{:0>3}", counter % 100));
+#endif
+
+        counter++;
+    }
+}
+
+TEST_CASE("Order querying by broker id", "[SQLiteHolder]")
+{
+    /// An order with unique_id == INVALID_ID will be ignored, so we start from
+    /// INVALID_ID + 1.
+    int counter = INVALID_ID + 1;
+
+    for (int i = 0; i < insertion_times * insertion_batch; i++) {
+        const auto orders = holder->query_orders_by_broker_id(fmt::format("broker_id_{}", counter));
+
+        REQUIRE(orders->orders_size() == 1);
+
+        CHECK(orders->orders(0).unique_id() == counter);
+        CHECK(orders->orders(0).broker_id() == fmt::format("broker_id_{}", counter));
+        CHECK(orders->orders(0).exchange_id() == fmt::format("exchange_id_{}", counter));
+        CHECK(orders->orders(0).symbol() == fmt::format("symbol_{}", counter));
+        CHECK(orders->orders(0).side() == trade::types::SideType::buy);
+        CHECK(orders->orders(0).position_side() == trade::types::PositionSideType::open);
+        CHECK(orders->orders(0).price() == counter);
+        CHECK(orders->orders(0).quantity() == counter);
+#ifdef LIB_DATE_SUPPORT
+        CHECK(trade::utilities::ToTime<std::string>()(orders->orders(0).creation_time()) == "2000-01-01 08:00:00.000");
+        CHECK(trade::utilities::ToTime<std::string>()(orders->orders(0).update_time()) == fmt::format("2000-01-01 08:00:00.{:0>3}", counter % 100));
+#endif
+
+        counter++;
+    }
+}
+
+TEST_CASE("Order querying by exchange id", "[SQLiteHolder]")
+{
+    /// An order with unique_id == INVALID_ID will be ignored, so we start from
+    /// INVALID_ID + 1.
+    int counter = INVALID_ID + 1;
+
+    for (int i = 0; i < insertion_times * insertion_batch; i++) {
+        const auto orders = holder->query_orders_by_exchange_id(fmt::format("exchange_id_{}", counter));
 
         REQUIRE(orders->orders_size() == 1);
 

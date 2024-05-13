@@ -6,6 +6,17 @@ import "google/protobuf/timestamp.proto";
 
 import "enums.proto";
 
+message Symbol
+{
+    string symbol         = 1; /// 合约代码
+    ExchangeType exchange = 2; /// 交易所
+}
+
+message Symbols
+{
+    repeated Symbol symbols = 1;
+}
+
 message Fund
 {
     string account_id        = 1; /// 资金账户

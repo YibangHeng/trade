@@ -8,6 +8,7 @@
 
 trade::holder::SQLiteHolder::SQLiteHolder(const std::string& db_path)
     : AppBase("SQLiteHolder"),
+      m_symbol_table_name("symbols"),
       m_fund_table_name("funds"),
       m_position_table_name("positions"),
       m_order_table_name("orders")
@@ -37,6 +38,37 @@ trade::holder::SQLiteHolder::SQLiteHolder(const std::string& db_path)
     }
 
     prepare_database();
+}
+
+int64_t trade::holder::SQLiteHolder::update_symbols(const std::shared_ptr<types::Symbols> symbols)
+{
+    start_transaction();
+
+    for (const auto& symbol : symbols->symbols()) {
+        sqlite3_reset(m_insert_symbols.get());
+
+        sqlite3_bind_text(m_insert_symbols.get(), 1, symbol.symbol().c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+        sqlite3_bind_text(m_insert_symbols.get(), 2, to_exchange(symbol.exchange()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+
+        m_exec_code = sqlite3_step(m_insert_symbols.get());
+        if (m_exec_code != SQLITE_DONE) {
+            logger->error("Failed to insert symbol {}: {}", symbol.symbol(), std::string(sqlite3_errmsg(m_db.get())));
+        }
+    }
+
+    commit_or_rollback(SQLITE_OK);
+
+    return symbols->symbols_size();
+}
+
+std::shared_ptr<trade::types::Symbols> trade::holder::SQLiteHolder::query_symbols_by_symbol(const std::string& symbol)
+{
+    return query_symbols_by("symbol", symbol);
+}
+
+std::shared_ptr<trade::types::Symbols> trade::holder::SQLiteHolder::query_symbols_by_exchange(const types::ExchangeType exchange)
+{
+    return query_symbols_by("exchange", to_exchange(exchange));
 }
 
 int64_t trade::holder::SQLiteHolder::update_funds(const std::shared_ptr<types::Funds> funds)
@@ -220,6 +252,92 @@ void trade::holder::SQLiteHolder::commit_or_rollback(const decltype(SQLITE_OK) c
         logger->error("Failed to execute SQL: {}", std::string(sqlite3_errmsg(m_db.get())));
         sqlite3_exec(m_db.get(), "ROLLBACK;", nullptr, nullptr, nullptr);
     }
+}
+
+void trade::holder::SQLiteHolder::init_symbol_table()
+{
+    /// Create table for symbols.
+    const std::string& create_symbols_table_sql = fmt::format(
+        "CREATE TABLE IF NOT EXISTS {} ("
+        "symbol   TEXT NOT NULL PRIMARY KEY,"
+        "exchange TEXT NOT NULL"
+        ");",
+        m_symbol_table_name
+    );
+
+    start_transaction();
+
+    auto m_exec_code = sqlite3_exec(m_db.get(), create_symbols_table_sql.c_str(), nullptr, nullptr, nullptr);
+
+    commit_or_rollback(m_exec_code);
+
+    /// Prepare insert statement.
+    const std::string& symbol_insert_sql = fmt::format(
+        "INSERT OR REPLACE INTO {} VALUES (?, ?);",
+        m_symbol_table_name
+    );
+
+    sqlite3_stmt* raw_insert_symbols;
+    m_exec_code = sqlite3_prepare_v2(m_db.get(), symbol_insert_sql.c_str(), SQLITE_AUTO_LENGTH, &raw_insert_symbols, nullptr);
+
+    commit_or_rollback(m_exec_code);
+
+    m_insert_symbols = std::unique_ptr<sqlite3_stmt, SQLite3StmtPtrDeleter>(raw_insert_symbols);
+
+    if (m_exec_code != SQLITE_OK) {
+        throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db.get()))));
+    }
+}
+
+void trade::holder::SQLiteHolder::init_query_symbol_stmts()
+{
+    m_query_symbols_by["symbol"]   = nullptr;
+    m_query_symbols_by["exchange"] = nullptr;
+
+    for (auto& [by, stmt] : m_query_symbols_by) {
+        const std::string& sql = fmt::format(
+            "SELECT * FROM {} WHERE {} = ?;",
+            m_symbol_table_name,
+            by
+        );
+
+        sqlite3_stmt* raw_stmt;
+        const auto m_exec_code = sqlite3_prepare_v2(m_db.get(), sql.c_str(), SQLITE_AUTO_LENGTH, &raw_stmt, nullptr);
+
+        stmt.reset(raw_stmt); /// Hand over ownership to stmt.
+
+        if (m_exec_code != SQLITE_OK) {
+            throw std::runtime_error(fmt::format("Failed to prepare SQL: {}", std::string(sqlite3_errmsg(m_db.get()))));
+        }
+    }
+}
+
+std::shared_ptr<trade::types::Symbols> trade::holder::SQLiteHolder::query_symbols_by(const std::string& by, const std::string& id) const
+{
+    start_transaction();
+
+    sqlite3_stmt* tp_stmt;
+
+    tp_stmt = m_query_symbols_by.at(by).get(); /// If no such by type, throw exception immediately.
+
+    sqlite3_reset(tp_stmt);
+
+    sqlite3_bind_text(tp_stmt, 1, id.c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
+
+    const auto symbols = std::make_shared<types::Symbols>();
+
+    while (sqlite3_step(tp_stmt) == SQLITE_ROW) {
+        types::Symbol symbol;
+
+        symbol.set_symbol(std::string(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 0))));
+        symbol.set_exchange(to_exchange(std::string(reinterpret_cast<const char*>(sqlite3_column_text(tp_stmt, 1)))));
+
+        symbols->add_symbols()->CopyFrom(symbol);
+    }
+
+    commit_or_rollback(SQLITE_OK);
+
+    return symbols;
 }
 
 void trade::holder::SQLiteHolder::init_fund_table()
@@ -446,6 +564,9 @@ std::shared_ptr<trade::types::Orders> trade::holder::SQLiteHolder::query_orders_
 
 void trade::holder::SQLiteHolder::prepare_database()
 {
+    init_symbol_table();
+    init_query_symbol_stmts();
+
     init_fund_table();
     init_query_fund_stmts();
 

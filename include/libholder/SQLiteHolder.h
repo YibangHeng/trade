@@ -35,6 +35,10 @@ public:
     ~SQLiteHolder() override = default;
 
 public:
+    int64_t update_symbols(std::shared_ptr<types::Symbols> symbols) override;
+    std::shared_ptr<types::Symbols> query_symbols_by_symbol(const std::string& symbol) override;
+    std::shared_ptr<types::Symbols> query_symbols_by_exchange(types::ExchangeType exchange) override;
+
     int64_t update_funds(std::shared_ptr<types::Funds> funds) override;
     std::shared_ptr<types::Funds> query_funds_by_account_id(const std::string& account_id) override;
 
@@ -51,6 +55,10 @@ private:
     void commit_or_rollback(decltype(SQLITE_OK) code) const;
 
 private:
+    void init_symbol_table();
+    void init_query_symbol_stmts();
+    std::shared_ptr<types::Symbols> query_symbols_by(const std::string& by, const std::string& id) const;
+
     void init_fund_table();
     void init_query_fund_stmts();
 
@@ -74,6 +82,10 @@ private:
 private:
     SQLite3Ptr m_db;
     decltype(SQLITE_OK) m_exec_code;
+    /// Symbols table.
+    const std::string m_symbol_table_name;
+    SQLite3StmtPtr m_insert_symbols;
+    std::unordered_map<std::string, SQLite3StmtPtr> m_query_symbols_by;
     /// Funds table.
     const std::string m_fund_table_name;
     SQLite3StmtPtr m_insert_funds;
