@@ -40,6 +40,7 @@ find_package(nlohmann_json REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(unofficial-sqlite3 REQUIRED)
+find_package(ZeroMQ REQUIRED)
 
 # Include directories.
 include_directories(include)

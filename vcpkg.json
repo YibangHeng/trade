@@ -50,6 +50,10 @@
     {
       "name": "sqlite3",
       "version>=": "3.45.3"
+    },
+    {
+      "name": "zeromq",
+      "version>=": "4.3.5#1"
     }
   ]
 }

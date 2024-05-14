@@ -11,9 +11,42 @@ TEST_CASE("Message with message_id == 0 and empty message", "[Serializer]")
         empty_message
     );
 
-    const auto [message_id, message] = trade::utilities::Serializer::deserialize<trade::types::EmptyMessage>(serialized);
+    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(serialized);
 
-    REQUIRE(message_id == trade::types::MessageID::invalid_message_id);
+    CHECK(message_id == trade::types::MessageID::invalid_message_id);
+}
+
+TEST_CASE("Message with message_id != 0 and empty message", "[Serializer]")
+{
+    const trade::types::EmptyMessage empty_message;
+
+    const auto serialized = trade::utilities::Serializer::serialize(
+        trade::types::MessageID::unix_sig,
+        empty_message
+    );
+
+    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(serialized);
+
+    CHECK(message_id == trade::types::MessageID::unix_sig);
+}
+
+TEST_CASE("Message with message_id == 0 and non-empty message", "[Serializer]")
+{
+    trade::types::UnixSig unix_sig;
+    unix_sig.set_sig(2);
+
+    const auto serialized = trade::utilities::Serializer::serialize(
+        trade::types::MessageID::invalid_message_id,
+        unix_sig
+    );
+
+    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(serialized);
+
+    unix_sig.Clear();
+    unix_sig.ParseFromString(message_body);
+
+    CHECK(message_id == trade::types::MessageID::invalid_message_id);
+    CHECK(unix_sig.sig() == 2);
 }
 
 TEST_CASE("Message with message_id != 0 and non-empty message", "[Serializer]")
@@ -26,10 +59,13 @@ TEST_CASE("Message with message_id != 0 and non-empty message", "[Serializer]")
         unix_sig
     );
 
-    const auto [message_id, message] = trade::utilities::Serializer::deserialize<trade::types::UnixSig>(serialized);
+    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(serialized);
 
-    REQUIRE(message_id == trade::types::MessageID::unix_sig);
-    REQUIRE(message.sig() == 2);
+    unix_sig.Clear();
+    unix_sig.ParseFromString(message_body);
+
+    CHECK(message_id == trade::types::MessageID::unix_sig);
+    CHECK(unix_sig.sig() == 2);
 }
 
 TEST_CASE("Message with an out-of-range message_id", "[Serializer]")
@@ -42,8 +78,11 @@ TEST_CASE("Message with an out-of-range message_id", "[Serializer]")
         unix_sig
     );
 
-    const auto [message_id, message] = trade::utilities::Serializer::deserialize<trade::types::UnixSig>(serialized);
+    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(serialized);
 
-    REQUIRE(message_id == trade::types::MessageID::invalid_message_id);
-    REQUIRE(message.sig() == 0); /// The returned message shall be empty.
+    unix_sig.Clear();
+    unix_sig.ParseFromString(message_body);
+
+    CHECK(message_id == trade::types::MessageID::invalid_message_id);
+    CHECK(unix_sig.sig() == 0); /// The returned message shall be empty.
 }

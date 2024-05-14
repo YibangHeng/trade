@@ -39,32 +39,24 @@ public:
 
     /// Unserialize a message.
     /// @param serialized The serialized message.
-    /// @return The Message ID and the raw message body. If the serialized
-    /// Message ID/message is invalid, the Message ID will be set to
-    /// invalid_message_id and the message will be an empty message.
-    template<typename MessageType>
+    /// @return The message ID and the raw message body. If the serialized
+    /// message is invalid, the message ID will be 0 and the message body will
+    /// be empty.
     static auto deserialize(const std::string& serialized)
     {
         if (serialized.size() < 4)
-            return std::make_tuple(types::MessageID::invalid_message_id, MessageType());
+            return std::make_tuple(types::MessageID::invalid_message_id, std::string {});
 
-        /// Deserialize message_id.
         unsigned char message_id_buf[4];
         memcpy(message_id_buf, serialized.data(), 4);
 
         const auto message_id = static_cast<types::MessageID>(parse_int32(message_id_buf));
-        /// An out-of-range message ID indicates an invalid message.
-        if (message_id < types::MessageID_MIN
-            || message_id > types::MessageID_MAX)
-            return std::make_tuple(types::MessageID::invalid_message_id, MessageType());
 
-        /// Deserialize message.
-        MessageType message;
+        /// Check if the message is in range.
+        if (message_id < types::MessageID_MIN || message_id > types::MessageID_MAX)
+            return std::make_tuple(types::MessageID::invalid_message_id, serialized.substr(4, serialized.size() - 4));
 
-        if (!message.ParseFromArray(serialized.data() + 4, serialized.size() - 4))
-            return std::make_tuple(types::MessageID::invalid_message_id, MessageType());
-
-        return std::make_tuple(message_id, message);
+        return std::make_tuple(message_id, serialized.substr(4, serialized.size() - 4));
     }
 
 private:
