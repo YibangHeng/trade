@@ -15,6 +15,7 @@ target_link_libraries(
         date::date
         date::date-tz
         fmt::fmt
+        libzmq-static
 )
 
 # Allow user to run tests with `make test` or `ctest`.
