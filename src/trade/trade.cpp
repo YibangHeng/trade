@@ -77,9 +77,32 @@ int trade::Trade::run()
     return m_exit_code;
 }
 
-int trade::Trade::stop()
+int trade::Trade::stop(int signal)
 {
+    spdlog::info("App exiting since received signal {}", signal);
+
     m_is_running = false;
+
+    /// Don't block in interrupt handlers.
+    std::thread notifier([this, signal] {
+        /// Send signal to network event loop.
+        auto listening_address = config->get<std::string>("Server.APIAddress");
+
+        // Replace '*' in listening address with 'localhost'.
+        const std::size_t pos = listening_address.find("*");
+        if (pos != std::string::npos)
+            listening_address.replace(pos, 1, "localhost");
+
+        utilities::RRClient client(listening_address);
+
+        types::UnixSig send_unix_sig;
+        send_unix_sig.set_sig(signal);
+
+        std::ignore = client.request<types::UnixSig>(types::MessageID::unix_sig, send_unix_sig);
+    });
+
+    notifier.detach();
+
     return 0;
 }
 
@@ -88,23 +111,9 @@ void trade::Trade::signal(const int signal)
     switch (signal) {
     case SIGINT:
     case SIGTERM: {
-        spdlog::info("App exiting since received signal {}", signal);
-
-        /// Don't block in interrupt handlers.
-        std::thread notifier([signal] {
         for (const auto& instance : m_instances) {
-            instance->stop();
+            instance->stop(signal);
         }
-
-            utilities::RRClient client("tcp://localhost:10000");
-
-            types::UnixSig send_unix_sig;
-            send_unix_sig.set_sig(signal);
-
-            std::ignore = client.request<types::UnixSig>(types::MessageID::unix_sig, send_unix_sig);
-        });
-
-        notifier.detach();
 
         break;
     }

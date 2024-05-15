@@ -3,15 +3,12 @@
 #include <atomic>
 #include <boost/program_options.hpp>
 #include <set>
-#include <zmq.h>
 
 #include "AppBase.hpp"
 #include "visibility.h"
 
 namespace trade
 {
-
-
 
 class PUBLIC_API Trade final: private AppBase<>
 {
@@ -21,7 +18,7 @@ public:
 
 public:
     int run();
-    int stop();
+    int stop(int signal);
     static void signal(int signal);
 
 private:
