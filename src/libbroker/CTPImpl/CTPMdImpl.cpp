@@ -113,10 +113,11 @@ void trade::broker::CTPMdImpl::OnRspUserLogin(
         logger->error("Failed to login with code {}: {}", pRspInfo->ErrorID, utilities::GB2312ToUTF8()(pRspInfo->ErrorMsg));
     }
     else {
-        M_A {m_common_data.m_broker_id} = pRspUserLogin->BrokerID;
-        M_A {m_common_data.m_user_id}   = pRspUserLogin->UserID;
-        m_common_data.m_front_id        = pRspUserLogin->FrontID;
-        m_common_data.m_session_id      = pRspUserLogin->SessionID;
+        M_A {m_common_data.m_system_name} = pRspUserLogin->SystemName;
+        M_A {m_common_data.m_broker_id}   = pRspUserLogin->BrokerID;
+        M_A {m_common_data.m_user_id}     = pRspUserLogin->UserID;
+        m_common_data.m_front_id          = pRspUserLogin->FrontID;
+        m_common_data.m_session_id        = pRspUserLogin->SessionID;
 
         logger->info("Logged to {} successfully as BrokerID/UserID {}/{} with FrontID/SessionID {}/{} at {}-{}", pRspUserLogin->SystemName, pRspUserLogin->BrokerID, pRspUserLogin->UserID, pRspUserLogin->FrontID, pRspUserLogin->SessionID, pRspUserLogin->TradingDay, pRspUserLogin->LoginTime);
     }
@@ -138,7 +139,7 @@ void trade::broker::CTPMdImpl::OnRspUserLogout(
         logger->error("Failed to logout with code {}: {}", pRspInfo->ErrorID, pRspInfo->ErrorMsg);
     }
     else {
-        logger->info("Logged out successfully as BrokerID/UserID {}/{} with FrontID/SessionID {}/{}", pUserLogout->BrokerID, pUserLogout->UserID, m_common_data.m_front_id, m_common_data.m_session_id);
+        logger->info("Logged out successfully from {} as BrokerID/UserID {}/{} with FrontID/SessionID {}/{}", m_common_data.m_system_name, pUserLogout->BrokerID, pUserLogout->UserID, m_common_data.m_front_id, m_common_data.m_session_id);
     }
 
     m_login_syncer.notify_logout_success();

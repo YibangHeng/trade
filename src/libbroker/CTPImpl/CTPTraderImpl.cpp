@@ -247,10 +247,11 @@ void trade::broker::CTPTraderImpl::OnRspUserLogin(
         return;
     }
 
-    M_A {m_common_data.m_broker_id} = pRspUserLogin->BrokerID;
-    M_A {m_common_data.m_user_id}   = pRspUserLogin->UserID;
-    m_common_data.m_front_id        = pRspUserLogin->FrontID;
-    m_common_data.m_session_id      = pRspUserLogin->SessionID;
+    M_A {m_common_data.m_system_name} = pRspUserLogin->SystemName;
+    M_A {m_common_data.m_broker_id}   = pRspUserLogin->BrokerID;
+    M_A {m_common_data.m_user_id}     = pRspUserLogin->UserID;
+    m_common_data.m_front_id          = pRspUserLogin->FrontID;
+    m_common_data.m_session_id        = pRspUserLogin->SessionID;
 
     try {
         /// Set OrderRef starts from MaxOrderRef for avoiding duplicated
@@ -286,7 +287,7 @@ void trade::broker::CTPTraderImpl::OnRspUserLogout(
         return;
     }
 
-    logger->info("Logged out successfully as BrokerID/UserID {}/{} with FrontID/SessionID {}/{}", pUserLogout->BrokerID, pUserLogout->UserID, m_common_data.m_front_id, m_common_data.m_session_id);
+    logger->info("Logged out successfully from {} as BrokerID/UserID {}/{} with FrontID/SessionID {}/{}", m_common_data.m_system_name, pUserLogout->BrokerID, pUserLogout->UserID, m_common_data.m_front_id, m_common_data.m_session_id);
 
     m_parent->notify_logout_success();
 }

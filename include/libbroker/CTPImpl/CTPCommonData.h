@@ -46,6 +46,7 @@ public:
     [[nodiscard]] static std::tuple<std::string, std::string> from_exchange_id(const std::string& exchange_id);
 
 public:
+    TThostFtdcSystemNameType m_system_name;
     TThostFtdcBrokerIDType m_broker_id;
     TThostFtdcUserIDType m_user_id;
     TThostFtdcInvestorIDType m_investor_id;

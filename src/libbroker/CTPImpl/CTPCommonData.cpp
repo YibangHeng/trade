@@ -5,7 +5,8 @@
 #include "utilities/TimeHelper.hpp"
 
 trade::broker::CTPCommonData::CTPCommonData()
-    : m_broker_id {},
+    : m_system_name {},
+      m_broker_id {},
       m_user_id {},
       m_investor_id {},
       m_front_id(0),
