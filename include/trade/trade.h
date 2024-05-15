@@ -11,23 +11,7 @@
 namespace trade
 {
 
-struct ZMQContextPtrDeleter {
-    void operator()(void* ptr) const
-    {
-        zmq_ctx_destroy(ptr);
-    }
-};
 
-using ZMQContextPtr = std::unique_ptr<void, ZMQContextPtrDeleter>;
-
-struct ZMQSocketPtrDeleter {
-    void operator()(void* ptr) const
-    {
-        zmq_close(ptr);
-    }
-};
-
-using ZMQSocketPtr = std::unique_ptr<void, ZMQSocketPtrDeleter>;
 
 class PUBLIC_API Trade final: private AppBase<>
 {
@@ -44,15 +28,12 @@ private:
     bool argv_parse(int argc, char* argv[]);
 
 private:
-    void init_zmq(const std::string& socket);
     int network_events() const;
 
 private:
     boost::program_options::variables_map m_arguments;
 
 private:
-    ZMQContextPtr zmq_context;
-    ZMQSocketPtr zmq_socket;
     std::atomic<bool> m_is_running = false;
     std::atomic<int> m_exit_code   = 0;
 

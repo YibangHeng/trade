@@ -60,8 +60,6 @@ int trade::Trade::run()
         return 1;
     }
 
-    init_zmq(config->get<std::string>("Server.APIAddress", ""));
-
     m_exit_code = network_events();
 
     broker->start_logout();
@@ -90,27 +88,23 @@ void trade::Trade::signal(const int signal)
     switch (signal) {
     case SIGINT:
     case SIGTERM: {
+        spdlog::info("App exiting since received signal {}", signal);
+
+        /// Don't block in interrupt handlers.
+        std::thread notifier([signal] {
         for (const auto& instance : m_instances) {
             instance->stop();
         }
 
-        spdlog::info("App exiting since received signal {}", signal);
+            utilities::RRClient client("tcp://localhost:10000");
 
-        /// Send a notification to network event loop.
-        void* context = zmq_ctx_new();
-        void* socket  = ::zmq_socket(context, ZMQ_REQ);
+            types::UnixSig send_unix_sig;
+            send_unix_sig.set_sig(signal);
 
-        zmq_connect(socket, "tcp://localhost:10000");
+            std::ignore = client.request<types::UnixSig>(types::MessageID::unix_sig, send_unix_sig);
+        });
 
-        types::UnixSig unix_sig;
-        unix_sig.set_sig(signal);
-
-        const auto message_body = utilities::Serializer::serialize(types::MessageID::unix_sig, unix_sig);
-
-        zmq_send(socket, message_body.c_str(), message_body.size(), ZMQ_DONTWAIT);
-
-        zmq_close(socket);
-        zmq_ctx_destroy(context);
+        notifier.detach();
 
         break;
     }
@@ -167,48 +161,15 @@ bool trade::Trade::argv_parse(const int argc, char* argv[])
     return true;
 }
 
-void trade::Trade::init_zmq(const std::string& socket)
-{
-    if (socket.empty()) {
-        logger->warn("API Server disabled since no socket provided");
-        return;
-    }
-
-    zmq_context.reset(zmq_ctx_new());
-    zmq_socket.reset(::zmq_socket(zmq_context.get(), ZMQ_REP));
-
-    const auto code = zmq_bind(zmq_socket.get(), socket.c_str());
-
-    if (code != 0) {
-        throw std::runtime_error(fmt::format("Failed to bind ZMQ socket at {}: {}", socket, std::string(zmq_strerror(errno))));
-    }
-
-    logger->info("Bound ZMQ socket at {}", socket);
-}
-
 int trade::Trade::network_events() const
 {
-    zmq_msg_t zmq_request;
+    /// Make the network server optional.
+    utilities::RRServer server(config->get<std::string>("Server.APIAddress"));
+
+    logger->info("Bound ZMQ socket at {}", config->get<std::string>("Server.APIAddress"));
 
     while (true) {
-        zmq_msg_init(&zmq_request);
-
-        const auto code = zmq_msg_recv(&zmq_request, zmq_socket.get(), ZMQ_DONTWAIT);
-
-        if (code < 0) {
-            if (errno == EAGAIN)
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            else
-                logger->error("Failed to receive ZMQ message: {}", std::string(zmq_strerror(errno)));
-
-            continue;
-        }
-
-        /// TODO: Use base64 for message data here.
-        logger->debug("Received ZMQ message  \"{}\"({} bytes)", zmq_msg_data(&zmq_request), zmq_msg_size(&zmq_request));
-
-        /// TODO: Use std::string_view here.
-        const auto [message_id, message_body] = utilities::Serializer::deserialize({static_cast<char*>(zmq_msg_data(&zmq_request)), zmq_msg_size(&zmq_request)});
+        const auto [message_id, message_body] = server.receive();
 
         switch (message_id) {
         case types::MessageID::unix_sig: {
@@ -221,14 +182,12 @@ int trade::Trade::network_events() const
                 logger->warn("Unexpected signal {} received", unix_sig.sig());
             }
             else {
+                server.send(types::MessageID::unix_sig, unix_sig);
                 logger->info("Network event loop exited since received signal {}", unix_sig.sig());
-                zmq_msg_close(&zmq_request);
                 return 0;
             }
 
-            const auto rsp = utilities::Serializer::serialize(types::MessageID::unix_sig, unix_sig);
-
-            zmq_send(zmq_socket.get(), rsp.data(), rsp.size(), ZMQ_DONTWAIT);
+            server.send(types::MessageID::unix_sig, unix_sig);
 
             break;
         }

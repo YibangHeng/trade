@@ -183,8 +183,6 @@ public:
 
         const auto [response_id, response_body] = Serializer::deserialize({static_cast<char*>(zmq_msg_data(&zmq_response)), zmq_msg_size(&zmq_response)});
 
-        zmq_msg_close(&zmq_response);
-
         /// Return an empty message if the response is invalid.
         if (response_id == types::MessageID::invalid_message_id)
             return ReturnedMessageType {};
