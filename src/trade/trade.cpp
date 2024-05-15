@@ -6,7 +6,7 @@
 #include "libholder/SQLiteHolder.h"
 #include "libreporter/LogReporter.h"
 #include "trade/trade.h"
-#include "utilities/Serializer.hpp"
+#include "utilities/NetworkHelper.hpp"
 
 trade::Trade::Trade(const int argc, char* argv[])
     : AppBase("trade")
@@ -74,7 +74,7 @@ int trade::Trade::run()
         return 1;
     }
 
-    logger->info("App exited with code {}", m_exit_code);
+    logger->info("App exited with code {}", m_exit_code.load());
 
     return m_exit_code;
 }

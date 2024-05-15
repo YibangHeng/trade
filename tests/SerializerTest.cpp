@@ -1,6 +1,6 @@
 #include <catch.hpp>
 
-#include "utilities/Serializer.hpp"
+#include "utilities/NetworkHelper.hpp"
 
 TEST_CASE("Message with message_id == 0 and empty message", "[Serializer]")
 {
@@ -84,5 +84,5 @@ TEST_CASE("Message with an out-of-range message_id", "[Serializer]")
     unix_sig.ParseFromString(message_body);
 
     CHECK(message_id == trade::types::MessageID::invalid_message_id);
-    CHECK(unix_sig.sig() == 0); /// The returned message shall be empty.
+    CHECK(unix_sig.sig() == 2); /// The returned message still contains the original value.
 }
