@@ -6,6 +6,8 @@
 
 #include "networks.pb.h"
 
+/// TODO: Add debug logging for NetworkHelper classes.
+
 namespace trade::utilities
 {
 
@@ -88,8 +90,8 @@ struct ZMQContextPtrDeleter {
     }
 };
 
-/// TODO: Use std::shared_ptr and factory pattern here.
-using ZMQContextPtr = std::unique_ptr<void, ZMQContextPtrDeleter>;
+/// TODO: Use factory pattern here.
+using ZMQContextPtr = std::shared_ptr<void>;
 
 struct ZMQSocketPtrDeleter {
     void operator()(void* ptr) const
@@ -103,10 +105,14 @@ using ZMQSocketPtr = std::unique_ptr<void, ZMQSocketPtrDeleter>;
 class RRServer
 {
 public:
-    explicit RRServer(const std::string& address, void* context = nullptr) : zmq_request()
+    explicit RRServer(const std::string& address, const ZMQContextPtr& context = nullptr) : zmq_request()
     {
-        zmq_context = context != nullptr ? context : zmq_ctx_new();
-        zmq_socket.reset(::zmq_socket(zmq_context, ZMQ_REP));
+        if (context != nullptr)
+            zmq_context = context;
+        else
+            zmq_context.reset(zmq_ctx_new(), ZMQContextPtrDeleter());
+
+        zmq_socket.reset(::zmq_socket(zmq_context.get(), ZMQ_REP));
 
         const auto code = zmq_bind(zmq_socket.get(), address.c_str());
 
@@ -122,12 +128,12 @@ public:
 public:
     [[nodiscard]] auto receive()
     {
-        zmq_msg_init(&zmq_request);
+        int code;
 
-        const auto code = zmq_msg_recv(&zmq_request, zmq_socket.get(), 0);
-
-        if (code < 0)
-            return std::make_tuple(types::MessageID::invalid_message_id, std::string {});
+        do {
+            zmq_msg_init(&zmq_request);
+            code = zmq_msg_recv(&zmq_request, zmq_socket.get(), 0);
+        } while (code < 0);
 
         return Serializer::deserialize(std::string(static_cast<char*>(zmq_msg_data(&zmq_request)), zmq_msg_size(&zmq_request)));
     }
@@ -135,12 +141,11 @@ public:
     void send(const types::MessageID message_id, const google::protobuf::Message& message_body) const
     {
         const auto message = Serializer::serialize(message_id, message_body);
-
         zmq_send(zmq_socket.get(), message.c_str(), message.size(), ZMQ_DONTWAIT);
     }
 
 private:
-    void* zmq_context;
+    ZMQContextPtr zmq_context;
     ZMQSocketPtr zmq_socket;
     zmq_msg_t zmq_request;
 };
@@ -148,10 +153,14 @@ private:
 class RRClient
 {
 public:
-    explicit RRClient(const std::string& address, void* context = nullptr) : zmq_response()
+    explicit RRClient(const std::string& address, const ZMQContextPtr& context = nullptr) : zmq_response()
     {
-        zmq_context = context != nullptr ? context : zmq_ctx_new();
-        zmq_socket.reset(::zmq_socket(zmq_context, ZMQ_REQ));
+        if (context != nullptr)
+            zmq_context = context;
+        else
+            zmq_context.reset(zmq_ctx_new(), ZMQContextPtrDeleter());
+
+        zmq_socket.reset(::zmq_socket(zmq_context.get(), ZMQ_REQ));
 
         const auto code = zmq_connect(zmq_socket.get(), address.c_str());
 
@@ -194,7 +203,7 @@ public:
     }
 
 private:
-    void* zmq_context;
+    ZMQContextPtr zmq_context;
     ZMQSocketPtr zmq_socket;
     zmq_msg_t zmq_response;
 };

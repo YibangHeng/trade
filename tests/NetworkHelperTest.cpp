@@ -94,11 +94,11 @@ TEST_CASE("Message with an out-of-range message_id", "[Serializer]")
 TEST_CASE("Sending and receiving messages with M:1 connections", "[RRServer/RRClient]")
 {
     trade::utilities::ZMQContextPtr zmq_context;
-    zmq_context.reset(zmq_ctx_new());
+    zmq_context.reset(zmq_ctx_new(), trade::utilities::ZMQContextPtrDeleter());
 
     /// Server side.
     auto server_worker = [&zmq_context] {
-        trade::utilities::RRServer server("inproc://server", zmq_context.get());
+        trade::utilities::RRServer server("inproc://server", zmq_context);
 
         for (int i = 0; i < insertion_times * insertion_batch; i++) {
             const auto [message_id, message_body] = server.receive();
@@ -116,7 +116,7 @@ TEST_CASE("Sending and receiving messages with M:1 connections", "[RRServer/RRCl
 
     /// Client side.
     auto client_worker = [&zmq_context] {
-        trade::utilities::RRClient client("inproc://server", zmq_context.get());
+        trade::utilities::RRClient client("inproc://server", zmq_context);
 
         for (int i = 0; i < insertion_batch; i++) {
             trade::types::UnixSig send_unix_sig;
