@@ -27,18 +27,20 @@ void trade::broker::CTPBroker::start_logout() noexcept
     m_trader_impl.reset();
 }
 
-int64_t trade::broker::CTPBroker::new_order(const std::shared_ptr<types::NewOrderReq> new_order_req)
+std::shared_ptr<trade::types::NewOrderRsp> trade::broker::CTPBroker::new_order(const std::shared_ptr<types::NewOrderReq> new_order_req)
 {
-    if (BrokerProxy::new_order(new_order_req) == INVALID_ID)
-        return INVALID_ID;
+    auto new_order_rsp = BrokerProxy::new_order(new_order_req);
+    if (new_order_rsp->has_rejection_code())
+        return new_order_rsp;
 
     return m_trader_impl->new_order(new_order_req);
 }
 
-int64_t trade::broker::CTPBroker::cancel_order(const std::shared_ptr<types::NewCancelReq> new_cancel_req)
+std::shared_ptr<trade::types::NewCancelRsp> trade::broker::CTPBroker::cancel_order(const std::shared_ptr<types::NewCancelReq> new_cancel_req)
 {
-    if (BrokerProxy::cancel_order(new_cancel_req) == INVALID_ID)
-        return INVALID_ID;
+    auto new_cancel_rsp = BrokerProxy::cancel_order(new_cancel_req);
+    if (new_cancel_rsp->has_rejection_code())
+        return new_cancel_rsp;
 
     return m_trader_impl->cancel_order(new_cancel_req);
 }

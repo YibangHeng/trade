@@ -30,8 +30,10 @@ public:
     ~BrokerProxy() override = default;
 
 public:
-    int64_t new_order(std::shared_ptr<types::NewOrderReq> new_order_req) override
+    std::shared_ptr<types::NewOrderRsp> new_order(std::shared_ptr<types::NewOrderReq> new_order_req) override
     {
+        auto new_order_rsp = std::make_shared<types::NewOrderRsp>();
+
         if (!new_order_req->has_request_id()) {
             new_order_req->set_request_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
         }
@@ -43,26 +45,57 @@ public:
         /// Pre-create order in holder.
         if (!pre_insert_order(new_order_req)) {
             AppBase<TickerTaperT, ConfigFileType>::logger->error("Failed to pre-create order due to holder error: {}", utilities::ToJSON()(*new_order_req));
+
+            new_order_rsp->set_request_id(new_order_req->request_id());
+            new_order_rsp->set_unique_id(INVALID_ID);
+            new_order_rsp->set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
+            new_order_rsp->set_rejection_code(types::RejectionCode::unknown);
+            new_order_rsp->set_rejection_reason(fmt::format("Failed to pre-create order due to holder error: {}", utilities::ToJSON()(*new_order_req)));
+
             return INVALID_ID;
         }
 
         AppBase<TickerTaperT, ConfigFileType>::logger->info("New order pre-created: {}", utilities::ToJSON()(*new_order_req));
 
-        return new_order_req->unique_id();
+        new_order_rsp->set_request_id(new_order_req->request_id());
+        new_order_rsp->set_unique_id(new_order_req->unique_id());
+        new_order_rsp->set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
+
+        return new_order_rsp;
     }
 
-    int64_t cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req) override
+    std::shared_ptr<types::NewCancelRsp> cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req) override
     {
+        auto new_cancel_rsp = std::make_shared<types::NewCancelRsp>();
+
         if (!new_cancel_req->has_request_id()) {
             new_cancel_req->set_request_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
         }
 
         AppBase<TickerTaperT, ConfigFileType>::logger->info("New cancel pre-created: {}", utilities::ToJSON()(*new_cancel_req));
 
-        return new_cancel_req->request_id();
+        new_cancel_rsp->set_request_id(new_cancel_req->request_id());
+        new_cancel_rsp->set_original_unique_id(new_cancel_req->original_unique_id());
+        new_cancel_rsp->set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
+
+        return new_cancel_rsp;
     }
 
-    int64_t cancel_all(std::shared_ptr<types::NewCancelAllReq> new_cancel_all_req) override { return INVALID_ID; }
+    std::shared_ptr<types::NewCancelAllRsp> cancel_all(std::shared_ptr<types::NewCancelAllReq> new_cancel_all_req) override
+    {
+        auto new_cancel_all_rsp = std::make_shared<types::NewCancelAllRsp>();
+
+        if (!new_cancel_all_req->has_request_id()) {
+            new_cancel_all_req->set_request_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
+        }
+
+        new_cancel_all_rsp->set_request_id(new_cancel_all_req->request_id());
+        new_cancel_all_rsp->set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
+        new_cancel_all_rsp->set_rejection_code(types::RejectionCode::unknown);
+        new_cancel_all_rsp->set_rejection_reason("Not supported yet");
+
+        return new_cancel_all_rsp;
+    }
 
 private:
     [[nodiscard]] bool pre_insert_order(const std::shared_ptr<types::NewOrderReq>& new_order_req) const

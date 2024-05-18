@@ -5,6 +5,9 @@
 #include <set>
 
 #include "AppBase.hpp"
+#include "libbroker/IBroker.h"
+#include "libholder/IHolder.h"
+#include "libreporter/IReporter.hpp"
 #include "visibility.h"
 
 namespace trade
@@ -33,6 +36,11 @@ private:
 private:
     std::atomic<bool> m_is_running = false;
     std::atomic<int> m_exit_code   = 0;
+
+private:
+    std::shared_ptr<reporter::IReporter> m_reporter;
+    std::shared_ptr<holder::IHolder> m_holder;
+    std::shared_ptr<broker::IBroker> m_broker;
 
 private:
     static std::set<Trade*> m_instances;

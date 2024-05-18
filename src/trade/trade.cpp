@@ -32,17 +32,15 @@ int trade::Trade::run()
         return 1;
     }
 
-    auto reporter = std::make_shared<reporter::LogReporter>();
+    m_reporter = std::make_shared<reporter::LogReporter>();
 
-    auto holder   = std::make_shared<holder::SQLiteHolder>();
-
-    std::shared_ptr<broker::IBroker> broker;
+    m_holder   = std::make_shared<holder::SQLiteHolder>();
 
     if (config->get<std::string>("Broker.Type") == "CTP") {
-        broker = std::make_shared<broker::CTPBroker>(
+        m_broker = std::make_shared<broker::CTPBroker>(
             config->get<std::string>("Broker.Config"),
-            holder,
-            reporter
+            m_holder,
+            m_reporter
         );
     }
     else {
@@ -50,10 +48,10 @@ int trade::Trade::run()
         return 1;
     }
 
-    broker->start_login();
+    m_broker->start_login();
 
     try {
-        broker->wait_login();
+        m_broker->wait_login();
     }
     catch (const std::runtime_error& e) {
         logger->error("Failed to login: {}", e.what());
@@ -62,10 +60,10 @@ int trade::Trade::run()
 
     m_exit_code = network_events();
 
-    broker->start_logout();
+    m_broker->start_logout();
 
     try {
-        broker->wait_logout();
+        m_broker->wait_logout();
     }
     catch (const std::runtime_error& e) {
         logger->error("Failed to logout: {}", e.what());
@@ -197,6 +195,36 @@ int trade::Trade::network_events() const
             }
 
             server.send(types::MessageID::unix_sig, unix_sig);
+
+            break;
+        }
+        case types::MessageID::new_order_req: {
+            const auto new_order_req = std::make_shared<types::NewOrderReq>();
+            new_order_req->ParseFromString(message_body);
+
+            const auto new_order_rsp = m_broker->new_order(new_order_req);
+
+            server.send(types::MessageID::new_order_rsp, *new_order_rsp);
+
+            break;
+        }
+        case types::MessageID::new_cancel_req: {
+            const auto new_cancel_req = std::make_shared<types::NewCancelReq>();
+            new_cancel_req->ParseFromString(message_body);
+
+            const auto new_cancel_rsp = m_broker->cancel_order(new_cancel_req);
+
+            server.send(types::MessageID::new_cancel_rsp, *new_cancel_rsp);
+
+            break;
+        }
+        case types::MessageID::new_cancel_all_req: {
+            const auto new_cancel_all_req = std::make_shared<types::NewCancelAllReq>();
+            new_cancel_all_req->ParseFromString(message_body);
+
+            const auto new_cancel_all_rsp = m_broker->cancel_all(new_cancel_all_req);
+
+            server.send(types::MessageID::new_cancel_all_rsp, *new_cancel_all_rsp);
 
             break;
         }

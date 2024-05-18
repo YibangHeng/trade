@@ -17,9 +17,9 @@ public:
     ~IBroker() override = default;
 
 public:
-    virtual int64_t new_order(std::shared_ptr<types::NewOrderReq> new_order_req)           = 0;
-    virtual int64_t cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req)      = 0;
-    virtual int64_t cancel_all(std::shared_ptr<types::NewCancelAllReq> new_cancel_all_req) = 0;
+    virtual std::shared_ptr<types::NewOrderRsp> new_order(std::shared_ptr<types::NewOrderReq> new_order_req)               = 0;
+    virtual std::shared_ptr<types::NewCancelRsp> cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req)         = 0;
+    virtual std::shared_ptr<types::NewCancelAllRsp> cancel_all(std::shared_ptr<types::NewCancelAllReq> new_cancel_all_req) = 0;
 
 public:
     virtual void subscribe(const std::unordered_set<std::string>& symbols)   = 0;

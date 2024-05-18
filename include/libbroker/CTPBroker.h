@@ -24,8 +24,8 @@ public:
     void start_logout() noexcept override;
 
 public:
-    int64_t new_order(std::shared_ptr<types::NewOrderReq> new_order_req) override;
-    int64_t cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req) override;
+    std::shared_ptr<types::NewOrderRsp> new_order(std::shared_ptr<types::NewOrderReq> new_order_req) override;
+    std::shared_ptr<types::NewCancelRsp> cancel_order(std::shared_ptr<types::NewCancelReq> new_cancel_req) override;
 
 public:
     void subscribe(const std::unordered_set<std::string>& symbols) override;
