@@ -92,6 +92,9 @@ TEST_CASE("Funds inserting", "[SQLiteHolder]")
             fund.set_frozen_fund(counter);
             fund.set_frozen_margin(counter);
             fund.set_frozen_commission(counter);
+#ifdef LIB_DATE_SUPPORT
+            fund.set_allocated_update_time(trade::utilities::ToTime<google::protobuf::Timestamp*>()(fmt::format("2000-01-01 08:00:00.{:0>3}", counter % 100)));
+#endif
 
             counter++;
 
@@ -117,6 +120,9 @@ TEST_CASE("Funds querying", "[SQLiteHolder]")
         CHECK(funds->funds(0).frozen_margin() == counter);
         CHECK(funds->funds(0).frozen_commission() == counter);
         CHECK(funds->funds(0).withdrawn_fund() == counter);
+#ifdef LIB_DATE_SUPPORT
+        CHECK(trade::utilities::ToTime<std::string>()(funds->funds(0).update_time()) == fmt::format("2000-01-01 08:00:00.{:0>3}", counter % 100));
+#endif
 
         counter++;
     }

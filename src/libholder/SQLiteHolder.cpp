@@ -87,6 +87,7 @@ int64_t trade::holder::SQLiteHolder::update_funds(const std::shared_ptr<types::F
         sqlite3_bind_double(m_insert_funds.get(), 4, fund.frozen_fund());
         sqlite3_bind_double(m_insert_funds.get(), 5, fund.frozen_margin());
         sqlite3_bind_double(m_insert_funds.get(), 6, fund.frozen_commission());
+        sqlite3_bind_text(m_insert_funds.get(), 7, utilities::ToTime<std::string>()(fund.update_time()).c_str(), SQLITE_AUTO_LENGTH, SQLITE_TRANSIENT);
 
         m_exec_code = sqlite3_step(m_insert_funds.get());
         if (m_exec_code != SQLITE_DONE) {
@@ -118,6 +119,7 @@ std::shared_ptr<trade::types::Funds> trade::holder::SQLiteHolder::query_funds_by
         fund.set_frozen_fund(sqlite3_column_double(m_query_funds_by_account_id.get(), 3));
         fund.set_frozen_margin(sqlite3_column_double(m_query_funds_by_account_id.get(), 4));
         fund.set_frozen_commission(sqlite3_column_double(m_query_funds_by_account_id.get(), 5));
+        fund.set_allocated_update_time(utilities::ToTime<google::protobuf::Timestamp*>()(reinterpret_cast<const char*>(sqlite3_column_text(m_query_funds_by_account_id.get(), 6))));
 
         funds->add_funds()->CopyFrom(fund);
     }
@@ -373,7 +375,8 @@ void trade::holder::SQLiteHolder::init_fund_table()
         "withdrawn_fund    REAL,"
         "frozen_fund       REAL,"
         "frozen_margin     REAL,"
-        "frozen_commission REAL"
+        "frozen_commission REAL,"
+        "update_time       DATETIME"
         ");",
         m_fund_table_name
     );
@@ -386,7 +389,7 @@ void trade::holder::SQLiteHolder::init_fund_table()
 
     /// Prepare insert statement.
     const std::string& fund_insert_sql = fmt::format(
-        "INSERT OR REPLACE INTO {} VALUES(?, ?, ?, ?, ?, ?);",
+        "INSERT OR REPLACE INTO {} VALUES(?, ?, ?, ?, ?, ?, ?);",
         m_fund_table_name
     );
 

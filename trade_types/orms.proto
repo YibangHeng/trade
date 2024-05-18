@@ -21,12 +21,13 @@ message Symbols
 
 message Fund
 {
-    string account_id        = 1; /// 资金账户
-    double available_fund    = 2; /// 可用资金
-    double withdrawn_fund    = 3; /// 可取资金
-    double frozen_fund       = 4; /// 冻结资金
-    double frozen_margin     = 5; /// 冻结保证金
-    double frozen_commission = 6; /// 冻结手续费
+    string account_id                     = 1; /// 资金账户
+    double available_fund                 = 2; /// 可用资金
+    double withdrawn_fund                 = 3; /// 可取资金
+    double frozen_fund                    = 4; /// 冻结资金
+    double frozen_margin                  = 5; /// 冻结保证金
+    double frozen_commission              = 6; /// 冻结手续费
+    google.protobuf.Timestamp update_time = 7; /// 更新时间
 }
 
 message Funds
