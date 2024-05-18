@@ -33,7 +33,9 @@ std::shared_ptr<trade::types::NewOrderRsp> trade::broker::CTPBroker::new_order(c
     if (new_order_rsp->has_rejection_code())
         return new_order_rsp;
 
-    return m_trader_impl->new_order(new_order_req);
+    m_trader_impl->new_order(new_order_req, new_order_rsp);
+
+    return new_order_rsp;
 }
 
 std::shared_ptr<trade::types::NewCancelRsp> trade::broker::CTPBroker::cancel_order(const std::shared_ptr<types::NewCancelReq> new_cancel_req)
@@ -42,7 +44,9 @@ std::shared_ptr<trade::types::NewCancelRsp> trade::broker::CTPBroker::cancel_ord
     if (new_cancel_rsp->has_rejection_code())
         return new_cancel_rsp;
 
-    return m_trader_impl->cancel_order(new_cancel_req);
+    m_trader_impl->cancel_order(new_cancel_req, new_cancel_rsp);
+
+    return new_cancel_rsp;
 }
 
 void trade::broker::CTPBroker::subscribe(const std::unordered_set<std::string>& symbols)

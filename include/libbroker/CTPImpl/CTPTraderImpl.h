@@ -22,8 +22,14 @@ public:
     ~CTPTraderImpl() override;
 
 public:
-    std::shared_ptr<types::NewOrderRsp> new_order(const std::shared_ptr<types::NewOrderReq>& new_order_req);
-    std::shared_ptr<types::NewCancelRsp> cancel_order(const std::shared_ptr<types::NewCancelReq>& new_cancel_req);
+    void new_order(
+        const std::shared_ptr<types::NewOrderReq>& new_order_req,
+        const std::shared_ptr<types::NewOrderRsp>& new_order_rsp
+    );
+    void cancel_order(
+        const std::shared_ptr<types::NewCancelReq>& new_cancel_req,
+        const std::shared_ptr<types::NewCancelRsp>& new_cancel_rsp
+    );
 
 private:
     /// Do some initial queries.

@@ -10,6 +10,7 @@
 namespace trade::broker
 {
 
+/// BrokerProxy provides a basic processing logic required by a broker, e.g. ID generation, database operations, etc.
 template<typename TickerTaperT = int64_t, utilities::ConfigFileType ConfigFileType = utilities::ConfigFileType::INI>
 class BrokerProxy
     : public IBroker,
@@ -34,6 +35,7 @@ public:
     {
         auto new_order_rsp = std::make_shared<types::NewOrderRsp>();
 
+        /// Generate request_id and unique_id if not provided.
         if (!new_order_req->has_request_id()) {
             new_order_req->set_request_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
         }
@@ -50,9 +52,9 @@ public:
             new_order_rsp->set_unique_id(INVALID_ID);
             new_order_rsp->set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
             new_order_rsp->set_rejection_code(types::RejectionCode::unknown);
-            new_order_rsp->set_rejection_reason(fmt::format("Failed to pre-create order due to holder error: {}", utilities::ToJSON()(*new_order_req)));
+            new_order_rsp->set_rejection_reason("Internal error. Check server side logs for details."); /// Do not send sensitive info to client side.
 
-            return INVALID_ID;
+            return new_order_rsp;
         }
 
         AppBase<TickerTaperT, ConfigFileType>::logger->info("New order pre-created: {}", utilities::ToJSON()(*new_order_req));
@@ -68,6 +70,7 @@ public:
     {
         auto new_cancel_rsp = std::make_shared<types::NewCancelRsp>();
 
+        /// Generate request_id if not provided.
         if (!new_cancel_req->has_request_id()) {
             new_cancel_req->set_request_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
         }
@@ -85,14 +88,13 @@ public:
     {
         auto new_cancel_all_rsp = std::make_shared<types::NewCancelAllRsp>();
 
+        /// Generate request_id if not provided.
         if (!new_cancel_all_req->has_request_id()) {
             new_cancel_all_req->set_request_id(AppBase<TickerTaperT, ConfigFileType>::snow_flaker());
         }
 
         new_cancel_all_rsp->set_request_id(new_cancel_all_req->request_id());
         new_cancel_all_rsp->set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
-        new_cancel_all_rsp->set_rejection_code(types::RejectionCode::unknown);
-        new_cancel_all_rsp->set_rejection_reason("Not supported yet");
 
         return new_cancel_all_rsp;
     }

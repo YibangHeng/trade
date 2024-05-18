@@ -9,6 +9,7 @@
 namespace trade::broker
 {
 
+/// IBroker defines the interface of a broker.
 class PUBLIC_API IBroker
     : public utilities::LoginSyncer /// A broker also provides a login syncer.
 {

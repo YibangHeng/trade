@@ -44,10 +44,12 @@ trade::broker::CTPTraderImpl::~CTPTraderImpl()
     m_trader_api->Release();
 }
 
-std::shared_ptr<trade::types::NewOrderRsp> trade::broker::CTPTraderImpl::new_order(const std::shared_ptr<types::NewOrderReq>& new_order_req)
+void trade::broker::CTPTraderImpl::new_order(
+    const std::shared_ptr<types::NewOrderReq>& new_order_req,
+    const std::shared_ptr<types::NewOrderRsp>& new_order_rsp
+)
 {
     const auto [request_seq, unique_id] = new_id_pair();
-    auto new_order_rsp                  = std::make_shared<types::NewOrderRsp>();
 
     CThostFtdcInputOrderField input_order_field {};
 
@@ -87,22 +89,22 @@ std::shared_ptr<trade::types::NewOrderRsp> trade::broker::CTPTraderImpl::new_ord
         new_order_rsp->set_unique_id(INVALID_ID);
         new_order_rsp->set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
         new_order_rsp->set_rejection_code(types::RejectionCode::unknown);
-        new_order_rsp->set_rejection_reason("Failed to call ReqOrderInsert: returned code {}", code);
+        new_order_rsp->set_rejection_reason("CTP API returned with code {}", code);
 
-        return new_order_rsp;
+        return;
     }
 
     new_order_rsp->set_request_id(new_order_req->request_id());
     new_order_rsp->set_unique_id(new_order_req->unique_id());
     new_order_rsp->set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
-
-    return new_order_rsp;
 }
 
-std::shared_ptr<trade::types::NewCancelRsp> trade::broker::CTPTraderImpl::cancel_order(const std::shared_ptr<types::NewCancelReq>& new_cancel_req)
+void trade::broker::CTPTraderImpl::cancel_order(
+    const std::shared_ptr<types::NewCancelReq>& new_cancel_req,
+    const std::shared_ptr<types::NewCancelRsp>& new_cancel_rsp
+)
 {
     const auto [request_seq, request_id] = new_id_pair();
-    auto new_cancel_rsp                  = std::make_shared<types::NewCancelRsp>();
 
     /// If original raw order id is not specified in request, query it from
     /// holder.
@@ -116,7 +118,7 @@ std::shared_ptr<trade::types::NewCancelRsp> trade::broker::CTPTraderImpl::cancel
             new_cancel_rsp->set_rejection_code(types::RejectionCode::unknown);
             new_cancel_rsp->set_rejection_reason("Order {} not found", new_cancel_req->original_unique_id());
 
-            return new_cancel_rsp;
+            return;
         }
 
         new_cancel_req->set_original_raw_order_id(orders->orders().at(0).exchange_id());
@@ -151,14 +153,12 @@ std::shared_ptr<trade::types::NewCancelRsp> trade::broker::CTPTraderImpl::cancel
         new_cancel_rsp->set_rejection_code(types::RejectionCode::unknown);
         new_cancel_rsp->set_rejection_reason("Failed to call ReqOrderAction: returned code {}", code);
 
-        return new_cancel_rsp;
+        return;
     }
 
     new_cancel_rsp->set_request_id(new_cancel_req->request_id());
     new_cancel_rsp->set_original_unique_id(new_cancel_req->original_unique_id());
     new_cancel_rsp->set_allocated_creation_time(utilities::Now<google::protobuf::Timestamp*>()());
-
-    return new_cancel_rsp;
 }
 
 void trade::broker::CTPTraderImpl::init_req()
