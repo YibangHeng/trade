@@ -10,7 +10,8 @@
 namespace trade::broker
 {
 
-/// BrokerProxy provides a basic processing logic required by a broker, e.g. ID generation, database operations, etc.
+/// BrokerProxy provides a basic processing logic required by a broker, e.g. ID
+/// generation, database operations, etc.
 template<typename TickerTaperT = int64_t, utilities::ConfigFileType ConfigFileType = utilities::ConfigFileType::INI>
 class BrokerProxy
     : public IBroker,
