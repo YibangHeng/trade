@@ -1,0 +1,193 @@
+syntax = "proto3";
+
+package trade.types;
+
+import "google/protobuf/timestamp.proto";
+
+import "enums.proto";
+
+/// Message ID for network.
+enum MessageID
+{
+    invalid_message_id = 0;
+
+    unix_sig           = 100; /// Unix 信号
+
+    /// 请求命令。客户端向 trade 发送的操作指令
+    new_order_req      = 1000; /// 新委托创建请求
+    new_cancel_req     = 1001; /// 新撤单创建请求
+    new_cancel_all_req = 1002; /// 新全部撤单创建请求
+
+    /// 内部响应。仅用于标识 trade 已接收到相应的命令
+    new_order_rsp      = 2000; /// 新委托创建响应
+    new_cancel_rsp     = 2001; /// 新撤单创建响应
+    new_cancel_all_rsp = 2002; /// 新全部撤单创建响应
+
+    /// 状体推送消息。更新来自券商的订单状态推送或查询结果
+}
+
+///
+/// 内部标记消息
+///
+
+/// 空消息
+message EmptyMessage {}
+
+/// 网络终止信号
+message UnixSig
+{
+    int32 sig = 1;
+}
+
+///
+/// 请求/响应消息
+///
+
+/// 新委托创建请求
+message NewOrderReq
+{
+    optional int64 request_id               = 1; /// 请求 ID
+    optional int64 unique_id                = 2; /// 委托 UniqueID。若不指定则自动生成
+    string symbol                           = 3;
+    ExchangeType exchange                   = 4;
+    SideType side                           = 5;
+    optional PositionSideType position_side = 6; /// For futures and options.
+    double price                            = 7;
+    int64 quantity                          = 8;
+}
+
+/// 新委托创建响应
+message NewOrderRsp
+{
+    int64 request_id                        = 1; /// 请求 ID
+    int64 unique_id                         = 2; /// 委托 UniqueID
+    google.protobuf.Timestamp creation_time = 3; /// 委托创建时间
+    optional RejectionCode rejection_code   = 4; /// 拒绝代码
+    optional string rejection_reason        = 5; /// 拒绝原因
+}
+
+/// 新撤单创建请求
+message NewCancelReq
+{
+    optional int64 request_id             = 1; /// 请求 ID
+    int64 original_unique_id              = 2; /// 委托 UniqueID
+    optional string original_raw_order_id = 3; /// 原始委托号
+}
+
+/// 新撤单创建响应
+message NewCancelRsp
+{
+    int64 request_id                        = 1; /// 请求 ID
+    int64 original_unique_id                = 2; /// 委托 UniqueID
+    google.protobuf.Timestamp creation_time = 3; /// 撤单创建时间
+    optional RejectionCode rejection_code   = 4; /// 拒绝代码
+    optional string rejection_reason        = 5; /// 拒绝原因
+}
+
+/// 新全部撤单创建请求
+message NewCancelAllReq
+{
+    optional int64 request_id = 1; /// 请求 ID
+}
+
+/// 新全部撤单创建响应
+message NewCancelAllRsp
+{
+    int64 request_id                        = 1; /// 请求 ID
+    google.protobuf.Timestamp creation_time = 2; /// 撤单创建时间
+    optional RejectionCode rejection_code   = 3; /// 拒绝代码
+    optional string rejection_reason        = 4; /// 拒绝原因
+}
+
+///
+/// 推送消息
+///
+
+/// 新委托券商确认推送
+message BrokerAcceptance
+{
+    int64 unique_id                                  = 1; /// 委托 UniqueID
+    string broker_id                                 = 2; /// 券商委托标识 ID
+    google.protobuf.Timestamp broker_acceptance_time = 3; /// 券商确认时间
+}
+
+/// 新委托交易所确认推送
+
+message ExchangeAcceptance
+{
+    int64 unique_id                                    = 1; /// 委托 UniqueID
+    string exchange_id                                 = 2; /// 交易所委托标识 ID
+    google.protobuf.Timestamp exchange_acceptance_time = 3; /// 交易所确认时间
+}
+
+/// 新委托拒绝推送
+
+message OrderRejection
+{
+    int64 original_unique_id                 = 1; /// 被拒单的委托 UniqueID
+    optional string original_broker_id       = 2; /// 被拒单的券商委托标识 ID
+    optional string original_exchange_id     = 3; /// 被拒单的交易所委托标识 ID
+    RejectionCode rejection_code             = 4; /// 拒绝代码
+    string rejection_reason                  = 5; /// 拒绝原因
+    google.protobuf.Timestamp rejection_time = 6; /// 拒绝时间
+}
+
+/// 新撤单券商确认推送
+
+message CancelBrokerAcceptance
+{
+    int64 original_unique_id                         = 1; /// 待撤委托 UniqueID
+    optional string original_broker_id               = 2; /// 待撤券商委托标识 ID
+    optional string original_exchange_id             = 3; /// 待撤交易所委托标识 ID
+    google.protobuf.Timestamp broker_acceptance_time = 4; /// 券商确认时间
+}
+
+/// 新撤单交易所确认推送
+
+message CancelExchangeAcceptance
+{
+    int64 original_unique_id                           = 1; /// 待撤委托 UniqueID
+    optional string original_broker_id                 = 2; /// 待撤券商委托标识 ID
+    optional string original_exchange_id               = 3; /// 待撤交易所委托标识 ID
+    google.protobuf.Timestamp exchange_acceptance_time = 4; /// 交易所确认时间
+}
+
+/// 撤单成功推送
+
+message CancelSuccess
+{
+    int64 original_unique_id                = 1; /// 已撤委托 UniqueID
+    optional string original_broker_id      = 2; /// 已撤券商委托标识 ID
+    optional string original_exchange_id    = 3; /// 已撤交易所委托标识 ID
+    int64 canceled_quantity                 = 4; /// 已撤数量
+    google.protobuf.Timestamp canceled_time = 5; /// 撤单时间
+}
+
+/// 新撤单拒绝推送
+
+message CancelOrderRejection
+{
+    int64 original_unique_id                 = 1; /// 待撤委托 UniqueID
+    optional string original_broker_id       = 2; /// 待撤券商委托标识 ID
+    optional string original_exchange_id     = 3; /// 待撤交易所委托标识 ID
+    RejectionCode rejection_code             = 4; /// 拒绝代码
+    string rejection_reason                  = 5; /// 拒绝原因
+    google.protobuf.Timestamp rejection_time = 6; /// 拒绝时间
+}
+
+/// 成交回报推送
+
+message Trade
+{
+    int64 unique_id                         = 1;  /// 委托 UniqueID
+    string broker_id                        = 2;  /// 券商 ID
+    string exchange_id                      = 3;  /// 交易所 ID
+    string symbol                           = 4;  /// 合约代码
+    SideType side                           = 5;  /// 买卖方向
+    optional PositionType position          = 6;  /// 开平方向
+    double price                            = 7;  /// 价格
+    double quantity                         = 8;  /// 当笔数量
+    double cumulative_quantity              = 9;  /// 累计成交数量
+    optional double fee                     = 10; /// 手续费
+    google.protobuf.Timestamp creation_time = 11; /// 成交时间
+}

@@ -9,4 +9,9 @@ target_link_libraries(
         PRIVATE
         ${Boost_LIBRARIES}
         fmt::fmt
+        libzmq-static
+        PRIVATE
+        broker
+        holder
+        reporter
 )

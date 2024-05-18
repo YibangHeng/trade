@@ -15,8 +15,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(BUILD_PYTHON "Enable building of Python bindings" ON)
 option(BUILD_DOCS "Enable building of documentation" ON)
 
-# Include directories.
-include_directories(include)
+set(CMAKE_MESSAGE_CONTEXT_SHOW ON)
+set(CMAKE_MESSAGE_CONTEXT ${CMAKE_PROJECT_NAME})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -27,11 +27,46 @@ configure_file(
 )
 
 # Third-party libraries.
+link_directories(lib)
+
+find_package(
+        Boost REQUIRED
+        COMPONENTS
+        program_options
+)
+find_package(date REQUIRED)
 find_package(fmt REQUIRED)
-find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(nlohmann_json REQUIRED)
+find_package(Protobuf REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(unofficial-sqlite3 REQUIRED)
+find_package(ZeroMQ REQUIRED)
+
+# Include directories.
+include_directories(include)
+
+# Protocols.
+add_subdirectory(trade_types)
+include_directories(${Protobuf_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/trade_types) # For generated *.pb.h.
 
 # Binaries and libraries.
+add_subdirectory(src/libbroker)
+add_subdirectory(src/libreporter)
+add_subdirectory(src/libholder)
 add_subdirectory(src/trade)
+
+# Configuration files.
+set(CONFIG_FILES trade.ini ctp.ini)
+
+foreach (CONFIG_FILE ${CONFIG_FILES})
+    configure_file(${CMAKE_SOURCE_DIR}/etc/${CONFIG_FILE}
+            ${CMAKE_BINARY_DIR}/etc/${CONFIG_FILE}
+            COPYONLY)
+    install(FILES ${CMAKE_SOURCE_DIR}/etc/${CONFIG_FILE}
+            DESTINATION /usr/local/etc
+            COMPONENT config)
+endforeach ()
 
 # Tests.
 include(CTest)

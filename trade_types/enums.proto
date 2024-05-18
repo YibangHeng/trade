@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package trade.types;
+
+/// 交易所
+enum ExchangeType
+{
+    invalid_exchange = 0;
+
+    bse              = 1000; /// 北京证券交易所
+    cffex            = 1001; /// 中国金融期货交易所
+    cme              = 1002; /// 芝加哥商业交易所
+    czce             = 1003; /// 郑州商品交易所
+    dce              = 1004; /// 大连商品交易所
+    gfex             = 1005; /// 广州期货交易所
+    hkex             = 1006; /// 香港交易所
+    ine              = 1007; /// 上海国际能源交易中心
+    nasd             = 1008; /// 纳斯达克交易所
+    nyse             = 1009; /// 纽约证券交易所
+    shfe             = 1010; /// 上海期货交易所
+    sse              = 1011; /// 上海证券交易所
+    szse             = 1012; /// 深圳证券交易所
+}
+
+/// 交易方向
+enum SideType
+{
+    invalid_side = 0;
+
+    buy          = 1000; /// 买
+    sell         = 1001; /// 卖
+}
+
+/// 开平方向
+enum PositionSideType
+{
+    invalid_position_side = 0;
+
+    open                  = 1000; /// 开
+    close                 = 1001; /// 平
+}
+
+/// 多空方向
+enum PositionType
+{
+    invalid_position = 0;
+
+    long             = 1000; /// 多
+    short            = 1001; /// 空
+}
+
+/// 委托状态
+enum OrderStatusType
+{
+    invalid_order_status      = 0;
+
+    created                   = 1000; /// 本地创建（未提交券商或未收到券商确认应答）
+    broker_submitted          = 1001; /// 券商已确认
+    exchange_submitted        = 1002; /// 交易所已确认
+    create_rejected           = 1003; /// 委托指令已被拒绝
+
+    cancel_created            = 2000; /// 本地撤单创建（未提交券商或未收到券商确认应答）
+    cancel_broker_submitted   = 2001; /// 撤单券商已确认
+    cancel_exchange_submitted = 2002; /// 撤单交易所已确认
+    cancel_rejected           = 2003; /// 撤单指令已被拒绝
+}
+
+/// 委托执行状态
+enum ExecStatusType
+{
+    invalid_exec_status            = 0;
+
+    no_touch                       = 1000; /// 未触发（未在竞价队列中）
+    no_filled                      = 1001; /// 尚未成交
+    partially_filled               = 1002; /// 部分成交
+    filled                         = 1003; /// 全部成交
+
+    canceled_with_no_filled        = 2000; /// 已撤销没有成交
+    canceled_with_partially_filled = 2001; /// 已撤销部分成交
+
+    rejected                       = 3000; /// 已拒绝
+}
+
+/// 委托拒单代码
+enum RejectionCode
+{
+    invalid_rejection_code = 0;
+
+    unknown                = 1; /// 未知错误
+
+    /// 交易时段
+    not_now = 1000; /// 非交易时段
+
+    /// 字段
+    repeated_unique_id = 2000; /// 重复的 UniqueID
+    invalid_unique_id  = 2001; /// 无效的 UniqueID
+    invalid_symbol     = 2002; /// 无效合约代码
+    invalid_price_type = 2003; /// 无效报价类型
+
+    /// 交易规则
+    invalid_price    = 3000; /// 无效价格
+    invalid_quantity = 3001; /// 无效数量
+    high_price       = 3002; /// 价格超出涨停
+    low_price        = 3003; /// 价格超出跌停
+    all_trade        = 3004; /// 全部成交
+
+    /// 资金和仓位
+    fund_not_enough     = 4000; /// 可用资金不足
+    position_not_enough = 4001; /// 可用仓位不足
+}
