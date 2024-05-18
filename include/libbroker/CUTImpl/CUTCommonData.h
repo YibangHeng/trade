@@ -1,0 +1,56 @@
+#pragma once
+
+#include "networks.pb.h"
+#include "third/cut/UTApiStruct.h"
+
+namespace trade::broker
+{
+
+class CUTCommonData
+{
+public:
+    CUTCommonData();
+    ~CUTCommonData() = default;
+
+public:
+    [[nodiscard]] static TUTExchangeIDType to_exchange(types::ExchangeType exchange);
+    [[nodiscard]] static types::ExchangeType to_exchange(TUTExchangeIDType exchange);
+    [[nodiscard]] static TUTDirectionType to_side(types::SideType side);
+    [[nodiscard]] static types::SideType to_side(TUTDirectionType side);
+    [[nodiscard]] static TUTOffsetFlagType to_position_side(types::PositionSideType position_side);
+    [[nodiscard]] static types::PositionSideType to_position_side(TUTOffsetFlagType position_side);
+    /// Concatenate front_id, session_id and order_ref to broker_id in format of
+    /// {front_id}:{session_id}:{order_ref}.
+    /// This tuples uniquely identify a CUT order.
+    [[nodiscard]] static std::string to_broker_id(
+        TUTFrontIDType front_id,
+        TUTSessionIDType session_id,
+        int order_ref
+    );
+    /// Extract front_id, session_id and order_ref from broker_id in format of
+    /// {front_id}:{session_id}:{order_ref}.
+    /// @return std::tuple<front_id, session_id, order_ref>. Empty string if
+    /// broker_id is not in format.
+    [[nodiscard]] static std::tuple<std::string, std::string, std::string> from_broker_id(const std::string& broker_id);
+    /// Concatenate exchange and order_sys_id to exchange_id in format of
+    /// {exchange}:{order_sys_id}.
+    /// This tuples uniquely identify a CUT order.
+    [[nodiscard]] static std::string to_exchange_id(
+        TUTExchangeIDType exchange,
+        const std::string& order_sys_id
+    );
+    /// Extract exchange and order_sys_id from exchange_id in format of
+    /// {exchange}:{order_sys_id}.
+    /// @return std::tuple<exchange, order_sys_id>. Empty string if exchange_id
+    /// is not in format.
+    [[nodiscard]] static std::tuple<std::string, std::string> from_exchange_id(const std::string& exchange_id);
+
+public:
+    TUTSystemNameType m_system_name;
+    TUTUserIDType m_user_id;
+    TUTInvestorIDType m_investor_id;
+    TUTFrontIDType m_front_id;
+    TUTSessionIDType m_session_id;
+};
+
+} // namespace trade::broker

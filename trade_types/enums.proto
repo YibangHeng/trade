@@ -38,6 +38,11 @@ enum PositionSideType
 
     open                  = 1000; /// 开
     close                 = 1001; /// 平
+    force_close           = 1002; /// 强平
+    close_today           = 1003; /// 平今
+    close_yesterday       = 1004; /// 平昨
+    force_off             = 1005; /// 强减
+    local_force_close     = 1006; /// 本地强平
 }
 
 /// 多空方向
