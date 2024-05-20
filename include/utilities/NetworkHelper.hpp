@@ -102,6 +102,12 @@ struct ZMQSocketPtrDeleter {
 
 using ZMQSocketPtr = std::unique_ptr<void, ZMQSocketPtrDeleter>;
 
+/// Encapsulate a ZeroMQ REP (reply) socket for creating a request-reply server.
+///
+/// This class manages the lifecycle of a ZeroMQ context (if not provided
+/// globally) and socket, handling the initialization, binding to an address,
+/// and cleanup. It provides methods to receive and send messages using the
+/// ZeroMQ request-reply pattern.
 class RRServer
 {
 public:
@@ -150,6 +156,13 @@ private:
     zmq_msg_t zmq_request;
 };
 
+/// Encapsulate a ZeroMQ REQ (request) socket for creating a request-reply
+/// client.
+///
+/// This class manages the lifecycle of a ZeroMQ context (if not provided
+/// globally) and socket, handling the initialization, connecting to an address,
+/// and cleanup. It provides a method to send a request and receive a reply
+/// using the ZeroMQ request-reply pattern.
 class RRClient
 {
 public:
