@@ -138,3 +138,49 @@ TEST_CASE("Sending and receiving messages with M:1 connections", "[RRServer/RRCl
 
     server_thread.join();
 }
+
+TEST_CASE("Sending and receiving messages via IP multicast", "[MCServer/MCClient]")
+{
+    const std::string multicast_address = "239.255.255.255";
+    constexpr uint16_t multicast_port   = 5555;
+
+    /// Server side.
+    auto server_worker = [multicast_address] {
+        trade::utilities::MCServer server(multicast_address, multicast_port);
+
+        for (int i = 0; i < insertion_times * insertion_batch; i++) {
+            trade::types::UnixSig unix_sig;
+            unix_sig.set_sig(2);
+
+            server.send(trade::utilities::Serializer::serialize(trade::types::MessageID::unix_sig, unix_sig));
+        }
+    };
+
+    std::thread server_thread(server_worker);
+
+    /// Client side.
+    auto client_worker = [multicast_address] {
+        trade::utilities::MCClient client(multicast_address, multicast_port);
+
+        for (int i = 0; i < insertion_times * insertion_batch; i++) {
+            const auto received_unix_sig          = client.receive();
+
+            const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(received_unix_sig);
+
+            trade::types::UnixSig unix_sig;
+            unix_sig.ParseFromString(message_body);
+            CHECK(message_id == trade::types::MessageID::unix_sig);
+            CHECK(unix_sig.sig() == 2);
+        }
+    };
+
+    std::array<std::thread, insertion_times> client_threads;
+
+    for (auto& client_thread : client_threads)
+        client_thread = std::thread(client_worker);
+
+    for (auto& client_thread : client_threads)
+        client_thread.join();
+
+    server_thread.join();
+}
