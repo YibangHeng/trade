@@ -222,7 +222,11 @@ private:
     zmq_msg_t zmq_response;
 };
 
-template<std::size_t BufferSize = 2048>
+/// Encapsulate raw UDP multicast socket.
+///
+/// This class manages the lifecycle of a raw socket, handling the
+/// initialization, and cleanup. It provides methods to send messages using the
+/// UDP multicast pattern.
 class MCServer
 {
 public:
@@ -233,6 +237,7 @@ public:
         const auto code = m_sender_fd = socket(AF_INET, SOCK_DGRAM, 0);
 
         if (code < 0) {
+            close(m_sender_fd);
             throw std::runtime_error("Failed to create sending socket");
         }
 
@@ -257,7 +262,12 @@ private:
     int m_sender_fd;
 };
 
-template<std::size_t BufferSize = 2048>
+/// Encapsulate raw UDP multicast socke.
+///
+/// This class manages the lifecycle of a raw socket, handling the
+/// initialization, and cleanup. It provides methods to receive messages using
+/// the UDP multicast pattern.
+template<typename T>
 class MCClient
 {
 public:
@@ -270,6 +280,7 @@ public:
         auto code = m_receiver_fd = socket(AF_INET, SOCK_DGRAM, 0);
 
         if (code < 0) {
+            close(m_receiver_fd);
             throw std::runtime_error(fmt::format("Failed to create receiving socket for {}: {}", address, strerror(errno)));
         }
 
@@ -291,6 +302,7 @@ public:
         code = bind(m_receiver_fd, reinterpret_cast<sockaddr*>(&m_receive_addr), sizeof(m_receive_addr));
 
         if (code < 0) {
+            close(m_receiver_fd);
             throw std::runtime_error("Failed to bind receiving socket");
         }
 
@@ -302,11 +314,12 @@ public:
         code = setsockopt(m_receiver_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &m_mreq, sizeof(m_mreq));
 
         if (code < 0) {
+            close(m_receiver_fd);
             throw std::runtime_error(fmt::format("Failed to join multicast group: {}", strerror(errno)));
         }
 
         /// Allocate buffer.
-        buffer.reset(new char[BufferSize]);
+        buffer.reset(new char[sizeof(T)]);
     }
     ~MCClient()
     {
@@ -316,7 +329,7 @@ public:
 public:
     std::string receive()
     {
-        const auto received_bytes = recvfrom(m_receiver_fd, buffer.get(), BufferSize, 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &addr_len);
+        const auto received_bytes = recvfrom(m_receiver_fd, buffer.get(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &addr_len);
 
         if (received_bytes < 0) {
             return "";

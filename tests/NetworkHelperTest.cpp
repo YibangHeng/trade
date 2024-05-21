@@ -176,7 +176,7 @@ TEST_CASE("Sending and receiving messages via IP multicast", "[MCServer/MCClient
 
     /// Client side.
     auto client_worker = [multicast_address, &touched_times] {
-        trade::utilities::MCClient client(multicast_address, multicast_port);
+        trade::utilities::MCClient<char[1024]> client(multicast_address, multicast_port);
 
         for (int i = 0; i < insertion_times * insertion_batch; i++) {
             const auto received_unix_sig          = client.receive();
