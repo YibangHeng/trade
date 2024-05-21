@@ -270,7 +270,7 @@ public:
         auto code = m_receiver_fd = socket(AF_INET, SOCK_DGRAM, 0);
 
         if (code < 0) {
-            throw std::runtime_error("Failed to create receiving socket");
+            throw std::runtime_error(fmt::format("Failed to create receiving socket for {}: {}", address, strerror(errno)));
         }
 
         constexpr u_int yes = 1;
@@ -279,10 +279,10 @@ public:
         code = setsockopt(m_receiver_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
         if (code < 0) {
-            throw std::runtime_error(fmt::format("Failed to resue: {}", address));
+            throw std::runtime_error(fmt::format("Failed to resue address {}: {}", address, strerror(errno)));
         }
 
-        /// Set up port.
+        /// Set up destination address.
         m_receive_addr.sin_family      = AF_INET;
         m_receive_addr.sin_addr.s_addr = htonl(INADDR_ANY);
         m_receive_addr.sin_port        = htons(port);
@@ -294,13 +294,15 @@ public:
             throw std::runtime_error("Failed to bind receiving socket");
         }
 
+        /// Set up multicast address.
         m_mreq.imr_multiaddr.s_addr = inet_addr(address.c_str());
         m_mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 
         /// Request that the kernel join a multicast group.
         code = setsockopt(m_receiver_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &m_mreq, sizeof(m_mreq));
+
         if (code < 0) {
-            throw std::runtime_error("Failed to set receiving socket");
+            throw std::runtime_error(fmt::format("Failed to join multicast group: {}", strerror(errno)));
         }
 
         /// Allocate buffer.

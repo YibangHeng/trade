@@ -96,8 +96,10 @@ TEST_CASE("Sending and receiving messages with M:1 connections", "[RRServer/RRCl
     trade::utilities::ZMQContextPtr zmq_context;
     zmq_context.reset(zmq_ctx_new(), trade::utilities::ZMQContextPtrDeleter());
 
+    std::mutex check_mutex;
+
     /// Server side.
-    auto server_worker = [&zmq_context] {
+    auto server_worker = [&zmq_context, &check_mutex] {
         trade::utilities::RRServer server("inproc://server", zmq_context);
 
         for (int i = 0; i < insertion_times * insertion_batch; i++) {
@@ -106,7 +108,10 @@ TEST_CASE("Sending and receiving messages with M:1 connections", "[RRServer/RRCl
             trade::types::UnixSig unix_sig;
             unix_sig.ParseFromString(message_body);
 
-            CHECK(message_id == trade::types::MessageID::unix_sig);
+            {
+                std::lock_guard lock(check_mutex);
+                CHECK(message_id == trade::types::MessageID::unix_sig);
+            }
 
             server.send(trade::types::MessageID::unix_sig, unix_sig);
         }
@@ -115,7 +120,7 @@ TEST_CASE("Sending and receiving messages with M:1 connections", "[RRServer/RRCl
     std::thread server_thread(server_worker);
 
     /// Client side.
-    auto client_worker = [&zmq_context] {
+    auto client_worker = [&zmq_context, &check_mutex] {
         trade::utilities::RRClient client("inproc://server", zmq_context);
 
         for (int i = 0; i < insertion_batch; i++) {
@@ -124,7 +129,10 @@ TEST_CASE("Sending and receiving messages with M:1 connections", "[RRServer/RRCl
 
             const auto received_unix_sig = client.request<trade::types::UnixSig>(trade::types::MessageID::unix_sig, send_unix_sig);
 
-            CHECK(received_unix_sig.sig() == i);
+            {
+                std::lock_guard lock(check_mutex);
+                CHECK(received_unix_sig.sig() == i);
+            }
         }
     };
 
@@ -144,13 +152,21 @@ TEST_CASE("Sending and receiving messages via IP multicast", "[MCServer/MCClient
     const std::string multicast_address = "239.255.255.255";
     constexpr uint16_t multicast_port   = 5555;
 
+    /// Record the number of times each signal is received. The index is the
+    /// value of the signal, and the value is the number of receptions of the
+    /// signal.
+    std::array<std::atomic<size_t>, insertion_times * insertion_batch> touched_times;
+
     /// Server side.
     auto server_worker = [multicast_address] {
         trade::utilities::MCServer server(multicast_address, multicast_port);
 
+        /// Wait for all clients to connect.
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
         for (int i = 0; i < insertion_times * insertion_batch; i++) {
             trade::types::UnixSig unix_sig;
-            unix_sig.set_sig(2);
+            unix_sig.set_sig(i);
 
             server.send(trade::utilities::Serializer::serialize(trade::types::MessageID::unix_sig, unix_sig));
         }
@@ -159,7 +175,7 @@ TEST_CASE("Sending and receiving messages via IP multicast", "[MCServer/MCClient
     std::thread server_thread(server_worker);
 
     /// Client side.
-    auto client_worker = [multicast_address] {
+    auto client_worker = [multicast_address, &touched_times] {
         trade::utilities::MCClient client(multicast_address, multicast_port);
 
         for (int i = 0; i < insertion_times * insertion_batch; i++) {
@@ -169,8 +185,9 @@ TEST_CASE("Sending and receiving messages via IP multicast", "[MCServer/MCClient
 
             trade::types::UnixSig unix_sig;
             unix_sig.ParseFromString(message_body);
-            CHECK(message_id == trade::types::MessageID::unix_sig);
-            CHECK(unix_sig.sig() == 2);
+
+            /// Record the number of received signals.
+            ++touched_times[static_cast<size_t>(i)];
         }
     };
 
@@ -183,4 +200,9 @@ TEST_CASE("Sending and receiving messages via IP multicast", "[MCServer/MCClient
         client_thread.join();
 
     server_thread.join();
+
+    /// Check whether all signals are received, no duplication or loss.
+    for (int i = 0; i < insertion_times * insertion_batch; i++) {
+        CHECK(touched_times[static_cast<size_t>(i)] == insertion_times);
+    }
 }
