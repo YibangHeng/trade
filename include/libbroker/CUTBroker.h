@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "BrokerProxy.hpp"
+#include "CUTImpl/CUTMdImpl.h"
 #include "CUTImpl/CUTTraderImpl.h"
 
 namespace trade::broker
@@ -31,6 +32,7 @@ public:
     void unsubscribe(const std::unordered_set<std::string>& symbols) override;
 
 private:
+    std::unique_ptr<CUTMdImpl> m_md_impl;
     std::unique_ptr<CUTTraderImpl> m_trader_impl;
 };
 

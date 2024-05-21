@@ -22,6 +22,16 @@ enum ExchangeType
     szse             = 1012; /// 深圳证券交易所
 }
 
+/// 委托类型
+enum OrderType
+{
+    invalid_order_type   = 0;
+
+    limit                = 1000; /// 限价
+    best_price_this_side = 1001; /// 本方最优价（市价）
+    best_price           = 1002; /// 最优价
+}
+
 /// 交易方向
 enum SideType
 {
@@ -112,4 +122,14 @@ enum RejectionCode
     /// 资金和仓位
     fund_not_enough     = 4000; /// 可用资金不足
     position_not_enough = 4001; /// 可用仓位不足
+}
+
+/// 以下为扩展枚举类型，仅适用于部分接口
+
+enum X_OST_SZSEMessageType
+{
+    invalid_ost_szse_message_type = 0;
+
+    order                         = 1000; /// 逐笔委托消息
+    trade                         = 1001; /// 逐笔成交消息
 }

@@ -44,6 +44,16 @@ trade::types::ExchangeType trade::broker::CUTCommonData::to_exchange(TUTExchange
     }
 }
 
+/// TODO: Confirmation is required.
+trade::types::OrderType trade::broker::CUTCommonData::to_order_type(char order_type)
+{
+    switch (order_type) {
+    case '2': return types::OrderType::limit;
+    case '1': return types::OrderType::best_price_this_side;
+    default: return types::OrderType::invalid_order_type;
+    }
+}
+
 TUTDirectionType trade::broker::CUTCommonData::to_side(const types::SideType side)
 {
     switch (side) {
@@ -58,6 +68,16 @@ trade::types::SideType trade::broker::CUTCommonData::to_side(const TUTDirectionT
     switch (side) {
     case UT_D_Buy: return types::SideType::buy;
     case UT_D_Sell: return types::SideType::sell;
+    default: return types::SideType::invalid_side;
+    }
+}
+
+/// TODO: Confirmation is required.
+trade::types::SideType trade::broker::CUTCommonData::to_md_side(const char side)
+{
+    switch (side) {
+    case '1': return types::SideType::buy;
+    case '2': return types::SideType::sell;
     default: return types::SideType::invalid_side;
     }
 }
@@ -138,4 +158,50 @@ std::tuple<std::string, std::string> trade::broker::CUTCommonData::from_exchange
     std::getline(iss, order_sys_id, ':');
 
     return std::make_tuple(exchange, order_sys_id);
+}
+
+trade::types::X_OST_SZSEMessageType trade::broker::CUTCommonData::get_datagram_type(const std::string& message)
+{
+    return to_szse_message_type(reinterpret_cast<const sze_hpf_pkt_head*>(message.data())->m_message_type);
+}
+
+trade::types::OrderTick trade::broker::CUTCommonData::to_order_tick(const std::string& message)
+{
+    assert(message.size() == sizeof(sze_hpf_order_pkt));
+
+    types::OrderTick order_tick;
+
+    const auto order = reinterpret_cast<const sze_hpf_order_pkt*>(message.data());
+
+    order_tick.set_symbol(order->m_header.m_symbol);
+    order_tick.set_order_type(to_order_type(order->m_order_type));
+    order_tick.set_side(to_md_side(order->m_side));
+    order_tick.set_price(order->m_px / 1000.);
+    order_tick.set_quantity(order->m_qty / 1000);
+
+    return order_tick;
+}
+
+trade::types::TradeTick trade::broker::CUTCommonData::to_trade_tick(const std::string& message)
+{
+    assert(message.size() == sizeof(sze_hpf_exe_pkt));
+
+    types::TradeTick trade_tick;
+
+    const auto trade = reinterpret_cast<const sze_hpf_exe_pkt*>(message.data());
+
+    trade_tick.set_symbol(trade->m_header.m_symbol);
+    trade_tick.set_exec_price(trade->m_exe_px / 1000.);
+    trade_tick.set_exec_quantity(trade->m_exe_qty / 1000);
+
+    return trade_tick;
+}
+
+trade::types::X_OST_SZSEMessageType trade::broker::CUTCommonData::to_szse_message_type(uint8_t message_type)
+{
+    switch (message_type) {
+    case 23: return types::X_OST_SZSEMessageType::order;
+    case 24: return types::X_OST_SZSEMessageType::trade;
+    default: return types::X_OST_SZSEMessageType::invalid_ost_szse_message_type;
+    }
 }
