@@ -1,0 +1,3 @@
+[submodule "include/third/liquibook"]
+	path = include/third/liquibook
+	url = git@github.com:enewhuis/liquibook.git
