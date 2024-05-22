@@ -22,6 +22,16 @@ enum ExchangeType
     szse             = 1012; /// 深圳证券交易所
 }
 
+/// 委托类型
+enum OrderType
+{
+    invalid_order_type   = 0;
+
+    limit                = 1000; /// 限价
+    best_price_this_side = 1001; /// 本方最优价（市价）
+    best_price           = 1002; /// 最优价
+}
+
 /// 交易方向
 enum SideType
 {
@@ -38,6 +48,11 @@ enum PositionSideType
 
     open                  = 1000; /// 开
     close                 = 1001; /// 平
+    force_close           = 1002; /// 强平
+    close_today           = 1003; /// 平今
+    close_yesterday       = 1004; /// 平昨
+    force_off             = 1005; /// 强减
+    local_force_close     = 1006; /// 本地强平
 }
 
 /// 多空方向
@@ -107,4 +122,14 @@ enum RejectionCode
     /// 资金和仓位
     fund_not_enough     = 4000; /// 可用资金不足
     position_not_enough = 4001; /// 可用仓位不足
+}
+
+/// 以下为扩展枚举类型，仅适用于部分接口
+
+enum X_OST_SZSEDatagramType
+{
+    invalid_ost_szse_datagram_type = 0;
+
+    order                          = 1000; /// 逐笔委托消息
+    trade                          = 1001; /// 逐笔成交消息
 }

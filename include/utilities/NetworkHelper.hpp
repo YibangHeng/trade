@@ -1,5 +1,6 @@
 #pragma once
 
+#include <arpa/inet.h>
 #include <fmt/format.h>
 #include <google/protobuf/message.h>
 #include <zmq.h>
@@ -102,6 +103,12 @@ struct ZMQSocketPtrDeleter {
 
 using ZMQSocketPtr = std::unique_ptr<void, ZMQSocketPtrDeleter>;
 
+/// Encapsulate a ZeroMQ REP (reply) socket for creating a request-reply server.
+///
+/// This class manages the lifecycle of a ZeroMQ context (if not provided
+/// globally) and socket, handling the initialization, binding to an address,
+/// and cleanup. It provides methods to receive and send messages using the
+/// ZeroMQ request-reply pattern.
 class RRServer
 {
 public:
@@ -150,6 +157,13 @@ private:
     zmq_msg_t zmq_request;
 };
 
+/// Encapsulate a ZeroMQ REQ (request) socket for creating a request-reply
+/// client.
+///
+/// This class manages the lifecycle of a ZeroMQ context (if not provided
+/// globally) and socket, handling the initialization, connecting to an address,
+/// and cleanup. It provides a method to send a request and receive a reply
+/// using the ZeroMQ request-reply pattern.
 class RRClient
 {
 public:
@@ -206,6 +220,132 @@ private:
     ZMQContextPtr zmq_context;
     ZMQSocketPtr zmq_socket;
     zmq_msg_t zmq_response;
+};
+
+/// Encapsulate raw UDP multicast socket.
+///
+/// This class manages the lifecycle of a raw socket, handling the
+/// initialization, and cleanup. It provides methods to send messages using the
+/// UDP multicast pattern.
+class MCServer
+{
+public:
+    explicit MCServer(const std::string& address, const uint16_t port)
+        : m_send_addr()
+    {
+        /// Create what looks like an ordinary UDP socket.
+        const auto code = m_sender_fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+        if (code < 0) {
+            close(m_sender_fd);
+            throw std::runtime_error("Failed to create sending socket");
+        }
+
+        /// Set up destination address.
+        m_send_addr.sin_family      = AF_INET;
+        m_send_addr.sin_addr.s_addr = inet_addr(address.c_str());
+        m_send_addr.sin_port        = htons(port);
+    }
+    ~MCServer()
+    {
+        close(m_sender_fd);
+    }
+
+public:
+    void send(const std::string& message)
+    {
+        std::ignore = sendto(m_sender_fd, message.c_str(), message.size(), 0, reinterpret_cast<sockaddr*>(&m_send_addr), sizeof(m_send_addr));
+    }
+
+private:
+    sockaddr_in m_send_addr;
+    int m_sender_fd;
+};
+
+/// Encapsulate raw UDP multicast socke.
+///
+/// This class manages the lifecycle of a raw socket, handling the
+/// initialization, and cleanup. It provides methods to receive messages using
+/// the UDP multicast pattern.
+template<typename T>
+class MCClient
+{
+public:
+    explicit MCClient(const std::string& address, const uint16_t port)
+        : m_receive_addr(),
+          m_mreq(),
+          addr_len(sizeof(m_receive_addr))
+    {
+        /// Create what looks like an ordinary UDP socket.
+        auto code = m_receiver_fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+        if (code < 0) {
+            close(m_receiver_fd);
+            throw std::runtime_error(fmt::format("Failed to create receiving socket for {}: {}", address, strerror(errno)));
+        }
+
+        constexpr u_int yes = 1;
+
+        /// Allow multiple sockets to use the same port number.
+        code = setsockopt(m_receiver_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+
+        if (code < 0) {
+            throw std::runtime_error(fmt::format("Failed to resue address {}: {}", address, strerror(errno)));
+        }
+
+        /// Set up destination address.
+        m_receive_addr.sin_family      = AF_INET;
+        m_receive_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+        m_receive_addr.sin_port        = htons(port);
+
+        /// Bind to receive address.
+        code = bind(m_receiver_fd, reinterpret_cast<sockaddr*>(&m_receive_addr), sizeof(m_receive_addr));
+
+        if (code < 0) {
+            close(m_receiver_fd);
+            throw std::runtime_error("Failed to bind receiving socket");
+        }
+
+        /// Set up multicast address.
+        m_mreq.imr_multiaddr.s_addr = inet_addr(address.c_str());
+        m_mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+
+        /// Request that the kernel join a multicast group.
+        code = setsockopt(m_receiver_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &m_mreq, sizeof(m_mreq));
+
+        if (code < 0) {
+            close(m_receiver_fd);
+            throw std::runtime_error(fmt::format("Failed to join multicast group: {}", strerror(errno)));
+        }
+
+        /// Allocate buffer.
+        buffer.reset(new char[sizeof(T)]);
+    }
+    ~MCClient()
+    {
+        close(m_receiver_fd);
+    }
+
+public:
+    std::string receive()
+    {
+        const auto received_bytes = recvfrom(m_receiver_fd, buffer.get(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &addr_len);
+
+        if (received_bytes < 0) {
+            return "";
+        }
+
+        return {buffer.get(), static_cast<std::string::size_type>(received_bytes)};
+    }
+
+private:
+    sockaddr_in m_receive_addr;
+    ip_mreq m_mreq;
+    int m_receiver_fd;
+
+private:
+    std::unique_ptr<char> buffer;
+    socklen_t addr_len;
 };
 
 } // namespace trade::utilities

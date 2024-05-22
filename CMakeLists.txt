@@ -55,9 +55,15 @@ add_subdirectory(src/libbroker)
 add_subdirectory(src/libreporter)
 add_subdirectory(src/libholder)
 add_subdirectory(src/trade)
+add_subdirectory(src/mds)
 
 # Configuration files.
-set(CONFIG_FILES trade.ini ctp.ini)
+set(CONFIG_FILES
+        ctp.ini
+        cut.ini
+        trade.ini
+        README.txt
+)
 
 foreach (CONFIG_FILE ${CONFIG_FILES})
     configure_file(${CMAKE_SOURCE_DIR}/etc/${CONFIG_FILE}
@@ -66,6 +72,22 @@ foreach (CONFIG_FILE ${CONFIG_FILES})
     install(FILES ${CMAKE_SOURCE_DIR}/etc/${CONFIG_FILE}
             DESTINATION /usr/local/etc
             COMPONENT config)
+endforeach ()
+
+# Data files.
+set(DATA_FILES
+        cut-odtd/od.csv
+        cut-odtd/td.csv
+        README.txt
+)
+
+foreach (DATA_FILE ${DATA_FILES})
+    configure_file(${CMAKE_SOURCE_DIR}/data/${DATA_FILE}
+            ${CMAKE_BINARY_DIR}/data/${DATA_FILE}
+            COPYONLY)
+    install(FILES ${CMAKE_SOURCE_DIR}/data/${DATA_FILE}
+            DESTINATION /usr/local/share
+            COMPONENT data)
 endforeach ()
 
 # Tests.

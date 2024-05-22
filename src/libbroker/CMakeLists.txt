@@ -11,4 +11,5 @@ target_link_libraries(
         PRIVATE
         thostmduserapi_se
         thosttraderapi_se
+        utapi
 )

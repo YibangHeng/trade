@@ -6,8 +6,7 @@ trade::broker::CTPBroker::CTPBroker(
     const std::string& config_path,
     const std::shared_ptr<holder::IHolder>& holder,
     const std::shared_ptr<reporter::IReporter>& reporter
-) : BrokerProxy("CTPBroker", holder, reporter, config_path),
-    m_trader_impl(nullptr)
+) : BrokerProxy("CTPBroker", holder, reporter, config_path)
 {
 }
 

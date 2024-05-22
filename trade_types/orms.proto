@@ -73,3 +73,19 @@ message Orders
 {
     repeated Order orders = 1;
 }
+
+message OrderTick
+{
+    string symbol        = 1;
+    OrderType order_type = 2;
+    SideType side        = 3;
+    double price         = 4;
+    int64 quantity       = 5;
+}
+
+message TradeTick
+{
+    string symbol       = 1;
+    double exec_price   = 2;
+    int64 exec_quantity = 3;
+}

@@ -3,6 +3,7 @@
 
 #include "info.h"
 #include "libbroker/CTPBroker.h"
+#include "libbroker/CUTBroker.h"
 #include "libholder/SQLiteHolder.h"
 #include "libreporter/LogReporter.h"
 #include "trade/trade.h"
@@ -38,6 +39,13 @@ int trade::Trade::run()
 
     if (config->get<std::string>("Broker.Type") == "CTP") {
         m_broker = std::make_shared<broker::CTPBroker>(
+            config->get<std::string>("Broker.Config"),
+            m_holder,
+            m_reporter
+        );
+    }
+    else if (config->get<std::string>("Broker.Type") == "CUT") {
+        m_broker = std::make_shared<broker::CUTBroker>(
             config->get<std::string>("Broker.Config"),
             m_holder,
             m_reporter
