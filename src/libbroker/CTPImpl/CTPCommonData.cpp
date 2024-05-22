@@ -5,13 +5,14 @@
 #include "utilities/TimeHelper.hpp"
 
 trade::broker::CTPCommonData::CTPCommonData()
-    : m_system_name {},
-      m_broker_id {},
-      m_user_id {},
-      m_investor_id {},
+    : m_system_name(),
+      m_broker_id(),
+      m_user_id(),
+      m_investor_id(),
       m_front_id(0),
       m_session_id(0)
-{}
+{
+}
 
 std::string trade::broker::CTPCommonData::to_exchange(const types::ExchangeType exchange)
 {
