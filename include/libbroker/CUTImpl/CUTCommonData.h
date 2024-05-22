@@ -91,11 +91,10 @@ public:
     /// is not in format.
     [[nodiscard]] static std::tuple<std::string, std::string> from_exchange_id(const std::string& exchange_id);
     [[nodiscard]] static types::X_OST_SZSEMessageType get_datagram_type(const std::string& message);
+    [[nodiscard]] static uint8_t to_szse_datagram_type(types::X_OST_SZSEMessageType message_type);
+    [[nodiscard]] static types::X_OST_SZSEMessageType to_szse_datagram_type(uint8_t message_type);
     [[nodiscard]] static types::OrderTick to_order_tick(const std::string& message);
     [[nodiscard]] static types::TradeTick to_trade_tick(const std::string& message);
-
-private:
-    [[nodiscard]] static types::X_OST_SZSEMessageType to_szse_message_type(uint8_t message_type);
 
 public:
     TUTSystemNameType m_system_name;

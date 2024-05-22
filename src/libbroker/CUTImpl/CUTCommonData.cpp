@@ -28,7 +28,7 @@ TUTExchangeIDType trade::broker::CUTCommonData::to_exchange(const types::Exchang
     }
 }
 
-trade::types::ExchangeType trade::broker::CUTCommonData::to_exchange(TUTExchangeIDType exchange)
+trade::types::ExchangeType trade::broker::CUTCommonData::to_exchange(const TUTExchangeIDType exchange)
 {
     switch (exchange) {
     case UT_EXG_BSE: return types::ExchangeType::bse;
@@ -45,7 +45,7 @@ trade::types::ExchangeType trade::broker::CUTCommonData::to_exchange(TUTExchange
 }
 
 /// TODO: Confirmation is required.
-trade::types::OrderType trade::broker::CUTCommonData::to_order_type(char order_type)
+trade::types::OrderType trade::broker::CUTCommonData::to_order_type(const char order_type)
 {
     switch (order_type) {
     case '2': return types::OrderType::limit;
@@ -162,7 +162,25 @@ std::tuple<std::string, std::string> trade::broker::CUTCommonData::from_exchange
 
 trade::types::X_OST_SZSEMessageType trade::broker::CUTCommonData::get_datagram_type(const std::string& message)
 {
-    return to_szse_message_type(reinterpret_cast<const sze_hpf_pkt_head*>(message.data())->m_message_type);
+    return to_szse_datagram_type(reinterpret_cast<const sze_hpf_pkt_head*>(message.data())->m_message_type);
+}
+
+uint8_t trade::broker::CUTCommonData::to_szse_datagram_type(const types::X_OST_SZSEMessageType message_type)
+{
+    switch (message_type) {
+    case types::X_OST_SZSEMessageType::order: return 23;
+    case types::X_OST_SZSEMessageType::trade: return 24;
+    default: return 0;
+    }
+}
+
+trade::types::X_OST_SZSEMessageType trade::broker::CUTCommonData::to_szse_datagram_type(const uint8_t message_type)
+{
+    switch (message_type) {
+    case 23: return types::X_OST_SZSEMessageType::order;
+    case 24: return types::X_OST_SZSEMessageType::trade;
+    default: return types::X_OST_SZSEMessageType::invalid_ost_szse_message_type;
+    }
 }
 
 trade::types::OrderTick trade::broker::CUTCommonData::to_order_tick(const std::string& message)
@@ -195,13 +213,4 @@ trade::types::TradeTick trade::broker::CUTCommonData::to_trade_tick(const std::s
     trade_tick.set_exec_quantity(trade->m_exe_qty / 1000);
 
     return trade_tick;
-}
-
-trade::types::X_OST_SZSEMessageType trade::broker::CUTCommonData::to_szse_message_type(uint8_t message_type)
-{
-    switch (message_type) {
-    case 23: return types::X_OST_SZSEMessageType::order;
-    case 24: return types::X_OST_SZSEMessageType::trade;
-    default: return types::X_OST_SZSEMessageType::invalid_ost_szse_message_type;
-    }
 }

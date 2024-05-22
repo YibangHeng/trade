@@ -6,8 +6,7 @@ trade::broker::CUTBroker::CUTBroker(
     const std::string& config_path,
     const std::shared_ptr<holder::IHolder>& holder,
     const std::shared_ptr<reporter::IReporter>& reporter
-) : BrokerProxy("CUTBroker", holder, reporter, config_path),
-    m_trader_impl(nullptr)
+) : BrokerProxy("CUTBroker", holder, reporter, config_path)
 {
 }
 
@@ -15,6 +14,7 @@ void trade::broker::CUTBroker::start_login() noexcept
 {
     BrokerProxy::start_login();
 
+    m_md_impl     = std::make_unique<CUTMdImpl>(config, m_holder, m_reporter);
     m_trader_impl = std::make_unique<CUTTraderImpl>(config, m_holder, m_reporter, this);
 }
 
@@ -22,6 +22,7 @@ void trade::broker::CUTBroker::start_logout() noexcept
 {
     BrokerProxy::start_logout();
 
+    m_md_impl.reset();
     m_trader_impl.reset();
 }
 
@@ -49,10 +50,10 @@ std::shared_ptr<trade::types::NewCancelRsp> trade::broker::CUTBroker::cancel_ord
 
 void trade::broker::CUTBroker::subscribe(const std::unordered_set<std::string>& symbols)
 {
-    logger->warn("CUTBroker::subscribe is not implemented yet");
+    m_md_impl->subscribe(symbols);
 }
 
 void trade::broker::CUTBroker::unsubscribe(const std::unordered_set<std::string>& symbols)
 {
-    logger->warn("CUTBroker::unsubscribe is not implemented yet");
+    m_md_impl->unsubscribe(symbols);
 }

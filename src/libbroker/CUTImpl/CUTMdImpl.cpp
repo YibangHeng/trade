@@ -13,7 +13,8 @@ trade::broker::CUTMdImpl::CUTMdImpl(
     thread(nullptr),
     m_holder(std::move(holder)),
     m_reporter(std::move(reporter))
-{}
+{
+}
 
 void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& symbols)
 {

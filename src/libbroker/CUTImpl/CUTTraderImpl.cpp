@@ -190,26 +190,26 @@ void trade::broker::CUTTraderImpl::init_req()
     logger->info("Queried instruments in request {}", request_id);
 
     std::tie(request_seq, request_id) = new_id_pair();
-    //
-    // /// @OnRspQryTradingAccount.
-    // CUTQryTradingAccountField qry_trading_account_field {};
-    // code = m_trader_api->ReqQryTradingAccount(&qry_trading_account_field, request_seq);
-    // if (code != 0) {
-    //     logger->error("Failed to call ReqQryTradingAccount: returned code {}", code);
-    // }
-    // logger->info("Queried trading accounts in request {}", request_id);
-    //
-    // std::tie(request_seq, request_id) = new_id_pair();
-    //
-    // /// @OnRspQryInvestorPosition.
-    // CUTQryInvestorPositionField qry_investor_position_field {};
-    // code = m_trader_api->ReqQryInvestorPosition(&qry_investor_position_field, request_seq);
-    // if (code != 0) {
-    //     logger->error("Failed to call ReqQryInvestorPosition: returned code {}", code);
-    // }
-    // logger->info("Queried investor positions in request {}", request_id);
-    //
-    // std::tie(request_seq, request_id) = new_id_pair();
+
+    /// @OnRspQryTradingAccount.
+    CUTQryTradingAccountField qry_trading_account_field {};
+    code = m_trader_api->ReqQryTradingAccount(&qry_trading_account_field, request_seq);
+    if (code != 0) {
+        logger->error("Failed to call ReqQryTradingAccount: returned code {}", code);
+    }
+    logger->info("Queried trading accounts in request {}", request_id);
+
+    std::tie(request_seq, request_id) = new_id_pair();
+
+    /// @OnRspQryInvestorPosition.
+    CUTQryInvestorPositionField qry_investor_position_field {};
+    code = m_trader_api->ReqQryInvestorPosition(&qry_investor_position_field, request_seq);
+    if (code != 0) {
+        logger->error("Failed to call ReqQryInvestorPosition: returned code {}", code);
+    }
+    logger->info("Queried investor positions in request {}", request_id);
+
+    std::tie(request_seq, request_id) = new_id_pair();
 }
 
 #define NULLPTR_CHECKER(ptr)                                      \
@@ -239,7 +239,7 @@ void trade::broker::CUTTraderImpl::OnFrontConnected()
 void trade::broker::CUTTraderImpl::OnRspLogin(
     CUTRspLoginField* pRspLogin,
     CUTRspInfoField* pRspInfo,
-    int nRequestID, bool bIsLast
+    const int nRequestID, const bool bIsLast
 )
 {
     CUTSpi::OnRspLogin(pRspLogin, pRspInfo, nRequestID, bIsLast);
@@ -266,7 +266,7 @@ void trade::broker::CUTTraderImpl::OnRspLogin(
     init_req();
 }
 
-void trade::broker::CUTTraderImpl::OnFrontDisconnected(int nReason)
+void trade::broker::CUTTraderImpl::OnFrontDisconnected(const int nReason)
 {
     CUTSpi::OnFrontDisconnected(nReason);
 
@@ -279,7 +279,7 @@ void trade::broker::CUTTraderImpl::OnFrontDisconnected(int nReason)
 void trade::broker::CUTTraderImpl::OnRspQryInvestor(
     CUTInvestorField* pInvestor,
     CUTRspInfoField* pRspInfo,
-    int nRequestID, bool bIsLast
+    const int nRequestID, const bool bIsLast
 )
 {
     CUTSpi::OnRspQryInvestor(pInvestor, pRspInfo, nRequestID, bIsLast);
