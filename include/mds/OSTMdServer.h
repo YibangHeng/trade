@@ -10,7 +10,7 @@
 namespace trade
 {
 
-class PUBLIC_API OSTMdServer final: private AppBase<>
+class PUBLIC_API OSTMdServer final: private AppBase<uint32_t>
 {
 public:
     OSTMdServer(int argc, char* argv[]);
@@ -25,8 +25,8 @@ private:
     bool argv_parse(int argc, char* argv[]);
 
 private:
-    const broker::sze_hpf_order_pkt& emit_od_tick(const std::string& path) const;
-    std::vector<broker::sze_hpf_order_pkt> read_od(const std::string& path) const;
+    const broker::sze_hpf_order_pkt& emit_od_tick(const std::string& path);
+    std::vector<broker::sze_hpf_order_pkt> read_od(const std::string& path);
 
 private:
     boost::program_options::variables_map m_arguments;

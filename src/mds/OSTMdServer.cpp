@@ -2,6 +2,7 @@
 #include <fast-cpp-csv-parser/csv.h>
 #include <iostream>
 
+#include "enums.pb.h"
 #include "info.h"
 #include "mds/OSTMdServer.h"
 #include "utilities/MakeAssignable.hpp"
@@ -119,7 +120,7 @@ bool trade::OSTMdServer::argv_parse(const int argc, char* argv[])
     return true;
 }
 
-const trade::broker::sze_hpf_order_pkt& trade::OSTMdServer::emit_od_tick(const std::string& path) const
+const trade::broker::sze_hpf_order_pkt& trade::OSTMdServer::emit_od_tick(const std::string& path)
 {
     static std::vector<broker::sze_hpf_order_pkt> order_ticks;
 
@@ -135,7 +136,7 @@ const trade::broker::sze_hpf_order_pkt& trade::OSTMdServer::emit_od_tick(const s
     return order_ticks[index++ % order_ticks.size()];
 }
 
-std::vector<trade::broker::sze_hpf_order_pkt> trade::OSTMdServer::read_od(const std::string& path) const
+std::vector<trade::broker::sze_hpf_order_pkt> trade::OSTMdServer::read_od(const std::string& path)
 {
     io::CSVReader<5> in(path);
     in.read_header(io::ignore_extra_column, "securityId", "price", "tradeQty", "side", "orderType");
@@ -153,6 +154,9 @@ std::vector<trade::broker::sze_hpf_order_pkt> trade::OSTMdServer::read_od(const 
         order_ticks.emplace_back();
 
         auto& order_tick                   = order_ticks.back();
+
+        order_tick.m_header.m_sequence     = ticker_taper();
+        order_tick.m_header.m_message_type = broker::CUTCommonData::to_szse_datagram_type(types::X_OST_SZSEMessageType::order);
 
         M_A {order_tick.m_header.m_symbol} = securityId;
         order_tick.m_px                    = static_cast<uint32_t>(m_px * 1000);
