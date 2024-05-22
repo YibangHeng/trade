@@ -1,5 +1,5 @@
 #include "libreporter/LogReporter.h"
-#include "utilities//ToJSON.hpp"
+#include "utilities/ToJSON.hpp"
 
 void trade::reporter::LogReporter::broker_accepted(const std::shared_ptr<types::BrokerAcceptance> broker_acceptance)
 {
