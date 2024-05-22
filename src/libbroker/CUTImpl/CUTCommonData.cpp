@@ -160,26 +160,26 @@ std::tuple<std::string, std::string> trade::broker::CUTCommonData::from_exchange
     return std::make_tuple(exchange, order_sys_id);
 }
 
-trade::types::X_OST_SZSEMessageType trade::broker::CUTCommonData::get_datagram_type(const std::string& message)
+trade::types::X_OST_SZSEDatagramType trade::broker::CUTCommonData::get_datagram_type(const std::string& message)
 {
     return to_szse_datagram_type(reinterpret_cast<const sze_hpf_pkt_head*>(message.data())->m_message_type);
 }
 
-uint8_t trade::broker::CUTCommonData::to_szse_datagram_type(const types::X_OST_SZSEMessageType message_type)
+uint8_t trade::broker::CUTCommonData::to_szse_datagram_type(const types::X_OST_SZSEDatagramType message_type)
 {
     switch (message_type) {
-    case types::X_OST_SZSEMessageType::order: return 23;
-    case types::X_OST_SZSEMessageType::trade: return 24;
+    case types::X_OST_SZSEDatagramType::order: return 23;
+    case types::X_OST_SZSEDatagramType::trade: return 24;
     default: return 0;
     }
 }
 
-trade::types::X_OST_SZSEMessageType trade::broker::CUTCommonData::to_szse_datagram_type(const uint8_t message_type)
+trade::types::X_OST_SZSEDatagramType trade::broker::CUTCommonData::to_szse_datagram_type(const uint8_t message_type)
 {
     switch (message_type) {
-    case 23: return types::X_OST_SZSEMessageType::order;
-    case 24: return types::X_OST_SZSEMessageType::trade;
-    default: return types::X_OST_SZSEMessageType::invalid_ost_szse_message_type;
+    case 23: return types::X_OST_SZSEDatagramType::order;
+    case 24: return types::X_OST_SZSEDatagramType::trade;
+    default: return types::X_OST_SZSEDatagramType::invalid_ost_szse_datagram_type;
     }
 }
 
@@ -195,7 +195,7 @@ trade::types::OrderTick trade::broker::CUTCommonData::to_order_tick(const std::s
     order_tick.set_order_type(to_order_type(order->m_order_type));
     order_tick.set_side(to_md_side(order->m_side));
     order_tick.set_price(order->m_px / 1000.);
-    order_tick.set_quantity(order->m_qty / 1000);
+    order_tick.set_quantity(static_cast<int64_t>(order->m_qty) / 1000);
 
     return order_tick;
 }
@@ -210,7 +210,7 @@ trade::types::TradeTick trade::broker::CUTCommonData::to_trade_tick(const std::s
 
     trade_tick.set_symbol(trade->m_header.m_symbol);
     trade_tick.set_exec_price(trade->m_exe_px / 1000.);
-    trade_tick.set_exec_quantity(trade->m_exe_qty / 1000);
+    trade_tick.set_exec_quantity(static_cast<int64_t>(trade->m_exe_qty) / 1000);
 
     return trade_tick;
 }

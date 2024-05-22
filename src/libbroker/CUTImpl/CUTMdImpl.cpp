@@ -62,14 +62,14 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address) const
         const auto message_type = CUTCommonData::get_datagram_type(message);
 
         switch (message_type) {
-        case types::X_OST_SZSEMessageType::order: {
+        case types::X_OST_SZSEDatagramType::order: {
             const auto order_tick = CUTCommonData::to_order_tick(message);
 
             logger->debug("Received order tick: {}", utilities::ToJSON()(order_tick));
 
             break;
         }
-        case types::X_OST_SZSEMessageType::trade: {
+        case types::X_OST_SZSEDatagramType::trade: {
             const auto trade_tick = CUTCommonData::to_trade_tick(message);
 
             logger->debug("Received trade tick: {}", utilities::ToJSON()(trade_tick));
