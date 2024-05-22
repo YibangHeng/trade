@@ -28,6 +28,10 @@
       "version>=": "3.0.1#5"
     },
     {
+      "name": "fast-cpp-csv-parser",
+      "version>=": "2021-01-03#2"
+    },
+    {
       "name": "fmt",
       "version>=": "10.2.1#1"
     },
