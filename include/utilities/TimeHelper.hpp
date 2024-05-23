@@ -18,7 +18,7 @@
 namespace trade::utilities
 {
 
-template<typename T>
+template<typename>
 class ToTime
 {
 public:

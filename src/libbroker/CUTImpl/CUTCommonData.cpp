@@ -165,7 +165,7 @@ std::tuple<std::string, std::string> trade::broker::CUTCommonData::from_exchange
 
 trade::types::X_OST_SZSEDatagramType trade::broker::CUTCommonData::get_datagram_type(const std::string& message)
 {
-    return to_szse_datagram_type(reinterpret_cast<const sze_hpf_pkt_head*>(message.data())->m_message_type);
+    return to_szse_datagram_type(reinterpret_cast<const SZSEHpfPackageHead*>(message.data())->m_message_type);
 }
 
 uint8_t trade::broker::CUTCommonData::to_szse_datagram_type(const types::X_OST_SZSEDatagramType message_type)
@@ -188,9 +188,9 @@ trade::types::X_OST_SZSEDatagramType trade::broker::CUTCommonData::to_szse_datag
 
 std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_tick(const std::string& message)
 {
-    assert(message.size() == sizeof(sze_hpf_order_pkt));
+    assert(message.size() == sizeof(SZSEHpfOrderTick));
 
-    const auto raw_order  = reinterpret_cast<const sze_hpf_order_pkt*>(message.data());
+    const auto raw_order  = reinterpret_cast<const SZSEHpfOrderTick*>(message.data());
 
     const auto order_tick = std::make_shared<types::OrderTick>();
 
@@ -205,9 +205,9 @@ std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_
 
 std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_tick(const std::string& message)
 {
-    assert(message.size() == sizeof(sze_hpf_exe_pkt));
+    assert(message.size() == sizeof(SZSEHpfTradeTick));
 
-    const auto raw_trade  = reinterpret_cast<const sze_hpf_exe_pkt*>(message.data());
+    const auto raw_trade  = reinterpret_cast<const SZSEHpfTradeTick*>(message.data());
 
     const auto trade_tick = std::make_shared<types::TradeTick>();
 

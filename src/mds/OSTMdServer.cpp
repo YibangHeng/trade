@@ -24,13 +24,13 @@ int trade::OSTMdServer::run()
 
     utilities::MCServer server("239.255.255.255", 5555);
 
-    const auto buf = std::unique_ptr<char>(new char[sizeof(broker::sze_hpf_order_pkt)]);
+    const auto buf = std::unique_ptr<char>(new char[sizeof(broker::SZSEHpfOrderTick)]);
 
     while (m_is_running) {
         const auto order_tick = emit_od_tick(m_arguments["od-files"].as<std::string>());
 
-        memcpy(buf.get(), &order_tick, sizeof(broker::sze_hpf_order_pkt));
-        server.send(std::string(buf.get(), sizeof(broker::sze_hpf_order_pkt)));
+        memcpy(buf.get(), &order_tick, sizeof(broker::SZSEHpfOrderTick));
+        server.send(std::string(buf.get(), sizeof(broker::SZSEHpfOrderTick)));
 
         logger->info("Emitted order tick: {:>6} {:>6.2f} {:>6} {:<4} {:>1}", order_tick.m_header.m_symbol, broker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(order_tick.m_px)), broker::BookerCommonData::to_quantity(order_tick.m_qty), SideType_Name(broker::BookerCommonData::to_side(order_tick.m_side)), order_tick.m_order_type);
 
@@ -125,9 +125,9 @@ bool trade::OSTMdServer::argv_parse(const int argc, char* argv[])
     return true;
 }
 
-const trade::broker::sze_hpf_order_pkt& trade::OSTMdServer::emit_od_tick(const std::string& path)
+const trade::broker::SZSEHpfOrderTick& trade::OSTMdServer::emit_od_tick(const std::string& path)
 {
-    static std::vector<broker::sze_hpf_order_pkt> order_ticks;
+    static std::vector<broker::SZSEHpfOrderTick> order_ticks;
 
     if (order_ticks.empty()) {
         order_ticks = read_od(path);
@@ -145,12 +145,12 @@ const trade::broker::sze_hpf_order_pkt& trade::OSTMdServer::emit_od_tick(const s
     return order_ticks[index++ % order_ticks.size()];
 }
 
-std::vector<trade::broker::sze_hpf_order_pkt> trade::OSTMdServer::read_od(const std::string& path)
+std::vector<trade::broker::SZSEHpfOrderTick> trade::OSTMdServer::read_od(const std::string& path)
 {
     io::CSVReader<5> in(path);
     in.read_header(io::ignore_extra_column, "securityId", "price", "tradeQty", "side", "orderType");
 
-    std::vector<broker::sze_hpf_order_pkt> order_ticks;
+    std::vector<broker::SZSEHpfOrderTick> order_ticks;
     order_ticks.reserve(in.get_file_line());
 
     std::string security_id;

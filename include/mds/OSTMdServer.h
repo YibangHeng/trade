@@ -25,8 +25,8 @@ private:
     bool argv_parse(int argc, char* argv[]);
 
 private:
-    const broker::sze_hpf_order_pkt& emit_od_tick(const std::string& path);
-    std::vector<broker::sze_hpf_order_pkt> read_od(const std::string& path);
+    const broker::SZSEHpfOrderTick& emit_od_tick(const std::string& path);
+    std::vector<broker::SZSEHpfOrderTick> read_od(const std::string& path);
 
 private:
     boost::program_options::variables_map m_arguments;

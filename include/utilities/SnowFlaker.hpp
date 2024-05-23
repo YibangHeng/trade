@@ -89,8 +89,8 @@ private:
     static constexpr int64_t TIMESTAMP_LEFT_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS + DATACENTER_ID_BITS;
     static constexpr int64_t SEQUENCE_MASK        = (1 << SEQUENCE_BITS) - 1;
 
-    using SteadyClockT                            = std::chrono::time_point<std::chrono::steady_clock>;
-    SteadyClockT m_start_time_point               = std::chrono::steady_clock::now();
+    using SteadyClockType                            = std::chrono::time_point<std::chrono::steady_clock>;
+    SteadyClockType m_start_time_point               = std::chrono::steady_clock::now();
 
     int64_t m_start_millisecond                   = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     int64_t m_last_timestamp                      = -1;

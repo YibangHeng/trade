@@ -15,7 +15,7 @@ namespace trade
 
 /// AppBase, which contains all the common functionalities (logger, config,
 /// etc), is the base class for all classes.
-template<typename TickerTaperT = int64_t, utilities::ConfigFileType ConfigFileType = utilities::ConfigFileType::INI>
+template<typename TickerTaperType = int64_t, utilities::ConfigFileType ConfigFileType = utilities::ConfigFileType::INI>
 class AppBase: private boost::noncopyable
 {
 protected:
@@ -66,7 +66,7 @@ public:
     /// Get the unique id by the given sequence id.
     /// @param seq_id The sequence id.
     /// @return The unique id. If the given sequence id is not found, return INVALID_ID.
-    std::optional<int64_t> get_by_seq_id(const TickerTaperT& seq_id)
+    std::optional<int64_t> get_by_seq_id(const TickerTaperType& seq_id)
     {
         std::lock_guard lock(m_id_map_mutex);
 
@@ -74,7 +74,7 @@ public:
     }
 
     /// Erase the unique id by the given sequence id.
-    void earse_by_seq_id(const TickerTaperT& seq_id)
+    void earse_by_seq_id(const TickerTaperType& seq_id)
     {
         std::lock_guard lock(m_id_map_mutex);
 
@@ -84,7 +84,7 @@ public:
 public:
     std::shared_ptr<ConfigType> config;
     std::shared_ptr<spdlog::logger> logger;
-    utilities::TickerTaper<TickerTaperT> ticker_taper;
+    utilities::TickerTaper<TickerTaperType> ticker_taper;
     utilities::SnowFlaker<946684800000l> snow_flaker;
 
 private:
