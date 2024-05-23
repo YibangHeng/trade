@@ -303,7 +303,7 @@ public:
 
         if (code < 0) {
             close(m_receiver_fd);
-            throw std::runtime_error("Failed to bind receiving socket");
+            throw std::runtime_error(fmt::format("Failed to bind receiving socket at {}:{}: {}", address, port, strerror(errno)));
         }
 
         /// Set up multicast address.
@@ -315,7 +315,7 @@ public:
 
         if (code < 0) {
             close(m_receiver_fd);
-            throw std::runtime_error(fmt::format("Failed to join multicast group: {}", strerror(errno)));
+            throw std::runtime_error(fmt::format("Failed to join multicast group {}:{}: {}", address, port, strerror(errno)));
         }
 
         /// Allocate buffer.

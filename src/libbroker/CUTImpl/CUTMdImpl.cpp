@@ -26,9 +26,11 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
 
     is_running = true;
 
+    /// Make a copy to avoid dangling reference.
+    const std::string address = *symbols.begin();
+
     /// Start receiving in a separate thread.
-    thread = new std::thread([this, &symbols] {
-        const std::string address = *symbols.begin(); /// Make a copy to avoid dangling reference.
+    thread = new std::thread([this, address] {
         odtd_receiver(address);
     });
 
