@@ -84,7 +84,7 @@ public:
 
         /// In format 2000-01-01 08:00:00.000000000.
         std::stringstream date_time;
-        date_time << format("%Y-%m-%d %H:%M:%S", local_time);
+        date_time << date::format("%Y-%m-%d %H:%M:%S", local_time);
 
         /// Remove nanoseconds part.
         return date_time.str().substr(0, date_time.str().size() - 6);

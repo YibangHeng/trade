@@ -1,5 +1,23 @@
 #include "libbooker/BookerCommonData.h"
 
+char trade::broker::BookerCommonData::to_side(const types::SideType side)
+{
+    switch (side) {
+    case types::SideType::buy: return '2';
+    case types::SideType::sell: return '1';
+    default: return '\0';
+    }
+}
+
+trade::types::SideType trade::broker::BookerCommonData::to_side(const char side)
+{
+    switch (side) {
+    case '2': return types::SideType::buy;
+    case '1': return types::SideType::sell;
+    default: return types::SideType::invalid_side;
+    }
+}
+
 liquibook::book::Price trade::broker::BookerCommonData::to_price(const double price)
 {
     return static_cast<liquibook::book::Price>(price * scale);

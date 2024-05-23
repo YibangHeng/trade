@@ -4,6 +4,7 @@
 
 #include "enums.pb.h"
 #include "info.h"
+#include "libbooker/BookerCommonData.h"
 #include "mds/OSTMdServer.h"
 #include "utilities/MakeAssignable.hpp"
 #include "utilities/NetworkHelper.hpp"
@@ -31,7 +32,7 @@ int trade::OSTMdServer::run()
         memcpy(buf.get(), &order_tick, sizeof(broker::sze_hpf_order_pkt));
         server.send(std::string(buf.get(), sizeof(broker::sze_hpf_order_pkt)));
 
-        logger->info("Emitted order tick: {:>6} {:>6.2f} {:>6} {:>1} {:>1}", order_tick.m_header.m_symbol, order_tick.m_px / 1000., order_tick.m_qty / 1000, order_tick.m_side, order_tick.m_order_type);
+        logger->info("Emitted order tick: {:>6} {:>6.2f} {:>6} {:<4} {:>1}", order_tick.m_header.m_symbol, broker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(order_tick.m_px)), broker::BookerCommonData::to_quantity(order_tick.m_qty), SideType_Name(broker::BookerCommonData::to_side(order_tick.m_side)), order_tick.m_order_type);
 
         if (m_arguments["emit-interval"].as<int64_t>() > 0)
             std::this_thread::sleep_for(std::chrono::milliseconds(m_arguments["emit-interval"].as<int64_t>()));
@@ -172,7 +173,7 @@ std::vector<trade::broker::sze_hpf_order_pkt> trade::OSTMdServer::read_od(const 
         order_tick.m_side                  = m_side;
         order_tick.m_order_type            = m_order_type;
 
-        logger->debug("Load order tick: {:>6} {:>6.2f} {:>6} {:>1} {:>1}", securityId, m_px, m_qty, m_side, m_order_type);
+        logger->debug("Load order tick: {:>6} {:>6.2f} {:>6} {:<4} {:>1}", order_tick.m_header.m_symbol, broker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(order_tick.m_px)), broker::BookerCommonData::to_quantity(order_tick.m_qty), SideType_Name(broker::BookerCommonData::to_side(order_tick.m_side)), order_tick.m_order_type);
     }
 
     logger->debug("Loaded {} order ticks", order_ticks.size());
