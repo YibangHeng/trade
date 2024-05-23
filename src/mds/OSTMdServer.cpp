@@ -33,8 +33,8 @@ int trade::OSTMdServer::run()
 
         logger->info("Emitted order tick: {:>6} {:>6.2f} {:>6} {:>1} {:>1}", order_tick.m_header.m_symbol, order_tick.m_px / 1000., order_tick.m_qty / 1000, order_tick.m_side, order_tick.m_order_type);
 
-        /// TODO: Make the sleep time configurable.
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        if (m_arguments["emit-interval"].as<int64_t>() > 0)
+            std::this_thread::sleep_for(std::chrono::milliseconds(m_arguments["emit-interval"].as<int64_t>()));
     }
 
     logger->info("App exited with code {}", m_exit_code.load());
@@ -81,6 +81,10 @@ bool trade::OSTMdServer::argv_parse(const int argc, char* argv[])
     /// Multicast address.
     desc.add_options()("address,a", boost::program_options::value<std::string>()->default_value("239.255.255.255"), "multicast address");
     desc.add_options()("port,p", boost::program_options::value<uint16_t>()->default_value(5555), "multicast port");
+
+    /// Emit interval and loop mode.
+    desc.add_options()("emit-interval,e", boost::program_options::value<int64_t>()->default_value(1000), "Emit interval in milliseconds");
+    desc.add_options()("enable-loop,l", "Enable loop emitting");
 
     /// Order/Trade ticks files.
     desc.add_options()("od-files,o", boost::program_options::value<std::string>()->default_value("./data/cut-odtd/od.csv"), "Order ticks file");
@@ -132,6 +136,10 @@ const trade::broker::sze_hpf_order_pkt& trade::OSTMdServer::emit_od_tick(const s
     }
 
     static size_t index = 0;
+
+    if (!m_arguments.contains("enable-loop") && index > order_ticks.size() - 2)
+        /// Stop emitting.
+        m_is_running = false;
 
     return order_ticks[index++ % order_ticks.size()];
 }
