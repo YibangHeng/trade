@@ -191,3 +191,13 @@ message Trade
     optional double fee                     = 10; /// 手续费
     google.protobuf.Timestamp creation_time = 11; /// 成交时间
 }
+
+/// 以下为行情信息
+
+/// 交易所撮合的成交信息
+message MdTrade
+{
+    string symbol   = 4; /// 合约代码
+    double price    = 7; /// 价格
+    double quantity = 8; /// 当笔数量
+}

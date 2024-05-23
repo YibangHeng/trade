@@ -28,6 +28,10 @@ public:
     /// Trade.
 public:
     void trade_accepted(std::shared_ptr<types::Trade> trade) override {}
+
+    /// Market data.
+public:
+    void md_trade_generated(std::shared_ptr<types::MdTrade> md_trade) override {}
 };
 
 } // namespace trade::reporter

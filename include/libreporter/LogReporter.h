@@ -9,11 +9,12 @@
 namespace trade::reporter
 {
 
-class PUBLIC_API LogReporter final: public IReporter, private AppBase<>
+class PUBLIC_API LogReporter final: public IReporter
 {
 public:
     explicit LogReporter(std::shared_ptr<IReporter> outside = std::make_shared<NopReporter>())
-        : AppBase("LogReporter"),
+        : trade_logger(spdlog::default_logger()->clone("TRADE")),
+          md_logger(spdlog::default_logger()->clone("MD")),
           m_outside(std::move(outside))
     {
     }
@@ -35,6 +36,14 @@ public:
     /// Trade.
 public:
     void trade_accepted(std::shared_ptr<types::Trade> trade) override;
+
+    /// Market data.
+public:
+    void md_trade_generated(std::shared_ptr<types::MdTrade> md_trade) override;
+
+private:
+    std::shared_ptr<spdlog::logger> trade_logger;
+    std::shared_ptr<spdlog::logger> md_logger;
 
 private:
     std::shared_ptr<IReporter> m_outside;

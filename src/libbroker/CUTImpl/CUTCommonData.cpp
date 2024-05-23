@@ -183,34 +183,34 @@ trade::types::X_OST_SZSEDatagramType trade::broker::CUTCommonData::to_szse_datag
     }
 }
 
-trade::types::OrderTick trade::broker::CUTCommonData::to_order_tick(const std::string& message)
+std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_tick(const std::string& message)
 {
     assert(message.size() == sizeof(sze_hpf_order_pkt));
 
-    types::OrderTick order_tick;
+    const auto raw_order  = reinterpret_cast<const sze_hpf_order_pkt*>(message.data());
 
-    const auto order = reinterpret_cast<const sze_hpf_order_pkt*>(message.data());
+    const auto order_tick = std::make_shared<types::OrderTick>();
 
-    order_tick.set_symbol(order->m_header.m_symbol);
-    order_tick.set_order_type(to_order_type(order->m_order_type));
-    order_tick.set_side(to_md_side(order->m_side));
-    order_tick.set_price(order->m_px / 1000.);
-    order_tick.set_quantity(static_cast<int64_t>(order->m_qty) / 1000);
+    order_tick->set_symbol(raw_order->m_header.m_symbol);
+    order_tick->set_order_type(to_order_type(raw_order->m_order_type));
+    order_tick->set_side(to_md_side(raw_order->m_side));
+    order_tick->set_price(raw_order->m_px / 1000.);
+    order_tick->set_quantity(static_cast<int64_t>(raw_order->m_qty) / 1000);
 
     return order_tick;
 }
 
-trade::types::TradeTick trade::broker::CUTCommonData::to_trade_tick(const std::string& message)
+std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_tick(const std::string& message)
 {
     assert(message.size() == sizeof(sze_hpf_exe_pkt));
 
-    types::TradeTick trade_tick;
+    const auto raw_trade  = reinterpret_cast<const sze_hpf_exe_pkt*>(message.data());
 
-    const auto trade = reinterpret_cast<const sze_hpf_exe_pkt*>(message.data());
+    const auto trade_tick = std::make_shared<types::TradeTick>();
 
-    trade_tick.set_symbol(trade->m_header.m_symbol);
-    trade_tick.set_exec_price(trade->m_exe_px / 1000.);
-    trade_tick.set_exec_quantity(static_cast<int64_t>(trade->m_exe_qty) / 1000);
+    trade_tick->set_symbol(raw_trade->m_header.m_symbol);
+    trade_tick->set_exec_price(raw_trade->m_exe_px / 1000.);
+    trade_tick->set_exec_quantity(static_cast<int64_t>(raw_trade->m_exe_qty) / 1000);
 
     return trade_tick;
 }

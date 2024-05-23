@@ -30,6 +30,10 @@ public:
     /// Trade.
 public:
     virtual void trade_accepted(std::shared_ptr<types::Trade> trade) = 0;
+
+    /// Market data.
+public:
+    virtual void md_trade_generated(std::shared_ptr<types::MdTrade> md_trade) = 0;
 };
 
 } // namespace trade::reporter

@@ -93,8 +93,8 @@ public:
     [[nodiscard]] static types::X_OST_SZSEDatagramType get_datagram_type(const std::string& message);
     [[nodiscard]] static uint8_t to_szse_datagram_type(types::X_OST_SZSEDatagramType message_type);
     [[nodiscard]] static types::X_OST_SZSEDatagramType to_szse_datagram_type(uint8_t message_type);
-    [[nodiscard]] static types::OrderTick to_order_tick(const std::string& message);
-    [[nodiscard]] static types::TradeTick to_trade_tick(const std::string& message);
+    [[nodiscard]] static std::shared_ptr<types::OrderTick> to_order_tick(const std::string& message);
+    [[nodiscard]] static std::shared_ptr<types::TradeTick> to_trade_tick(const std::string& message);
 
 public:
     TUTSystemNameType m_system_name;

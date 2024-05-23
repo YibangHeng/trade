@@ -51,7 +51,22 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
     delete thread;
 }
 
-void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address) const
+void trade::broker::CUTMdImpl::on_trade(
+    const liquibook::book::OrderBook<OrderWrapperPtr>* book,
+    const liquibook::book::Quantity qty,
+    const liquibook::book::Price price
+)
+{
+    const auto md_trade = std::make_shared<types::MdTrade>();
+
+    md_trade->set_symbol(book->symbol());
+    md_trade->set_price(price / 1000);
+    md_trade->set_quantity(qty / 1000);
+
+    m_reporter->md_trade_generated(md_trade);
+}
+
+void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
 {
     const auto [multicast_address, multicast_port] = extract_address(address);
     utilities::MCClient<char[1024]> client(multicast_address, multicast_port);
@@ -65,14 +80,24 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address) const
         case types::X_OST_SZSEDatagramType::order: {
             const auto order_tick = CUTCommonData::to_order_tick(message);
 
-            logger->debug("Received order tick: {}", utilities::ToJSON()(order_tick));
+            logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
+
+            if (!books.contains(order_tick->symbol())) {
+                books.emplace(order_tick->symbol(), std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>());
+                books[order_tick->symbol()]->set_symbol(order_tick->symbol());
+                books[order_tick->symbol()]->set_trade_listener(this);
+
+                logger->debug("Created order book for symbol: {}", order_tick->symbol());
+            }
+
+            books[order_tick->symbol()]->add(std::make_shared<OrderWrapper>(order_tick));
 
             break;
         }
         case types::X_OST_SZSEDatagramType::trade: {
             const auto trade_tick = CUTCommonData::to_trade_tick(message);
 
-            logger->debug("Received trade tick: {}", utilities::ToJSON()(trade_tick));
+            logger->debug("Received trade tick: {}", utilities::ToJSON()(*trade_tick));
 
             break;
         }
