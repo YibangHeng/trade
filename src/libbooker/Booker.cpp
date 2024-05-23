@@ -23,6 +23,17 @@ void trade::broker::Booker::add(const std::shared_ptr<types::OrderTick>& order_t
     books[order_tick->symbol()]->add(std::make_shared<OrderWrapper>(order_tick));
 }
 
+void trade::broker::Booker::cancel(const std::shared_ptr<types::OrderTick>& order_tick)
+{
+    if (!books.contains(order_tick->symbol())) {
+        books.emplace(order_tick->symbol(), std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>());
+        books[order_tick->symbol()]->set_symbol(order_tick->symbol());
+        books[order_tick->symbol()]->set_trade_listener(this);
+    }
+
+    books[order_tick->symbol()]->cancel(std::make_shared<OrderWrapper>(order_tick));
+}
+
 void trade::broker::Booker::on_trade(
     const liquibook::book::OrderBook<OrderWrapperPtr>* book,
     const liquibook::book::Quantity qty,

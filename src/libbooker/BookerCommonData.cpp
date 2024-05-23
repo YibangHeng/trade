@@ -3,8 +3,8 @@
 char trade::broker::BookerCommonData::to_side(const types::SideType side)
 {
     switch (side) {
-    case types::SideType::buy: return '2';
-    case types::SideType::sell: return '1';
+    case types::SideType::buy: return '1';
+    case types::SideType::sell: return '2';
     default: return '\0';
     }
 }
@@ -12,8 +12,8 @@ char trade::broker::BookerCommonData::to_side(const types::SideType side)
 trade::types::SideType trade::broker::BookerCommonData::to_side(const char side)
 {
     switch (side) {
-    case '2': return types::SideType::buy;
-    case '1': return types::SideType::sell;
+    case '1': return types::SideType::buy;
+    case '2': return types::SideType::sell;
     default: return types::SideType::invalid_side;
     }
 }

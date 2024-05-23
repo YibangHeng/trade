@@ -21,6 +21,7 @@ public:
     /// 0 if a market order.
     [[nodiscard]] liquibook::book::Price price() const;
     [[nodiscard]] liquibook::book::Quantity order_qty() const;
+    [[nodiscard]] bool is_limit() const;
 
     /// 0 if not a stop order.
     /// stop_price is not used yet. Just make matcher happy.

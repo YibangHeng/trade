@@ -25,3 +25,8 @@ liquibook::book::Quantity trade::broker::OrderWrapper::order_qty() const
 {
     return BookerCommonData::to_quantity(m_order->quantity());
 }
+
+bool trade::broker::OrderWrapper::is_limit() const
+{
+    return m_order->order_type() == types::OrderType::limit;
+}

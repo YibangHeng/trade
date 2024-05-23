@@ -1,6 +1,7 @@
 #include <fmt/format.h>
 #include <regex>
 
+#include "libbooker/BookerCommonData.h"
 #include "libbroker/CUTImpl/CUTCommonData.h"
 #include "utilities/TimeHelper.hpp"
 
@@ -49,7 +50,9 @@ trade::types::OrderType trade::broker::CUTCommonData::to_order_type(const char o
 {
     switch (order_type) {
     case '2': return types::OrderType::limit;
-    case '1': return types::OrderType::best_price_this_side;
+    case 'U': return types::OrderType::best_price_this_side;
+    case '1': return types::OrderType::best_price;
+    case '4': return types::OrderType::cancel;
     default: return types::OrderType::invalid_order_type;
     }
 }
@@ -194,8 +197,8 @@ std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_
     order_tick->set_symbol(raw_order->m_header.m_symbol);
     order_tick->set_order_type(to_order_type(raw_order->m_order_type));
     order_tick->set_side(to_md_side(raw_order->m_side));
-    order_tick->set_price(raw_order->m_px / 1000.);
-    order_tick->set_quantity(static_cast<int64_t>(raw_order->m_qty) / 1000);
+    order_tick->set_price(BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_order->m_px)));
+    order_tick->set_quantity(BookerCommonData::to_quantity(raw_order->m_qty));
 
     return order_tick;
 }
@@ -209,8 +212,8 @@ std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_
     const auto trade_tick = std::make_shared<types::TradeTick>();
 
     trade_tick->set_symbol(raw_trade->m_header.m_symbol);
-    trade_tick->set_exec_price(raw_trade->m_exe_px / 1000.);
-    trade_tick->set_exec_quantity(static_cast<int64_t>(raw_trade->m_exe_qty) / 1000);
+    trade_tick->set_exec_price(BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_trade->m_exe_px)));
+    trade_tick->set_exec_quantity(BookerCommonData::to_quantity(raw_trade->m_exe_qty));
 
     return trade_tick;
 }

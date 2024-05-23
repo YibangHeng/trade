@@ -30,6 +30,8 @@ enum OrderType
     limit                = 1000; /// 限价
     best_price_this_side = 1001; /// 本方最优价（市价）
     best_price           = 1002; /// 最优价
+
+    cancel               = 2000; /// 撤单
 }
 
 /// 交易方向

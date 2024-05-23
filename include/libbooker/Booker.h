@@ -14,7 +14,6 @@ using OrderBook    = liquibook::book::OrderBook<OrderWrapperPtr>;
 using OrderBookPtr = std::shared_ptr<OrderBook>;
 
 class PUBLIC_API Booker: private OrderBook::TypedTradeListener
-
 {
 public:
     explicit Booker(
@@ -25,6 +24,7 @@ public:
 
 public:
     void add(const std::shared_ptr<types::OrderTick>& order_tick);
+    void cancel(const std::shared_ptr<types::OrderTick>& order_tick);
 
 private:
     void on_trade(
