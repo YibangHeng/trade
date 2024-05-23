@@ -1,7 +1,7 @@
 #pragma once
 
 #include "AppBase.hpp"
-#include "OrderWrapper.h"
+#include "libbooker/Booker.h"
 #include "libholder/IHolder.h"
 #include "libreporter/IReporter.hpp"
 #include "third/ctp/ThostFtdcMdApi.h"
@@ -11,8 +11,7 @@ namespace trade::broker
 {
 
 class CUTMdImpl final: private AppBase<int>,
-                       private CThostFtdcMdSpi,
-                       public liquibook::book::OrderBook<std::shared_ptr<OrderWrapper>>::TypedTradeListener
+                       private CThostFtdcMdSpi
 {
 public:
     CUTMdImpl(
@@ -26,13 +25,6 @@ public:
     void subscribe(const std::unordered_set<std::string>& symbols);
     void unsubscribe(const std::unordered_set<std::string>& symbols);
 
-public:
-    void on_trade(
-        const liquibook::book::OrderBook<OrderWrapperPtr>* book,
-        liquibook::book::Quantity qty,
-        liquibook::book::Price price
-    ) override;
-
 private:
     void odtd_receiver(const std::string& address);
 
@@ -40,9 +32,7 @@ private:
     static std::tuple<std::string, uint16_t> extract_address(const std::string& address);
 
 private:
-    using OrderBookPtr = std::shared_ptr<liquibook::book::OrderBook<OrderWrapperPtr>>;
-    /// Symbol -> OrderBook.
-    std::unordered_map<std::string, OrderBookPtr> books;
+    Booker booker;
 
 private:
     std::atomic<bool> is_running;

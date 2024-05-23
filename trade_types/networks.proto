@@ -24,6 +24,8 @@ enum MessageID
     new_cancel_all_rsp = 2002; /// 新全部撤单创建响应
 
     /// 状体推送消息。更新来自券商的订单状态推送或查询结果
+
+    /// 行情信息。更新来自交易所行情推送或自撮合的行情
 }
 
 ///
@@ -186,18 +188,20 @@ message Trade
     SideType side                           = 5;  /// 买卖方向
     optional PositionType position          = 6;  /// 开平方向
     double price                            = 7;  /// 价格
-    double quantity                         = 8;  /// 当笔数量
-    double cumulative_quantity              = 9;  /// 累计成交数量
+    int64 quantity                          = 8;  /// 当笔数量
+    int64 cumulative_quantity               = 9;  /// 累计成交数量
     optional double fee                     = 10; /// 手续费
     google.protobuf.Timestamp creation_time = 11; /// 成交时间
 }
 
-/// 以下为行情信息
+///
+/// 行情信息
+///
 
 /// 交易所撮合的成交信息
 message MdTrade
 {
-    string symbol   = 4; /// 合约代码
-    double price    = 7; /// 价格
-    double quantity = 8; /// 当笔数量
+    string symbol  = 4; /// 合约代码
+    double price   = 7; /// 价格
+    int64 quantity = 8; /// 当笔数量
 }

@@ -10,6 +10,7 @@ trade::broker::CUTMdImpl::CUTMdImpl(
     std::shared_ptr<holder::IHolder> holder,
     std::shared_ptr<reporter::IReporter> reporter
 ) : AppBase("CUTMdImpl", std::move(config)),
+    booker({}, reporter), /// TODO: Initialize tradable symbols here.
     thread(nullptr),
     m_holder(std::move(holder)),
     m_reporter(std::move(reporter))
@@ -51,21 +52,6 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
     delete thread;
 }
 
-void trade::broker::CUTMdImpl::on_trade(
-    const liquibook::book::OrderBook<OrderWrapperPtr>* book,
-    const liquibook::book::Quantity qty,
-    const liquibook::book::Price price
-)
-{
-    const auto md_trade = std::make_shared<types::MdTrade>();
-
-    md_trade->set_symbol(book->symbol());
-    md_trade->set_price(price / 1000);
-    md_trade->set_quantity(qty / 1000);
-
-    m_reporter->md_trade_generated(md_trade);
-}
-
 void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
 {
     const auto [multicast_address, multicast_port] = extract_address(address);
@@ -82,15 +68,7 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
 
             logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
 
-            if (!books.contains(order_tick->symbol())) {
-                books.emplace(order_tick->symbol(), std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>());
-                books[order_tick->symbol()]->set_symbol(order_tick->symbol());
-                books[order_tick->symbol()]->set_trade_listener(this);
-
-                logger->debug("Created order book for symbol: {}", order_tick->symbol());
-            }
-
-            books[order_tick->symbol()]->add(std::make_shared<OrderWrapper>(order_tick));
+            booker.add(order_tick);
 
             break;
         }

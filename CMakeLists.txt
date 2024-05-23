@@ -51,6 +51,7 @@ include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/trade_types) # For generated *.pb.h.
 
 # Binaries and libraries.
+add_subdirectory(src/libbooker)
 add_subdirectory(src/libbroker)
 add_subdirectory(src/libreporter)
 add_subdirectory(src/libholder)

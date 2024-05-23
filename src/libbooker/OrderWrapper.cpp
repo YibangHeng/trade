@@ -1,4 +1,5 @@
-#include "libbroker/CUTImpl/OrderWrapper.h"
+#include "libbooker/OrderWrapper.h"
+#include "libbooker/BookerCommonData.h"
 
 trade::broker::OrderWrapper::OrderWrapper(const std::shared_ptr<types::OrderTick>& order_tick)
 {
@@ -17,10 +18,10 @@ bool trade::broker::OrderWrapper::is_buy() const
 
 liquibook::book::Price trade::broker::OrderWrapper::price() const
 {
-    return static_cast<liquibook::book::Price>(m_order->price() * 1000);
+    return BookerCommonData::to_price(m_order->price());
 }
 
 liquibook::book::Quantity trade::broker::OrderWrapper::order_qty() const
 {
-    return static_cast<liquibook::book::Quantity>(m_order->quantity());
+    return BookerCommonData::to_quantity(m_order->quantity());
 }

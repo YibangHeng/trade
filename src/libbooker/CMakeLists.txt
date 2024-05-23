@@ -1,4 +1,4 @@
-project(broker)
+project(booker)
 
 file(GLOB_RECURSE SOURCES "*.cpp")
 
@@ -8,10 +8,4 @@ target_link_libraries(
         ${PROJECT_NAME}
         PRIVATE
         trade_types
-        PRIVATE
-        booker
-        PRIVATE
-        thostmduserapi_se
-        thosttraderapi_se
-        utapi
 )
