@@ -153,13 +153,13 @@ std::vector<trade::broker::sze_hpf_order_pkt> trade::OSTMdServer::read_od(const 
     std::vector<broker::sze_hpf_order_pkt> order_ticks;
     order_ticks.reserve(in.get_file_line());
 
-    std::string securityId;
-    double m_px;
-    int64_t m_qty;
-    char m_side;
-    char m_order_type;
+    std::string security_id;
+    double price;
+    int64_t trade_qty;
+    char side;
+    char order_type;
 
-    while (in.read_row(securityId, m_px, m_qty, m_side, m_order_type)) {
+    while (in.read_row(security_id, price, trade_qty, side, order_type)) {
         order_ticks.emplace_back();
 
         auto& order_tick                   = order_ticks.back();
@@ -167,11 +167,11 @@ std::vector<trade::broker::sze_hpf_order_pkt> trade::OSTMdServer::read_od(const 
         order_tick.m_header.m_sequence     = ticker_taper();
         order_tick.m_header.m_message_type = broker::CUTCommonData::to_szse_datagram_type(types::X_OST_SZSEDatagramType::order);
 
-        M_A {order_tick.m_header.m_symbol} = securityId;
-        order_tick.m_px                    = static_cast<uint32_t>(m_px * 1000);
-        order_tick.m_qty                   = m_qty * 1000;
-        order_tick.m_side                  = m_side;
-        order_tick.m_order_type            = m_order_type;
+        M_A {order_tick.m_header.m_symbol} = security_id;
+        order_tick.m_px                    = broker::BookerCommonData::to_price(price);
+        order_tick.m_qty                   = broker::BookerCommonData::to_quantity(trade_qty);
+        order_tick.m_side                  = side;
+        order_tick.m_order_type            = order_type;
 
         logger->debug("Load order tick: {:>6} {:>6.2f} {:>6} {:<4} {:>1}", order_tick.m_header.m_symbol, broker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(order_tick.m_px)), broker::BookerCommonData::to_quantity(order_tick.m_qty), SideType_Name(broker::BookerCommonData::to_side(order_tick.m_side)), order_tick.m_order_type);
     }
