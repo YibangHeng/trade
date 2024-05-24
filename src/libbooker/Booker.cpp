@@ -1,5 +1,6 @@
 #include "libbooker/Booker.h"
 #include "libbooker/BookerCommonData.h"
+#include "utilities/ToJSON.hpp"
 
 trade::broker::Booker::Booker(
     const std::vector<std::string>& symbols,
@@ -25,18 +26,21 @@ void trade::broker::Booker::add(const std::shared_ptr<types::OrderTick>& order_t
         logger->debug("Created new order book for symbol {}", order_tick->symbol());
     }
 
-    books[order_tick->symbol()]->add(std::make_shared<OrderWrapper>(order_tick));
-}
-
-void trade::broker::Booker::cancel(const std::shared_ptr<types::OrderTick>& order_tick)
-{
-    if (!books.contains(order_tick->symbol())) {
-        books.emplace(order_tick->symbol(), std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>());
-        books[order_tick->symbol()]->set_symbol(order_tick->symbol());
-        books[order_tick->symbol()]->set_trade_listener(this);
+    switch (order_tick->order_type()) {
+    case types::OrderType::limit:
+    case types::OrderType::best_price_this_side:
+    case types::OrderType::best_price: {
+        books[order_tick->symbol()]->add(std::make_shared<OrderWrapper>(order_tick));
+        break;
     }
-
-    books[order_tick->symbol()]->cancel(std::make_shared<OrderWrapper>(order_tick));
+    case types::OrderType::cancel: {
+        books[order_tick->symbol()]->cancel(std::make_shared<OrderWrapper>(order_tick));
+        break;
+    }
+    default: {
+        logger->error("Unsupported order type: {}", utilities::ToJSON()(*order_tick));
+    }
+    }
 }
 
 void trade::broker::Booker::on_trade(

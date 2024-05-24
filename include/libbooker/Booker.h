@@ -25,7 +25,6 @@ public:
 
 public:
     void add(const std::shared_ptr<types::OrderTick>& order_tick);
-    void cancel(const std::shared_ptr<types::OrderTick>& order_tick);
 
 private:
     void on_trade(

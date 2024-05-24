@@ -66,10 +66,7 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
 
             logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
 
-            if (order_tick->order_type() == types::OrderType::cancel)
-                booker.cancel(order_tick);
-            else
-                booker.add(order_tick);
+            booker.add(order_tick);
 
             break;
         }

@@ -92,8 +92,7 @@ TEST_CASE("Normal limit order matching with 1:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100\n");
-        CHECK(g_reporter->get_market_price_result() == "600875.SH:00.00\n"
-                                                       "600875.SH:22.33\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
     }
 
     SECTION("Buy after sell with same price")
@@ -104,8 +103,7 @@ TEST_CASE("Normal limit order matching with 1:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100\n");
-        CHECK(g_reporter->get_market_price_result() == "600875.SH:00.00\n"
-                                                       "600875.SH:22.33\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
     }
 
     SECTION("Sell after buy with lower price")
@@ -116,8 +114,7 @@ TEST_CASE("Normal limit order matching with 1:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0100\n");
-        CHECK(g_reporter->get_market_price_result() == "600875.SH:00.00\n"
-                                                       "600875.SH:33.22\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:33.22\n");
     }
 
     SECTION("Buy after sell with higher price")
@@ -128,8 +125,7 @@ TEST_CASE("Normal limit order matching with 1:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100\n");
-        CHECK(g_reporter->get_market_price_result() == "600875.SH:00.00\n"
-                                                       "600875.SH:22.33\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
     }
 
     SECTION("Sell after buy with higher price")
@@ -140,8 +136,7 @@ TEST_CASE("Normal limit order matching with 1:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", SELL, 33.22, 100));
 
         CHECK(g_reporter->get_trade_result().empty());
-        CHECK(g_reporter->get_market_price_result() == "600875.SH:00.00\n"
-                                                       "600875.SH:00.00\n");
+        CHECK(g_reporter->get_market_price_result().empty());
     }
 
     SECTION("Buy after sell with lower price")
@@ -152,8 +147,7 @@ TEST_CASE("Normal limit order matching with 1:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result().empty());
-        CHECK(g_reporter->get_market_price_result() == "600875.SH:00.00\n"
-                                                       "600875.SH:00.00\n");
+        CHECK(g_reporter->get_market_price_result().empty());
     }
 }
 
