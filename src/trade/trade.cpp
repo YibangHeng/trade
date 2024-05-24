@@ -56,26 +56,34 @@ int trade::Trade::run()
         return 1;
     }
 
-    m_broker->start_login();
+    if (config->get<bool>("Functionality.EnableTrade")) {
+        m_broker->start_login();
 
-    try {
-        m_broker->wait_login();
+        try {
+            m_broker->wait_login();
+        }
+        catch (const std::runtime_error& e) {
+            logger->error("Failed to login: {}", e.what());
+            return 1;
+        }
     }
-    catch (const std::runtime_error& e) {
-        logger->error("Failed to login: {}", e.what());
-        return 1;
+
+    if (config->get<bool>("Functionality.EnableMd")) {
+        m_broker->subscribe({});
     }
 
     m_exit_code = network_events();
 
-    m_broker->start_logout();
+    if (config->get<bool>("Functionality.EnableTrade")) {
+        m_broker->start_logout();
 
-    try {
-        m_broker->wait_logout();
-    }
-    catch (const std::runtime_error& e) {
-        logger->error("Failed to logout: {}", e.what());
-        return 1;
+        try {
+            m_broker->wait_logout();
+        }
+        catch (const std::runtime_error& e) {
+            logger->error("Failed to logout: {}", e.what());
+            return 1;
+        }
     }
 
     logger->info("App exited with code {}", m_exit_code.load());

@@ -19,22 +19,18 @@ trade::broker::CUTMdImpl::CUTMdImpl(
 
 void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& symbols)
 {
-    if (symbols.size() != 1) {
-        logger->error("Wrong usage of subscribe of CUT: symbols treated as multicast address and must be exactly one");
-        return;
+    if (!symbols.empty()) {
+        throw std::runtime_error("Wrong usage of subscribe of CUT: symbols treated as multicast address and must be specified in config");
     }
 
     is_running = true;
 
-    /// Make a copy to avoid dangling reference.
-    const std::string address = *symbols.begin();
-
     /// Start receiving in a separate thread.
-    thread = new std::thread([this, address] {
-        odtd_receiver(address);
+    thread = new std::thread([this] {
+        odtd_receiver(config->get<std::string>("Server.MdAddress"));
     });
 
-    logger->info("Subscribed to ODTD multicast address: {}", *symbols.begin());
+    logger->info("Subscribed to ODTD multicast address: {}", config->get<std::string>("Server.MdAddress"));
 }
 
 void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>& symbols)

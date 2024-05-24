@@ -14,7 +14,6 @@ void trade::broker::CUTBroker::start_login() noexcept
 {
     BrokerProxy::start_login();
 
-    m_md_impl     = std::make_unique<CUTMdImpl>(config, m_holder, m_reporter);
     m_trader_impl = std::make_unique<CUTTraderImpl>(config, m_holder, m_reporter, this);
 }
 
@@ -50,10 +49,12 @@ std::shared_ptr<trade::types::NewCancelRsp> trade::broker::CUTBroker::cancel_ord
 
 void trade::broker::CUTBroker::subscribe(const std::unordered_set<std::string>& symbols)
 {
+    m_md_impl = std::make_unique<CUTMdImpl>(config, m_holder, m_reporter);
     m_md_impl->subscribe(symbols);
 }
 
 void trade::broker::CUTBroker::unsubscribe(const std::unordered_set<std::string>& symbols)
 {
     m_md_impl->unsubscribe(symbols);
+    m_md_impl.reset();
 }

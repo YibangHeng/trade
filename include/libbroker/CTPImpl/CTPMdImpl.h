@@ -46,7 +46,7 @@ private:
         CThostFtdcRspInfoField* pRspInfo,
         int nRequestID, bool bIsLast
     ) override;
-    void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData) override;
+    void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField* pDepthMarketData) override;
 
 private:
     CThostFtdcMdApi* m_md_api;
@@ -61,7 +61,6 @@ private:
 private:
     /// Use self-managed login syncer for keeping trade running without market
     /// data.
-    /// m_login_syncer always notifies success even if login fails.
     utilities::LoginSyncer m_login_syncer;
 };
 
