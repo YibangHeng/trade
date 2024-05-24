@@ -63,3 +63,8 @@ void trade::reporter::LogReporter::md_trade_generated(const std::shared_ptr<type
 
     m_outside->md_trade_generated(md_trade);
 }
+
+void trade::reporter::LogReporter::market_price(std::string symbol, double price)
+{
+    md_logger->info("Market price for symbol {}: {}", symbol, price);
+}

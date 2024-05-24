@@ -76,11 +76,12 @@ message Orders
 
 message OrderTick
 {
-    string symbol        = 1;
-    OrderType order_type = 2;
-    SideType side        = 3;
-    double price         = 4;
-    int64 quantity       = 5;
+    int64 unique_id      = 1; /// 委托 UniqueID
+    OrderType order_type = 2; /// 委托类型
+    string symbol        = 3; /// 合约代码
+    SideType side        = 4; /// 买卖方向
+    double price         = 5; /// 价格
+    int64 quantity       = 6; /// 当笔数量
 }
 
 message TradeTick

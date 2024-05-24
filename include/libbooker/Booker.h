@@ -3,6 +3,7 @@
 #include <memory>
 #include <third/liquibook/src/book/order_book.h>
 
+#include "AppBase.hpp"
 #include "OrderWrapper.h"
 #include "libreporter/IReporter.hpp"
 #include "visibility.h"
@@ -13,7 +14,7 @@ namespace trade::broker
 using OrderBook    = liquibook::book::OrderBook<OrderWrapperPtr>;
 using OrderBookPtr = std::shared_ptr<OrderBook>;
 
-class PUBLIC_API Booker: private OrderBook::TypedTradeListener
+class PUBLIC_API Booker final: AppBase<>, private OrderBook::TypedTradeListener
 {
 public:
     explicit Booker(

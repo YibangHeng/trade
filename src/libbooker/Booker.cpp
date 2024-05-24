@@ -4,11 +4,14 @@
 trade::broker::Booker::Booker(
     const std::vector<std::string>& symbols,
     const std::shared_ptr<reporter::IReporter>& reporter
-) : m_reporter(reporter)
+) : AppBase("Booker"),
+    m_reporter(reporter)
 {
     for (const auto& symbol : symbols) {
         books.emplace(symbol, std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>(symbol));
         books.at(symbol)->set_trade_listener(this);
+
+        logger->debug("Created new order book for symbol {}", symbol);
     }
 }
 
@@ -18,6 +21,8 @@ void trade::broker::Booker::add(const std::shared_ptr<types::OrderTick>& order_t
         books.emplace(order_tick->symbol(), std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>());
         books[order_tick->symbol()]->set_symbol(order_tick->symbol());
         books[order_tick->symbol()]->set_trade_listener(this);
+
+        logger->debug("Created new order book for symbol {}", order_tick->symbol());
     }
 
     books[order_tick->symbol()]->add(std::make_shared<OrderWrapper>(order_tick));
@@ -47,4 +52,5 @@ void trade::broker::Booker::on_trade(
     md_trade->set_quantity(BookerCommonData::to_quantity(qty));
 
     m_reporter->md_trade_generated(md_trade);
+    m_reporter->market_price(book->symbol(), BookerCommonData::to_price(price));
 }

@@ -6,7 +6,7 @@
 namespace trade::reporter
 {
 
-class PUBLIC_API NopReporter final: public IReporter
+class PUBLIC_API NopReporter: public IReporter
 {
 public:
     NopReporter()           = default;
@@ -32,6 +32,7 @@ public:
     /// Market data.
 public:
     void md_trade_generated(std::shared_ptr<types::MdTrade> md_trade) override {}
+    void market_price(std::string symbol, double price) override {}
 };
 
 } // namespace trade::reporter

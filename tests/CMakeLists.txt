@@ -8,6 +8,8 @@ target_link_libraries(
         ${PROJECT_NAME}
         PRIVATE
         trade_types
+        PRIVATE
+        booker
         holder
         PUBLIC
         Catch2::Catch2
