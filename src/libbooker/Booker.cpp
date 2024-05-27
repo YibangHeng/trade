@@ -8,23 +8,13 @@ trade::broker::Booker::Booker(
 ) : AppBase("Booker"),
     m_reporter(reporter)
 {
-    for (const auto& symbol : symbols) {
-        books.emplace(symbol, std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>(symbol));
-        books.at(symbol)->set_trade_listener(this);
-
-        logger->debug("Created new order book for symbol {}", symbol);
-    }
+    for (const auto& symbol : symbols)
+        new_booker(symbol);
 }
 
 void trade::broker::Booker::add(const std::shared_ptr<types::OrderTick>& order_tick)
 {
-    if (!books.contains(order_tick->symbol())) {
-        books.emplace(order_tick->symbol(), std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>());
-        books[order_tick->symbol()]->set_symbol(order_tick->symbol());
-        books[order_tick->symbol()]->set_trade_listener(this);
-
-        logger->debug("Created new order book for symbol {}", order_tick->symbol());
-    }
+    new_booker(order_tick->symbol());
 
     std::shared_ptr<OrderWrapper> order_wrapper;
 
@@ -68,4 +58,18 @@ void trade::broker::Booker::on_trade(
 
     m_reporter->md_trade_generated(md_trade);
     m_reporter->market_price(book->symbol(), BookerCommonData::to_price(price));
+}
+
+void trade::broker::Booker::new_booker(const std::string& symbol)
+{
+    /// Do nothing if the order book already exists.
+    if (books.contains(symbol))
+        return;
+
+    books.emplace(symbol, std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>(symbol));
+
+    books[symbol]->set_symbol(symbol);
+    books[symbol]->set_trade_listener(this);
+
+    logger->debug("Created new order book for symbol {}", symbol);
 }

@@ -34,6 +34,9 @@ private:
     ) override;
 
 private:
+    void new_booker(const std::string& symbol);
+
+private:
     /// Symbol -> OrderBook.
     std::unordered_map<std::string, OrderBookPtr> books;
     /// TODO: Use a better way to cache orders.
