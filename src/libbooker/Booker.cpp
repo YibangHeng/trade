@@ -29,7 +29,7 @@ void trade::broker::Booker::add(const std::shared_ptr<types::OrderTick>& order_t
 
     switch (order_tick->order_type()) {
     case types::OrderType::limit:
-    case types::OrderType::best_price_this_side:
+    case types::OrderType::market:
     case types::OrderType::best_price: {
         books[order_tick->symbol()]->add(order_wrapper);
         break;
@@ -58,6 +58,21 @@ void trade::broker::Booker::on_trade(
 
     m_reporter->md_trade_generated(md_trade);
     m_reporter->market_price(book->symbol(), BookerCommonData::to_price(price));
+}
+
+void trade::broker::Booker::on_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
+{
+    logger->error("Order {} was rejected: {}", order->unique_id(), reason);
+}
+
+void trade::broker::Booker::on_cancel_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
+{
+    logger->error("Cancel for {} was rejected: {}", order->unique_id(), reason);
+}
+
+void trade::broker::Booker::on_replace_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
+{
+    logger->error("Replace for {} was rejected: {}", order->unique_id(), reason);
 }
 
 void trade::broker::Booker::new_booker(const std::string& symbol)

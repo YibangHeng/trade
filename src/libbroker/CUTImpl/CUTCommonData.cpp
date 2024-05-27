@@ -45,13 +45,12 @@ trade::types::ExchangeType trade::broker::CUTCommonData::to_exchange(const TUTEx
     }
 }
 
-/// TODO: Confirmation is required.
 trade::types::OrderType trade::broker::CUTCommonData::to_order_type(const char order_type)
 {
     switch (order_type) {
     case '2': return types::OrderType::limit;
-    case 'U': return types::OrderType::best_price_this_side;
-    case '1': return types::OrderType::best_price;
+    case '1': return types::OrderType::market;
+    case 'U': return types::OrderType::best_price;
     case '4': return types::OrderType::cancel;
     default: return types::OrderType::invalid_order_type;
     }

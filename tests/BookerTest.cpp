@@ -71,8 +71,8 @@ std::shared_ptr<trade::types::OrderTick> create_order(
 }
 
 #define LIMIT trade::types::OrderType::limit
-#define MARKET trade::types::OrderType::best_price_this_side
-#define MARKET_OPP trade::types::OrderType::best_price
+#define MARKET trade::types::OrderType::market
+#define BEST_PRICE trade::types::OrderType::best_price
 #define CANCEL trade::types::OrderType::cancel
 
 #define BUY trade::types::SideType::buy
@@ -289,5 +289,101 @@ TEST_CASE("Limit order with cancel", "[Booker]")
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
+    }
+}
+
+TEST_CASE("Normal market order matching with 1:1 for buy:sell", "[Booker]")
+{
+    SECTION("Sell after buy with market price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 100));
+        booker.add(create_order(3, MARKET, "600875.SH", SELL, 0, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0100\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:33.22\n");
+    }
+
+    SECTION("Buy after sell with market price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 33.22, 100));
+        booker.add(create_order(3, MARKET, "600875.SH", BUY, 0, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
+    }
+}
+
+TEST_CASE("Normal market order matching with N:1 for buy:sell", "[Booker]")
+{
+    SECTION("Buy after sell with market price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(4, MARKET, "600875.SH", BUY, 0, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
+                                                "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n");
+    }
+
+    SECTION("Buy after sell with market price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(4, MARKET, "600875.SH", BUY, 0, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
+                                                "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n");
+    }
+
+    SECTION("Sell after buy with step market price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 20));
+        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 40));
+        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 33.33, 80));
+        booker.add(create_order(4, MARKET, "600875.SH", SELL, 0, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:33.33:0080\n"
+                                                "600875.SH:33.22:0020\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:33.33\n"
+                                                       "600875.SH:33.22\n");
+    }
+
+    SECTION("Buy after sell with step market price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.22, 20));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 33.22, 80));
+        booker.add(create_order(4, MARKET, "600875.SH", BUY, 0, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.22:0020\n"
+                                                "600875.SH:22.33:0040\n"
+                                                "600875.SH:33.22:0040\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.22\n"
+                                                       "600875.SH:22.33\n"
+                                                       "600875.SH:33.22\n");
     }
 }

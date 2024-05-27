@@ -14,6 +14,9 @@ public:
     explicit OrderWrapper(const std::shared_ptr<types::OrderTick>& order_tick);
     ~OrderWrapper() = default;
 
+public:
+    [[nodiscard]] int64_t unique_id() const;
+
     /// Implement the liquibook::book::order concept.
 public:
     [[nodiscard]] std::string symbol() const;

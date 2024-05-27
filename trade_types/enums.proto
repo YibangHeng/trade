@@ -25,13 +25,13 @@ enum ExchangeType
 /// 委托类型
 enum OrderType
 {
-    invalid_order_type   = 0;
+    invalid_order_type = 0;
 
-    limit                = 1000; /// 限价
-    best_price_this_side = 1001; /// 本方最优价（市价）
-    best_price           = 1002; /// 最优价
+    limit              = 1000; /// 限价
+    market             = 1001; /// 对方最优价（市价）
+    best_price         = 1002; /// 本方最优价
 
-    cancel               = 2000; /// 撤单
+    cancel             = 2000; /// 撤单
 }
 
 /// 交易方向

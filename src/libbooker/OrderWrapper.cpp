@@ -6,6 +6,11 @@ trade::broker::OrderWrapper::OrderWrapper(const std::shared_ptr<types::OrderTick
     this->m_order = order_tick;
 }
 
+int64_t trade::broker::OrderWrapper::unique_id() const
+{
+    return m_order->unique_id();
+}
+
 std::string trade::broker::OrderWrapper::symbol() const
 {
     return m_order->symbol();

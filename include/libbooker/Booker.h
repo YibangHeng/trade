@@ -14,7 +14,9 @@ namespace trade::broker
 using OrderBook    = liquibook::book::OrderBook<OrderWrapperPtr>;
 using OrderBookPtr = std::shared_ptr<OrderBook>;
 
-class PUBLIC_API Booker final: AppBase<>, private OrderBook::TypedTradeListener
+class PUBLIC_API Booker final: AppBase<>,
+                               private OrderBook::TypedTradeListener,
+                               private OrderBook::TypedOrderListener
 {
 public:
     explicit Booker(
@@ -32,6 +34,16 @@ private:
         liquibook::book::Quantity qty,
         liquibook::book::Price price
     ) override;
+
+private:
+    void on_accept(const std::shared_ptr<OrderWrapper>& order) override {}
+    void on_trigger_stop(const std::shared_ptr<OrderWrapper>& order) override {}
+    void on_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason) override;
+    void on_fill(const std::shared_ptr<OrderWrapper>& order, const std::shared_ptr<OrderWrapper>& matched_order, liquibook::book::Quantity fill_qty, liquibook::book::Price fill_price) override {}
+    void on_cancel(const std::shared_ptr<OrderWrapper>& order) override {}
+    void on_cancel_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason) override;
+    void on_replace(const std::shared_ptr<OrderWrapper>& order, const int64_t& size_delta, liquibook::book::Price new_price) override {}
+    void on_replace_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason) override;
 
 private:
     void new_booker(const std::string& symbol);
