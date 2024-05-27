@@ -29,8 +29,37 @@ void trade::broker::Booker::add(const std::shared_ptr<types::OrderTick>& order_t
 
     switch (order_tick->order_type()) {
     case types::OrderType::limit:
-    case types::OrderType::market:
+    case types::OrderType::market: {
+        books[order_tick->symbol()]->add(order_wrapper);
+        break;
+    }
+        /// TODO: Make the matching logic for best price clearer.
     case types::OrderType::best_price: {
+        double best_price;
+
+        if (order_wrapper->is_buy()) {
+            const auto bids = books[order_tick->symbol()]->bids();
+
+            if (bids.empty()) {
+                logger->error("A best price order {} arrived while no bid exists", order_wrapper->unique_id());
+                break;
+            }
+
+            best_price = BookerCommonData::to_price(bids.begin()->first.price());
+        }
+        else {
+            const auto asks = books[order_tick->symbol()]->asks();
+
+            if (asks.empty()) {
+                logger->error("A best price order {} arrived while no ask exists", order_wrapper->unique_id());
+                break;
+            }
+
+            best_price = BookerCommonData::to_price(asks.begin()->first.price());
+        }
+
+        order_wrapper->to_limit_order(best_price);
+
         books[order_tick->symbol()]->add(order_wrapper);
         break;
     }

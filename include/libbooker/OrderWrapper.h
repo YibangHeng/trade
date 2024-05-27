@@ -17,6 +17,16 @@ public:
 public:
     [[nodiscard]] int64_t unique_id() const;
 
+public:
+    /// Convert order type to limit from best price.
+    ///
+    /// @param price The latest best market price.
+    ///
+    /// @note A best price order acts like a limit order that automatically
+    /// fills with the latest best market price with side matching the order's
+    /// side.
+    void to_limit_order(double price) const;
+
     /// Implement the liquibook::book::order concept.
 public:
     [[nodiscard]] std::string symbol() const;

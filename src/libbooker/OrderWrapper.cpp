@@ -11,6 +11,14 @@ int64_t trade::broker::OrderWrapper::unique_id() const
     return m_order->unique_id();
 }
 
+void trade::broker::OrderWrapper::to_limit_order(const double price) const
+{
+    assert(m_order->order_type() == types::OrderType::best_price);
+
+    m_order->set_order_type(types::OrderType::limit);
+    m_order->set_price(price);
+}
+
 std::string trade::broker::OrderWrapper::symbol() const
 {
     return m_order->symbol();

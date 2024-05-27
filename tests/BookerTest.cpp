@@ -82,7 +82,7 @@ std::shared_ptr<trade::types::OrderTick> create_order(
 #define T(symbol, price, quantity) #symbol ":" #price ":" #quantity "\n"
 #define M(symbol, price) #symbol ":" #price "\n"
 
-TEST_CASE("Normal limit order matching with 1:1 matching", "[Booker]")
+TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
 {
     SECTION("Sell after buy with same price")
     {
@@ -151,7 +151,7 @@ TEST_CASE("Normal limit order matching with 1:1 matching", "[Booker]")
     }
 }
 
-TEST_CASE("Normal limit order matching with M:N matching", "[Booker]")
+TEST_CASE("Limit order matching with M:N matching", "[Booker]")
 {
     SECTION("Buy after sell with same price")
     {
@@ -308,7 +308,7 @@ TEST_CASE("Limit order with cancel", "[Booker]")
     }
 }
 
-TEST_CASE("Normal market order matching with 1:1 matching", "[Booker]")
+TEST_CASE("Market order matching with 1:1 matching", "[Booker]")
 {
     SECTION("Sell after buy with market price")
     {
@@ -335,7 +335,7 @@ TEST_CASE("Normal market order matching with 1:1 matching", "[Booker]")
     }
 }
 
-TEST_CASE("Normal market order matching with M:N matching", "[Booker]")
+TEST_CASE("Market order matching with M:N matching", "[Booker]")
 {
     SECTION("Buy after sell with market price")
     {
@@ -415,5 +415,36 @@ TEST_CASE("Normal market order matching with M:N matching", "[Booker]")
                                                        "600875.SH:22.33\n"
                                                        "600875.SH:33.22\n"
                                                        "600875.SH:33.22\n");
+    }
+}
+
+TEST_CASE("Best price order matching", "[Booker]")
+{
+    SECTION("Sell after buy with best price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 20));
+        booker.add(create_order(2, BEST_PRICE, "600875.SH", BUY, 0, 40));
+        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
+                                                "600875.SH:22.33:0040\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n");
+    }
+
+    SECTION("Buy after sell with best price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(2, BEST_PRICE, "600875.SH", SELL, 0, 40));
+        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 22.33, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
+                                                "600875.SH:22.33:0040\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n");
     }
 }
