@@ -251,3 +251,43 @@ TEST_CASE("Normal limit order matching with N:1 for buy:sell", "[Booker]")
                                                        "600875.SH:22.33\n");
     }
 }
+
+TEST_CASE("Limit order with cancel", "[Booker]")
+{
+    SECTION("Limit order with cancel before fill")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 50));
+        booker.add(create_order(1, CANCEL, "600875.SH", BUY, 22.33, 50));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 100));
+
+        CHECK(g_reporter->get_trade_result().empty());
+        CHECK(g_reporter->get_market_price_result().empty());
+    }
+
+    SECTION("Limit order with cancel after partial fill")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 50));
+        booker.add(create_order(1, CANCEL, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 50));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0050\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
+    }
+
+    SECTION("Limit order with cancel after full fill")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(1, CANCEL, "600875.SH", BUY, 22.33, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
+    }
+}

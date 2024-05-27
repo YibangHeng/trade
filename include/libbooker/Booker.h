@@ -21,7 +21,7 @@ public:
         const std::vector<std::string>& symbols,
         const std::shared_ptr<reporter::IReporter>& reporter
     );
-    ~Booker() = default;
+    ~Booker() override = default;
 
 public:
     void add(const std::shared_ptr<types::OrderTick>& order_tick);
@@ -36,6 +36,8 @@ private:
 private:
     /// Symbol -> OrderBook.
     std::unordered_map<std::string, OrderBookPtr> books;
+    /// TODO: Use a better way to cache orders.
+    std::unordered_map<int64_t, std::shared_ptr<OrderWrapper>> orders;
 
 private:
     std::shared_ptr<reporter::IReporter> m_reporter;

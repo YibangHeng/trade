@@ -26,15 +26,26 @@ void trade::broker::Booker::add(const std::shared_ptr<types::OrderTick>& order_t
         logger->debug("Created new order book for symbol {}", order_tick->symbol());
     }
 
+    std::shared_ptr<OrderWrapper> order_wrapper;
+
+    /// Check if order already exists.
+    if (orders.contains(order_tick->unique_id())) {
+        order_wrapper = orders[order_tick->unique_id()];
+    }
+    else {
+        order_wrapper = std::make_shared<OrderWrapper>(order_tick);
+        orders.emplace(order_tick->unique_id(), order_wrapper);
+    }
+
     switch (order_tick->order_type()) {
     case types::OrderType::limit:
     case types::OrderType::best_price_this_side:
     case types::OrderType::best_price: {
-        books[order_tick->symbol()]->add(std::make_shared<OrderWrapper>(order_tick));
+        books[order_tick->symbol()]->add(order_wrapper);
         break;
     }
     case types::OrderType::cancel: {
-        books[order_tick->symbol()]->cancel(std::make_shared<OrderWrapper>(order_tick));
+        books[order_tick->symbol()]->cancel(order_wrapper);
         break;
     }
     default: {
