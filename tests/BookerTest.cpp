@@ -82,7 +82,7 @@ std::shared_ptr<trade::types::OrderTick> create_order(
 #define T(symbol, price, quantity) #symbol ":" #price ":" #quantity "\n"
 #define M(symbol, price) #symbol ":" #price "\n"
 
-TEST_CASE("Normal limit order matching with 1:1 for buy:sell", "[Booker]")
+TEST_CASE("Normal limit order matching with 1:1 matching", "[Booker]")
 {
     SECTION("Sell after buy with same price")
     {
@@ -151,7 +151,7 @@ TEST_CASE("Normal limit order matching with 1:1 for buy:sell", "[Booker]")
     }
 }
 
-TEST_CASE("Normal limit order matching with N:1 for buy:sell", "[Booker]")
+TEST_CASE("Normal limit order matching with M:N matching", "[Booker]")
 {
     SECTION("Buy after sell with same price")
     {
@@ -161,11 +161,14 @@ TEST_CASE("Normal limit order matching with N:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
         booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
         booker.add(create_order(4, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(5, LIMIT, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n"
                                                 "600875.SH:22.33:0040\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
                                                        "600875.SH:22.33\n"
                                                        "600875.SH:22.33\n");
     }
@@ -178,11 +181,14 @@ TEST_CASE("Normal limit order matching with N:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
         booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
         booker.add(create_order(4, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(5, LIMIT, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n"
                                                 "600875.SH:22.33:0040\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
                                                        "600875.SH:22.33\n"
                                                        "600875.SH:22.33\n");
     }
@@ -195,11 +201,14 @@ TEST_CASE("Normal limit order matching with N:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 40));
         booker.add(create_order(3, LIMIT, "600875.SH", BUY, 33.22, 80));
         booker.add(create_order(4, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(5, LIMIT, "600875.SH", SELL, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0020\n"
                                                 "600875.SH:33.22:0040\n"
+                                                "600875.SH:33.22:0040\n"
                                                 "600875.SH:33.22:0040\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:33.22\n"
+                                                       "600875.SH:33.22\n"
                                                        "600875.SH:33.22\n"
                                                        "600875.SH:33.22\n");
     }
@@ -212,11 +221,14 @@ TEST_CASE("Normal limit order matching with N:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
         booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
         booker.add(create_order(4, LIMIT, "600875.SH", BUY, 33.22, 100));
+        booker.add(create_order(5, LIMIT, "600875.SH", BUY, 33.22, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n"
                                                 "600875.SH:22.33:0040\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
                                                        "600875.SH:22.33\n"
                                                        "600875.SH:22.33\n");
     }
@@ -229,10 +241,13 @@ TEST_CASE("Normal limit order matching with N:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 40));
         booker.add(create_order(3, LIMIT, "600875.SH", BUY, 33.33, 80));
         booker.add(create_order(4, LIMIT, "600875.SH", SELL, 33.22, 100));
+        booker.add(create_order(5, LIMIT, "600875.SH", SELL, 33.22, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:33.33:0080\n"
+                                                "600875.SH:33.22:0020\n"
                                                 "600875.SH:33.22:0020\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:33.33\n"
+                                                       "600875.SH:33.22\n"
                                                        "600875.SH:33.22\n");
     }
 
@@ -244,6 +259,7 @@ TEST_CASE("Normal limit order matching with N:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
         booker.add(create_order(3, LIMIT, "600875.SH", SELL, 33.22, 80));
         booker.add(create_order(4, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(5, LIMIT, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.22:0020\n"
                                                 "600875.SH:22.33:0040\n");
@@ -292,7 +308,7 @@ TEST_CASE("Limit order with cancel", "[Booker]")
     }
 }
 
-TEST_CASE("Normal market order matching with 1:1 for buy:sell", "[Booker]")
+TEST_CASE("Normal market order matching with 1:1 matching", "[Booker]")
 {
     SECTION("Sell after buy with market price")
     {
@@ -319,7 +335,7 @@ TEST_CASE("Normal market order matching with 1:1 for buy:sell", "[Booker]")
     }
 }
 
-TEST_CASE("Normal market order matching with N:1 for buy:sell", "[Booker]")
+TEST_CASE("Normal market order matching with M:N matching", "[Booker]")
 {
     SECTION("Buy after sell with market price")
     {
@@ -329,11 +345,14 @@ TEST_CASE("Normal market order matching with N:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
         booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
         booker.add(create_order(4, MARKET, "600875.SH", BUY, 0, 100));
+        booker.add(create_order(5, MARKET, "600875.SH", BUY, 0, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n"
                                                 "600875.SH:22.33:0040\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
                                                        "600875.SH:22.33\n"
                                                        "600875.SH:22.33\n");
     }
@@ -346,11 +365,14 @@ TEST_CASE("Normal market order matching with N:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
         booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
         booker.add(create_order(4, MARKET, "600875.SH", BUY, 0, 100));
+        booker.add(create_order(5, MARKET, "600875.SH", BUY, 0, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n"
                                                 "600875.SH:22.33:0040\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
                                                        "600875.SH:22.33\n"
                                                        "600875.SH:22.33\n");
     }
@@ -363,11 +385,16 @@ TEST_CASE("Normal market order matching with N:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 40));
         booker.add(create_order(3, LIMIT, "600875.SH", BUY, 33.33, 80));
         booker.add(create_order(4, MARKET, "600875.SH", SELL, 0, 100));
+        booker.add(create_order(5, MARKET, "600875.SH", SELL, 0, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:33.33:0080\n"
-                                                "600875.SH:33.22:0020\n");
+                                                "600875.SH:33.22:0020\n"
+                                                "600875.SH:33.22:0020\n"
+                                                "600875.SH:22.33:0020\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:33.33\n"
-                                                       "600875.SH:33.22\n");
+                                                       "600875.SH:33.22\n"
+                                                       "600875.SH:33.22\n"
+                                                       "600875.SH:22.33\n");
     }
 
     SECTION("Buy after sell with step market price")
@@ -378,12 +405,15 @@ TEST_CASE("Normal market order matching with N:1 for buy:sell", "[Booker]")
         booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
         booker.add(create_order(3, LIMIT, "600875.SH", SELL, 33.22, 80));
         booker.add(create_order(4, MARKET, "600875.SH", BUY, 0, 100));
+        booker.add(create_order(5, MARKET, "600875.SH", BUY, 0, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.22:0020\n"
                                                 "600875.SH:22.33:0040\n"
+                                                "600875.SH:33.22:0040\n"
                                                 "600875.SH:33.22:0040\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.22\n"
                                                        "600875.SH:22.33\n"
+                                                       "600875.SH:33.22\n"
                                                        "600875.SH:33.22\n");
     }
 }
