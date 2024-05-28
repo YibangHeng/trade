@@ -34,6 +34,7 @@ private:
         liquibook::book::Quantity qty,
         liquibook::book::Price price
     ) override;
+    void generate_level_price(const std::string& symbol);
 
 private:
     void on_accept(const std::shared_ptr<OrderWrapper>& order) override {}
@@ -53,6 +54,8 @@ private:
     std::unordered_map<std::string, OrderBookPtr> books;
     /// TODO: Use a better way to cache orders.
     std::unordered_map<int64_t, std::shared_ptr<OrderWrapper>> orders;
+    std::array<double, reporter::level_depth> asks;
+    std::array<double, reporter::level_depth> bids;
 
 private:
     std::shared_ptr<reporter::IReporter> m_reporter;

@@ -6,6 +6,8 @@ trade::broker::Booker::Booker(
     const std::vector<std::string>& symbols,
     const std::shared_ptr<reporter::IReporter>& reporter
 ) : AppBase("Booker"),
+    asks(),
+    bids(),
     m_reporter(reporter)
 {
     for (const auto& symbol : symbols)
@@ -87,6 +89,29 @@ void trade::broker::Booker::on_trade(
 
     m_reporter->md_trade_generated(md_trade);
     m_reporter->market_price(book->symbol(), BookerCommonData::to_price(price));
+    generate_level_price(book->symbol());
+    m_reporter->level_price(asks, bids);
+}
+
+void trade::broker::Booker::generate_level_price(const std::string& symbol)
+{
+    /// Set asks and bids to 0 first.
+    asks.fill(0.0);
+    bids.fill(0.0);
+
+    auto index = 0;
+    for (const auto& price : books[symbol]->asks() | std::views::keys) {
+        if (index > asks.size())
+            break;
+        asks[index++] = BookerCommonData::to_price(price.price());
+    }
+
+    index = 0;
+    for (const auto& price : books[symbol]->bids() | std::views::keys) {
+        if (index > bids.size())
+            break;
+        bids[index++] = BookerCommonData::to_price(price.price());
+    }
 }
 
 void trade::broker::Booker::on_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
