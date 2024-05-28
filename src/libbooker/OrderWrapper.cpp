@@ -43,3 +43,8 @@ bool trade::broker::OrderWrapper::is_limit() const
 {
     return m_order->order_type() == types::OrderType::limit;
 }
+
+bool trade::broker::OrderWrapper::exchange_time() const
+{
+    return m_order->exchange_time();
+}

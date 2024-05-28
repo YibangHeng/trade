@@ -82,11 +82,13 @@ message OrderTick
     SideType side        = 4; /// 买卖方向
     double price         = 5; /// 价格
     int64 quantity       = 6; /// 当笔数量
+    int64 exchange_time  = 7; /// 交易所时间
 }
 
 message TradeTick
 {
-    string symbol       = 1;
-    double exec_price   = 2;
-    int64 exec_quantity = 3;
+    string symbol       = 1; /// 合约代码
+    double exec_price   = 2; /// 执行价格
+    int64 exec_quantity = 3; /// 执行数量
+    int64 exchange_time = 4; /// 交易所时间
 }
