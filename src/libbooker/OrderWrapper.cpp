@@ -41,7 +41,12 @@ liquibook::book::Quantity trade::broker::OrderWrapper::order_qty() const
 
 bool trade::broker::OrderWrapper::is_limit() const
 {
-    return m_order->order_type() == types::OrderType::limit;
+    return order_type() == types::OrderType::limit;
+}
+
+trade::types::OrderType trade::broker::OrderWrapper::order_type() const
+{
+    return m_order->order_type();
 }
 
 bool trade::broker::OrderWrapper::exchange_time() const

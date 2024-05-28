@@ -88,8 +88,8 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
@@ -99,8 +99,8 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 100));
-        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
@@ -110,8 +110,8 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 100));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 33.22, 100));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0100\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:33.22\n");
@@ -121,8 +121,8 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 100));
-        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
@@ -132,8 +132,8 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 33.22, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 33.22, 100));
 
         CHECK(g_reporter->get_trade_result().empty());
         CHECK(g_reporter->get_market_price_result().empty());
@@ -143,8 +143,8 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 33.22, 100));
-        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 33.22, 100));
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result().empty());
         CHECK(g_reporter->get_market_price_result().empty());
@@ -157,11 +157,11 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 20));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 22.33, 100));
         booker.add(create_order(4, LIMIT, "600875.SH", BUY, 22.33, 100));
-        booker.add(create_order(5, LIMIT, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n"
@@ -177,11 +177,11 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 20));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 22.33, 100));
         booker.add(create_order(4, LIMIT, "600875.SH", BUY, 22.33, 100));
-        booker.add(create_order(5, LIMIT, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n"
@@ -197,11 +197,11 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 20));
-        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 33.22, 80));
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 33.22, 20));
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 80));
+        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 100));
         booker.add(create_order(4, LIMIT, "600875.SH", SELL, 22.33, 100));
-        booker.add(create_order(5, LIMIT, "600875.SH", SELL, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0020\n"
                                                 "600875.SH:33.22:0040\n"
@@ -217,11 +217,11 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 20));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 33.22, 100));
         booker.add(create_order(4, LIMIT, "600875.SH", BUY, 33.22, 100));
-        booker.add(create_order(5, LIMIT, "600875.SH", BUY, 33.22, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n"
@@ -237,11 +237,11 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 20));
-        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 33.33, 80));
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 20));
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.33, 80));
+        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 33.22, 100));
         booker.add(create_order(4, LIMIT, "600875.SH", SELL, 33.22, 100));
-        booker.add(create_order(5, LIMIT, "600875.SH", SELL, 33.22, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:33.33:0080\n"
                                                 "600875.SH:33.22:0020\n"
@@ -255,11 +255,11 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.22, 20));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 33.22, 80));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.22, 20));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 33.22, 80));
+        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 22.33, 100));
         booker.add(create_order(4, LIMIT, "600875.SH", BUY, 22.33, 100));
-        booker.add(create_order(5, LIMIT, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.22:0020\n"
                                                 "600875.SH:22.33:0040\n");
@@ -274,9 +274,9 @@ TEST_CASE("Limit order with cancel", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 50));
-        booker.add(create_order(1, CANCEL, "600875.SH", BUY, 22.33, 50));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 50));
+        booker.add(create_order(0, CANCEL, "600875.SH", BUY, 22.33, 50));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result().empty());
         CHECK(g_reporter->get_market_price_result().empty());
@@ -286,10 +286,10 @@ TEST_CASE("Limit order with cancel", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 50));
+        booker.add(create_order(0, CANCEL, "600875.SH", BUY, 22.33, 100));
         booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 50));
-        booker.add(create_order(1, CANCEL, "600875.SH", BUY, 22.33, 100));
-        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 50));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0050\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
@@ -299,9 +299,9 @@ TEST_CASE("Limit order with cancel", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 100));
-        booker.add(create_order(1, CANCEL, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(0, CANCEL, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
@@ -314,9 +314,9 @@ TEST_CASE("Market order matching with 1:1 matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
-        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 100));
-        booker.add(create_order(3, MARKET, "600875.SH", SELL, 0, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 100));
+        booker.add(create_order(2, MARKET, "600875.SH", SELL, 0, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0100\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:33.22\n");
@@ -326,9 +326,9 @@ TEST_CASE("Market order matching with 1:1 matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 100));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 33.22, 100));
-        booker.add(create_order(3, MARKET, "600875.SH", BUY, 0, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 33.22, 100));
+        booker.add(create_order(2, MARKET, "600875.SH", BUY, 0, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n");
@@ -341,11 +341,11 @@ TEST_CASE("Market order matching with M:N matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 20));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(3, MARKET, "600875.SH", BUY, 0, 100));
         booker.add(create_order(4, MARKET, "600875.SH", BUY, 0, 100));
-        booker.add(create_order(5, MARKET, "600875.SH", BUY, 0, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n"
@@ -361,11 +361,11 @@ TEST_CASE("Market order matching with M:N matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 20));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(3, MARKET, "600875.SH", BUY, 0, 100));
         booker.add(create_order(4, MARKET, "600875.SH", BUY, 0, 100));
-        booker.add(create_order(5, MARKET, "600875.SH", BUY, 0, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n"
@@ -381,11 +381,11 @@ TEST_CASE("Market order matching with M:N matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 20));
-        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 33.33, 80));
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 20));
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.33, 80));
+        booker.add(create_order(3, MARKET, "600875.SH", SELL, 0, 100));
         booker.add(create_order(4, MARKET, "600875.SH", SELL, 0, 100));
-        booker.add(create_order(5, MARKET, "600875.SH", SELL, 0, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:33.33:0080\n"
                                                 "600875.SH:33.22:0020\n"
@@ -401,11 +401,11 @@ TEST_CASE("Market order matching with M:N matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.22, 20));
-        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 33.22, 80));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.22, 20));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 33.22, 80));
+        booker.add(create_order(3, MARKET, "600875.SH", BUY, 0, 100));
         booker.add(create_order(4, MARKET, "600875.SH", BUY, 0, 100));
-        booker.add(create_order(5, MARKET, "600875.SH", BUY, 0, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.22:0020\n"
                                                 "600875.SH:22.33:0040\n"
@@ -424,9 +424,9 @@ TEST_CASE("Best price order matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 20));
-        booker.add(create_order(2, BEST_PRICE, "600875.SH", BUY, 0, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 20));
+        booker.add(create_order(1, BEST_PRICE, "600875.SH", BUY, 0, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n");
@@ -438,13 +438,130 @@ TEST_CASE("Best price order matching", "[Booker]")
     {
         trade::broker::Booker booker({}, reporter());
 
-        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 20));
-        booker.add(create_order(2, BEST_PRICE, "600875.SH", SELL, 0, 40));
-        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(1, BEST_PRICE, "600875.SH", SELL, 0, 40));
+        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 22.33, 100));
 
         CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
                                                 "600875.SH:22.33:0040\n");
         CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n");
+    }
+}
+
+TEST_CASE("Limit unordered order matching with M:N matching", "[Booker]")
+{
+    SECTION("Buy after sell with same price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(4, LIMIT, "600875.SH", BUY, 22.33, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
+                                                "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n");
+    }
+
+    SECTION("Buy after sell with same price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(4, LIMIT, "600875.SH", BUY, 22.33, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
+                                                "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n");
+    }
+
+    SECTION("Sell after buy with lower price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 33.22, 20));
+        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 100));
+        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.22, 80));
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 40));
+        booker.add(create_order(4, LIMIT, "600875.SH", SELL, 22.33, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0020\n"
+                                                "600875.SH:33.22:0040\n"
+                                                "600875.SH:33.22:0040\n"
+                                                "600875.SH:33.22:0040\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:33.22\n"
+                                                       "600875.SH:33.22\n"
+                                                       "600875.SH:33.22\n"
+                                                       "600875.SH:33.22\n");
+    }
+
+    SECTION("Buy after sell with higher price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
+        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 33.22, 100));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 22.33, 80));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(4, LIMIT, "600875.SH", BUY, 33.22, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020\n"
+                                                "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n"
+                                                "600875.SH:22.33:0040\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n"
+                                                       "600875.SH:22.33\n");
+    }
+
+    SECTION("Sell after buy with step price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 20));
+        booker.add(create_order(3, LIMIT, "600875.SH", SELL, 33.22, 100));
+        booker.add(create_order(2, LIMIT, "600875.SH", BUY, 33.33, 80));
+        booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 40));
+        booker.add(create_order(4, LIMIT, "600875.SH", SELL, 33.22, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:33.33:0080\n"
+                                                "600875.SH:33.22:0020\n"
+                                                "600875.SH:33.22:0020\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:33.33\n"
+                                                       "600875.SH:33.22\n"
+                                                       "600875.SH:33.22\n");
+    }
+
+    SECTION("Buy after sell with step price")
+    {
+        trade::broker::Booker booker({}, reporter());
+
+        booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.22, 20));
+        booker.add(create_order(3, LIMIT, "600875.SH", BUY, 22.33, 100));
+        booker.add(create_order(2, LIMIT, "600875.SH", SELL, 33.22, 80));
+        booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
+        booker.add(create_order(4, LIMIT, "600875.SH", BUY, 22.33, 100));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:22.22:0020\n"
+                                                "600875.SH:22.33:0040\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:22.22\n"
                                                        "600875.SH:22.33\n");
     }
 }

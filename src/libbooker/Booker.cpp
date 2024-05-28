@@ -29,49 +29,59 @@ void trade::broker::Booker::add(const std::shared_ptr<types::OrderTick>& order_t
         orders.emplace(order_tick->unique_id(), order_wrapper);
     }
 
-    switch (order_tick->order_type()) {
-    case types::OrderType::limit:
-    case types::OrderType::market: {
-        books[order_tick->symbol()]->add(order_wrapper);
-        break;
-    }
-        /// TODO: Make the matching logic for best price clearer.
-    case types::OrderType::best_price: {
-        double best_price;
+    /// Push the order into the queue first.
+    rearrangers[order_wrapper->symbol()].push(order_wrapper);
 
-        if (order_wrapper->is_buy()) {
-            const auto bids = books[order_tick->symbol()]->bids();
+    while (true) {
+        /// Loop until no more orders in the queue.
+        const auto& next_order_wrapper = rearrangers[order_wrapper->symbol()].pop();
+        if (!next_order_wrapper.has_value())
+            break;
 
-            if (bids.empty()) {
-                logger->error("A best price order {} arrived while no bid exists", order_wrapper->unique_id());
-                break;
+        switch (next_order_wrapper.value()->order_type()) {
+        case types::OrderType::limit:
+        case types::OrderType::market: {
+            books[order_tick->symbol()]->add(next_order_wrapper.value());
+            break;
+        }
+            /// TODO: Make the matching logic for best price clearer.
+        case types::OrderType::best_price: {
+            double best_price;
+
+            if (next_order_wrapper.value()->is_buy()) {
+                const auto bids = books[order_tick->symbol()]->bids();
+
+                if (bids.empty()) {
+                    logger->error("A best price order {} arrived while no bid exists", next_order_wrapper.value()->unique_id());
+                    break;
+                }
+
+                best_price = BookerCommonData::to_price(bids.begin()->first.price());
+            }
+            else {
+                const auto asks = books[order_tick->symbol()]->asks();
+
+                if (asks.empty()) {
+                    logger->error("A best price order {} arrived while no ask exists", next_order_wrapper.value()->unique_id());
+                    break;
+                }
+
+                best_price = BookerCommonData::to_price(asks.begin()->first.price());
             }
 
-            best_price = BookerCommonData::to_price(bids.begin()->first.price());
+            next_order_wrapper.value()->to_limit_order(best_price);
+
+            books[order_tick->symbol()]->add(next_order_wrapper.value());
+            break;
         }
-        else {
-            const auto asks = books[order_tick->symbol()]->asks();
-
-            if (asks.empty()) {
-                logger->error("A best price order {} arrived while no ask exists", order_wrapper->unique_id());
-                break;
-            }
-
-            best_price = BookerCommonData::to_price(asks.begin()->first.price());
+        case types::OrderType::cancel: {
+            books[order_tick->symbol()]->cancel(next_order_wrapper.value());
+            break;
         }
-
-        order_wrapper->to_limit_order(best_price);
-
-        books[order_tick->symbol()]->add(order_wrapper);
-        break;
-    }
-    case types::OrderType::cancel: {
-        books[order_tick->symbol()]->cancel(order_wrapper);
-        break;
-    }
-    default: {
-        logger->error("Unsupported order type: {}", utilities::ToJSON()(*order_tick));
-    }
+        default: {
+            logger->error("Unsupported order type: {}", utilities::ToJSON()(*order_tick));
+        }
+        }
     }
 }
 
@@ -136,6 +146,7 @@ void trade::broker::Booker::new_booker(const std::string& symbol)
         return;
 
     books.emplace(symbol, std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>(symbol));
+    rearrangers.emplace(symbol, Rearranger());
 
     books[symbol]->set_symbol(symbol);
     books[symbol]->set_trade_listener(this);

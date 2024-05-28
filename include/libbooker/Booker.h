@@ -5,6 +5,7 @@
 
 #include "AppBase.hpp"
 #include "OrderWrapper.h"
+#include "Rearranger.h"
 #include "libreporter/IReporter.hpp"
 #include "visibility.h"
 
@@ -52,6 +53,8 @@ private:
 private:
     /// Symbol -> OrderBook.
     std::unordered_map<std::string, OrderBookPtr> books;
+    /// Symbol -> Rearranger.
+    std::unordered_map<std::string, Rearranger> rearrangers;
     /// TODO: Use a better way to cache orders.
     std::unordered_map<int64_t, std::shared_ptr<OrderWrapper>> orders;
     std::array<double, reporter::level_depth> asks;

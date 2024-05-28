@@ -35,6 +35,9 @@ public:
     [[nodiscard]] liquibook::book::Price price() const;
     [[nodiscard]] liquibook::book::Quantity order_qty() const;
     [[nodiscard]] bool is_limit() const;
+
+public:
+    [[nodiscard]] types::OrderType order_type() const;
     [[nodiscard]] bool exchange_time() const;
 
     /// 0 if not a stop order.
