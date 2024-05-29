@@ -32,7 +32,7 @@ int trade::OSTMdServer::run()
         memcpy(buf.get(), &order_tick, sizeof(broker::SZSEHpfOrderTick));
         server.send(std::string(buf.get(), sizeof(broker::SZSEHpfOrderTick)));
 
-        logger->info("Emitted order tick: {:>6} {:>6.2f} {:>6} {:<4} {:>1}", order_tick.m_header.m_symbol, broker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(order_tick.m_px)), broker::BookerCommonData::to_quantity(order_tick.m_qty), SideType_Name(broker::BookerCommonData::to_side(order_tick.m_side)), order_tick.m_order_type);
+        logger->info("Emitted order tick: {:>6} {:>6.2f} {:>6} {:<4} {:>1}", order_tick.m_header.m_symbol, booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(order_tick.m_px)), booker::BookerCommonData::to_quantity(order_tick.m_qty), SideType_Name(booker::BookerCommonData::to_side(order_tick.m_side)), order_tick.m_order_type);
 
         if (m_arguments["emit-interval"].as<int64_t>() > 0)
             std::this_thread::sleep_for(std::chrono::milliseconds(m_arguments["emit-interval"].as<int64_t>()));
@@ -168,12 +168,12 @@ std::vector<trade::broker::SZSEHpfOrderTick> trade::OSTMdServer::read_od(const s
         order_tick.m_header.m_message_type = broker::CUTCommonData::to_szse_datagram_type(types::X_OST_SZSEDatagramType::order);
 
         M_A {order_tick.m_header.m_symbol} = security_id;
-        order_tick.m_px                    = broker::BookerCommonData::to_price(price);
-        order_tick.m_qty                   = broker::BookerCommonData::to_quantity(trade_qty);
+        order_tick.m_px                    = booker::BookerCommonData::to_price(price);
+        order_tick.m_qty                   = booker::BookerCommonData::to_quantity(trade_qty);
         order_tick.m_side                  = side;
         order_tick.m_order_type            = order_type;
 
-        logger->debug("Load order tick: {:>6} {:>6.2f} {:>6} {:<4} {:>1}", order_tick.m_header.m_symbol, broker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(order_tick.m_px)), broker::BookerCommonData::to_quantity(order_tick.m_qty), SideType_Name(broker::BookerCommonData::to_side(order_tick.m_side)), order_tick.m_order_type);
+        logger->debug("Load order tick: {:>6} {:>6.2f} {:>6} {:<4} {:>1}", order_tick.m_header.m_symbol, booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(order_tick.m_px)), booker::BookerCommonData::to_quantity(order_tick.m_qty), SideType_Name(booker::BookerCommonData::to_side(order_tick.m_side)), order_tick.m_order_type);
     }
 
     logger->debug("Loaded {} order ticks", order_ticks.size());

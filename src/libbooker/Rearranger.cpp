@@ -1,16 +1,16 @@
 #include "libbooker/Rearranger.h"
 
-trade::broker::Rearranger::Rearranger(const int64_t starting_order_id)
+trade::booker::Rearranger::Rearranger(const int64_t starting_order_id)
     : excepted(starting_order_id)
 {
 }
 
-void trade::broker::Rearranger::push(const OrderWrapperPtr& order_wrapper)
+void trade::booker::Rearranger::push(const OrderWrapperPtr& order_wrapper)
 {
     cached_orders.push(order_wrapper);
 }
 
-std::optional<trade::broker::OrderWrapperPtr> trade::broker::Rearranger::pop()
+std::optional<trade::booker::OrderWrapperPtr> trade::booker::Rearranger::pop()
 {
     if (cached_orders.empty()
         || excepted != cached_orders.top()->unique_id()) {

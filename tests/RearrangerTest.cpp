@@ -3,20 +3,20 @@
 #include "libbooker/OrderWrapper.h"
 #include "libbooker/Rearranger.h"
 
-std::shared_ptr<trade::broker::OrderWrapper> create_order(const int64_t unique_id)
+std::shared_ptr<trade::booker::OrderWrapper> create_order(const int64_t unique_id)
 {
     const auto order_tick = std::make_shared<trade::types::OrderTick>();
 
     order_tick->set_unique_id(unique_id);
 
-    return std::make_shared<trade::broker::OrderWrapper>(order_tick);
+    return std::make_shared<trade::booker::OrderWrapper>(order_tick);
 }
 
 TEST_CASE("In order pushing", "[Rearranger]")
 {
     SECTION("Single pushing and popping")
     {
-        trade::broker::Rearranger rearranger;
+        trade::booker::Rearranger rearranger;
 
         rearranger.push(create_order(0));
 
@@ -26,7 +26,7 @@ TEST_CASE("In order pushing", "[Rearranger]")
 
     SECTION("Multiple pushing and popping")
     {
-        trade::broker::Rearranger rearranger;
+        trade::booker::Rearranger rearranger;
 
         rearranger.push(create_order(0));
         rearranger.push(create_order(1));
@@ -40,7 +40,7 @@ TEST_CASE("In order pushing", "[Rearranger]")
 
     SECTION("Multiple pushing and multiple popping")
     {
-        trade::broker::Rearranger rearranger;
+        trade::booker::Rearranger rearranger;
 
         rearranger.push(create_order(0));
         CHECK(rearranger.pop().value()->unique_id() == 0);
@@ -66,7 +66,7 @@ TEST_CASE("Out of order pushing and popping", "[Rearranger]")
 {
     SECTION("Multiple pushing and popping")
     {
-        trade::broker::Rearranger rearranger;
+        trade::booker::Rearranger rearranger;
 
         rearranger.push(create_order(1));
         rearranger.push(create_order(0));
@@ -80,7 +80,7 @@ TEST_CASE("Out of order pushing and popping", "[Rearranger]")
 
     SECTION("Multiple pushing and multiple popping")
     {
-        trade::broker::Rearranger rearranger;
+        trade::booker::Rearranger rearranger;
 
         rearranger.push(create_order(0));
         CHECK(rearranger.pop().value()->unique_id() == 0);

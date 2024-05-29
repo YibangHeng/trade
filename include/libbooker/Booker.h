@@ -9,7 +9,7 @@
 #include "libreporter/IReporter.hpp"
 #include "visibility.h"
 
-namespace trade::broker
+namespace trade::booker
 {
 
 using OrderBook    = liquibook::book::OrderBook<OrderWrapperPtr>;
@@ -64,4 +64,4 @@ private:
     std::shared_ptr<reporter::IReporter> m_reporter;
 };
 
-} // namespace trade::broker
+} // namespace trade::booker

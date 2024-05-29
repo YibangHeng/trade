@@ -86,7 +86,7 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
 {
     SECTION("Sell after buy with same price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 100));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 100));
@@ -97,7 +97,7 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
 
     SECTION("Buy after sell with same price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 100));
         booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
@@ -108,7 +108,7 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
 
     SECTION("Sell after buy with lower price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 33.22, 100));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 100));
@@ -119,7 +119,7 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
 
     SECTION("Buy after sell with higher price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 100));
         booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 100));
@@ -130,7 +130,7 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
 
     SECTION("Sell after buy with higher price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 100));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 33.22, 100));
@@ -141,7 +141,7 @@ TEST_CASE("Limit order matching with 1:1 matching", "[Booker]")
 
     SECTION("Buy after sell with lower price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 33.22, 100));
         booker.add(create_order(1, LIMIT, "600875.SH", BUY, 22.33, 100));
@@ -155,7 +155,7 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
 {
     SECTION("Buy after sell with same price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
@@ -175,7 +175,7 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
 
     SECTION("Buy after sell with same price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
@@ -195,7 +195,7 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
 
     SECTION("Sell after buy with lower price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 33.22, 20));
         booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 40));
@@ -215,7 +215,7 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
 
     SECTION("Buy after sell with higher price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
@@ -235,7 +235,7 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
 
     SECTION("Sell after buy with step price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 20));
         booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 40));
@@ -253,7 +253,7 @@ TEST_CASE("Limit order matching with M:N matching", "[Booker]")
 
     SECTION("Buy after sell with step price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.22, 20));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
@@ -272,7 +272,7 @@ TEST_CASE("Limit order with cancel", "[Booker]")
 {
     SECTION("Limit order with cancel before fill")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 50));
         booker.add(create_order(0, CANCEL, "600875.SH", BUY, 22.33, 50));
@@ -284,7 +284,7 @@ TEST_CASE("Limit order with cancel", "[Booker]")
 
     SECTION("Limit order with cancel after partial fill")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 100));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 50));
@@ -297,7 +297,7 @@ TEST_CASE("Limit order with cancel", "[Booker]")
 
     SECTION("Limit order with cancel after full fill")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 100));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 100));
@@ -312,7 +312,7 @@ TEST_CASE("Market order matching with 1:1 matching", "[Booker]")
 {
     SECTION("Sell after buy with market price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 100));
         booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 100));
@@ -324,7 +324,7 @@ TEST_CASE("Market order matching with 1:1 matching", "[Booker]")
 
     SECTION("Buy after sell with market price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 100));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 33.22, 100));
@@ -339,7 +339,7 @@ TEST_CASE("Market order matching with M:N matching", "[Booker]")
 {
     SECTION("Buy after sell with market price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
@@ -359,7 +359,7 @@ TEST_CASE("Market order matching with M:N matching", "[Booker]")
 
     SECTION("Buy after sell with market price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
@@ -379,7 +379,7 @@ TEST_CASE("Market order matching with M:N matching", "[Booker]")
 
     SECTION("Sell after buy with step market price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 20));
         booker.add(create_order(1, LIMIT, "600875.SH", BUY, 33.22, 40));
@@ -399,7 +399,7 @@ TEST_CASE("Market order matching with M:N matching", "[Booker]")
 
     SECTION("Buy after sell with step market price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.22, 20));
         booker.add(create_order(1, LIMIT, "600875.SH", SELL, 22.33, 40));
@@ -422,7 +422,7 @@ TEST_CASE("Best price order matching", "[Booker]")
 {
     SECTION("Sell after buy with best price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 20));
         booker.add(create_order(1, BEST_PRICE, "600875.SH", BUY, 0, 40));
@@ -436,7 +436,7 @@ TEST_CASE("Best price order matching", "[Booker]")
 
     SECTION("Buy after sell with best price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
         booker.add(create_order(1, BEST_PRICE, "600875.SH", SELL, 0, 40));
@@ -453,7 +453,7 @@ TEST_CASE("Limit unordered order matching with M:N matching", "[Booker]")
 {
     SECTION("Buy after sell with same price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
         booker.add(create_order(3, LIMIT, "600875.SH", BUY, 22.33, 100));
@@ -473,7 +473,7 @@ TEST_CASE("Limit unordered order matching with M:N matching", "[Booker]")
 
     SECTION("Buy after sell with same price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
         booker.add(create_order(3, LIMIT, "600875.SH", BUY, 22.33, 100));
@@ -493,7 +493,7 @@ TEST_CASE("Limit unordered order matching with M:N matching", "[Booker]")
 
     SECTION("Sell after buy with lower price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 33.22, 20));
         booker.add(create_order(3, LIMIT, "600875.SH", SELL, 22.33, 100));
@@ -513,7 +513,7 @@ TEST_CASE("Limit unordered order matching with M:N matching", "[Booker]")
 
     SECTION("Buy after sell with higher price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.33, 20));
         booker.add(create_order(3, LIMIT, "600875.SH", BUY, 33.22, 100));
@@ -533,7 +533,7 @@ TEST_CASE("Limit unordered order matching with M:N matching", "[Booker]")
 
     SECTION("Sell after buy with step price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", BUY, 22.33, 20));
         booker.add(create_order(3, LIMIT, "600875.SH", SELL, 33.22, 100));
@@ -551,7 +551,7 @@ TEST_CASE("Limit unordered order matching with M:N matching", "[Booker]")
 
     SECTION("Buy after sell with step price")
     {
-        trade::broker::Booker booker({}, reporter());
+        trade::booker::Booker booker({}, reporter());
 
         booker.add(create_order(0, LIMIT, "600875.SH", SELL, 22.22, 20));
         booker.add(create_order(3, LIMIT, "600875.SH", BUY, 22.33, 100));

@@ -4,7 +4,7 @@
 
 #include "orms.pb.h"
 
-namespace trade::broker
+namespace trade::booker
 {
 
 /// Wrapper types::Order for liquibook::book::Order.
@@ -50,4 +50,4 @@ private:
 
 using OrderWrapperPtr = std::shared_ptr<OrderWrapper>;
 
-} // namespace trade::broker
+} // namespace trade::booker

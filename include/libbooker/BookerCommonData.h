@@ -4,7 +4,7 @@
 
 #include "enums.pb.h"
 
-namespace trade::broker
+namespace trade::booker
 {
 
 class BookerCommonData
@@ -21,4 +21,4 @@ private:
     static constexpr int64_t scale = 1000;
 };
 
-} // namespace trade::broker
+} // namespace trade::booker

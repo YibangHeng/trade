@@ -2,7 +2,7 @@
 #include "libbooker/BookerCommonData.h"
 #include "utilities/ToJSON.hpp"
 
-trade::broker::Booker::Booker(
+trade::booker::Booker::Booker(
     const std::vector<std::string>& symbols,
     const std::shared_ptr<reporter::IReporter>& reporter
 ) : AppBase("Booker"),
@@ -14,7 +14,7 @@ trade::broker::Booker::Booker(
         new_booker(symbol);
 }
 
-void trade::broker::Booker::add(const std::shared_ptr<types::OrderTick>& order_tick)
+void trade::booker::Booker::add(const std::shared_ptr<types::OrderTick>& order_tick)
 {
     new_booker(order_tick->symbol());
 
@@ -85,7 +85,7 @@ void trade::broker::Booker::add(const std::shared_ptr<types::OrderTick>& order_t
     }
 }
 
-void trade::broker::Booker::on_trade(
+void trade::booker::Booker::on_trade(
     const liquibook::book::OrderBook<OrderWrapperPtr>* book,
     const liquibook::book::Quantity qty,
     const liquibook::book::Price price
@@ -103,7 +103,7 @@ void trade::broker::Booker::on_trade(
     m_reporter->level_price(asks, bids);
 }
 
-void trade::broker::Booker::generate_level_price(const std::string& symbol)
+void trade::booker::Booker::generate_level_price(const std::string& symbol)
 {
     /// Set asks and bids to 0 first.
     asks.fill(0.0);
@@ -124,22 +124,22 @@ void trade::broker::Booker::generate_level_price(const std::string& symbol)
     }
 }
 
-void trade::broker::Booker::on_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
+void trade::booker::Booker::on_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
 {
     logger->error("Order {} was rejected: {}", order->unique_id(), reason);
 }
 
-void trade::broker::Booker::on_cancel_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
+void trade::booker::Booker::on_cancel_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
 {
     logger->error("Cancel for {} was rejected: {}", order->unique_id(), reason);
 }
 
-void trade::broker::Booker::on_replace_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
+void trade::booker::Booker::on_replace_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
 {
     logger->error("Replace for {} was rejected: {}", order->unique_id(), reason);
 }
 
-void trade::broker::Booker::new_booker(const std::string& symbol)
+void trade::booker::Booker::new_booker(const std::string& symbol)
 {
     /// Do nothing if the order book already exists.
     if (books.contains(symbol))

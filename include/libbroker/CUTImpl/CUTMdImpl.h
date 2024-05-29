@@ -32,7 +32,7 @@ private:
     static std::tuple<std::string, uint16_t> extract_address(const std::string& address);
 
 private:
-    Booker booker;
+    booker::Booker booker;
 
 private:
     std::atomic<bool> is_running;
