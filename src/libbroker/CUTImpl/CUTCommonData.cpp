@@ -1,8 +1,8 @@
 #include <fmt/format.h>
 #include <regex>
 
-#include "libbooker/BookerCommonData.h"
 #include "libbroker/CUTImpl/CUTCommonData.h"
+#include "libbroker/CUTImpl/RawStructure.h"
 #include "utilities/TimeHelper.hpp"
 
 trade::broker::CUTCommonData::CUTCommonData()

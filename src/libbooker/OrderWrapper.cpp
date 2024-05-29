@@ -1,7 +1,7 @@
 #include "libbooker/OrderWrapper.h"
 #include "libbooker/BookerCommonData.h"
 
-trade::booker::OrderWrapper::OrderWrapper(const std::shared_ptr<types::OrderTick>& order_tick)
+trade::booker::OrderWrapper::OrderWrapper(const OrderTickPtr& order_tick)
     : filled_quantity(0)
 {
     this->m_order = order_tick;

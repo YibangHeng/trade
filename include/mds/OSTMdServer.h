@@ -4,7 +4,7 @@
 #include <boost/program_options.hpp>
 
 #include "AppBase.hpp"
-#include "libbroker/CUTImpl/CUTCommonData.h"
+#include "libbroker/CUTImpl/RawStructure.h"
 #include "visibility.h"
 
 namespace trade

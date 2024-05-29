@@ -5,6 +5,7 @@
 #include "enums.pb.h"
 #include "info.h"
 #include "libbooker/BookerCommonData.h"
+#include "libbroker/CUTImpl/CUTCommonData.h"
 #include "mds/OSTMdServer.h"
 #include "utilities/MakeAssignable.hpp"
 #include "utilities/NetworkHelper.hpp"

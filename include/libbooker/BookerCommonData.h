@@ -3,6 +3,7 @@
 #include <third/liquibook/src/book/order_book.h>
 
 #include "enums.pb.h"
+#include "orms.pb.h"
 
 namespace trade::booker
 {
@@ -20,5 +21,8 @@ public:
 private:
     static constexpr int64_t scale = 1000;
 };
+
+using OrderTickPtr = std::shared_ptr<types::OrderTick>;
+using TradeTickPtr = std::shared_ptr<types::TradeTick>;
 
 } // namespace trade::booker

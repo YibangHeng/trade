@@ -16,10 +16,10 @@ public:
 public:
     void push(const OrderWrapperPtr& order_wrapper);
     void trade(const types::TradeTick& trade_tick);
-    std::shared_ptr<types::OrderTick> pop();
+    OrderTickPtr pop();
 
 private:
-    static std::shared_ptr<types::OrderTick> to_order_tick(const OrderWrapperPtr& order_wrapper);
+    static OrderTickPtr to_order_tick(const OrderWrapperPtr& order_wrapper);
 
 private:
     /// unique_id -> ask order.

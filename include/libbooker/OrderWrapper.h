@@ -2,7 +2,7 @@
 
 #include <third/liquibook/src/book/order_book.h>
 
-#include "orms.pb.h"
+#include "BookerCommonData.h"
 
 namespace trade::booker
 {
@@ -11,7 +11,7 @@ namespace trade::booker
 class OrderWrapper
 {
 public:
-    explicit OrderWrapper(const std::shared_ptr<types::OrderTick>& order_tick);
+    explicit OrderWrapper(const OrderTickPtr& order_tick);
     ~OrderWrapper() = default;
 
 public:
@@ -51,7 +51,7 @@ public:
     [[nodiscard]] liquibook::book::Quantity quantity_on_market() const;
 
 private:
-    std::shared_ptr<types::OrderTick> m_order;
+    OrderTickPtr m_order;
     liquibook::book::Quantity filled_quantity;
 };
 

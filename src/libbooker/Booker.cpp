@@ -14,11 +14,11 @@ trade::booker::Booker::Booker(
         new_booker(symbol);
 }
 
-void trade::booker::Booker::add(const std::shared_ptr<types::OrderTick>& order_tick)
+void trade::booker::Booker::add(const OrderTickPtr& order_tick)
 {
     new_booker(order_tick->symbol());
 
-    std::shared_ptr<OrderWrapper> order_wrapper;
+    OrderWrapperPtr order_wrapper;
 
     /// Check if order already exists.
     if (orders.contains(order_tick->unique_id())) {
@@ -124,17 +124,17 @@ void trade::booker::Booker::generate_level_price(const std::string& symbol)
     }
 }
 
-void trade::booker::Booker::on_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
+void trade::booker::Booker::on_reject(const OrderWrapperPtr& order, const char* reason)
 {
     logger->error("Order {} was rejected: {}", order->unique_id(), reason);
 }
 
-void trade::booker::Booker::on_cancel_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
+void trade::booker::Booker::on_cancel_reject(const OrderWrapperPtr& order, const char* reason)
 {
     logger->error("Cancel for {} was rejected: {}", order->unique_id(), reason);
 }
 
-void trade::booker::Booker::on_replace_reject(const std::shared_ptr<OrderWrapper>& order, const char* reason)
+void trade::booker::Booker::on_replace_reject(const OrderWrapperPtr& order, const char* reason)
 {
     logger->error("Replace for {} was rejected: {}", order->unique_id(), reason);
 }
