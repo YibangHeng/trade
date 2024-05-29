@@ -2,15 +2,7 @@
 
 #include "libbooker/OrderWrapper.h"
 #include "libbooker/Rearranger.h"
-
-std::shared_ptr<trade::booker::OrderWrapper> create_order(const int64_t unique_id)
-{
-    const auto order_tick = std::make_shared<trade::types::OrderTick>();
-
-    order_tick->set_unique_id(unique_id);
-
-    return std::make_shared<trade::booker::OrderWrapper>(order_tick);
-}
+#include "utilities/OrderCreator.hpp"
 
 TEST_CASE("In order pushing", "[Rearranger]")
 {
@@ -18,7 +10,7 @@ TEST_CASE("In order pushing", "[Rearranger]")
     {
         trade::booker::Rearranger rearranger;
 
-        rearranger.push(create_order(0));
+        rearranger.push(OrderCreator::order_wrapper(0));
 
         CHECK(rearranger.pop().value()->unique_id() == 0);
         CHECK(rearranger.pop().has_value() == false);
@@ -28,9 +20,9 @@ TEST_CASE("In order pushing", "[Rearranger]")
     {
         trade::booker::Rearranger rearranger;
 
-        rearranger.push(create_order(0));
-        rearranger.push(create_order(1));
-        rearranger.push(create_order(2));
+        rearranger.push(OrderCreator::order_wrapper(0));
+        rearranger.push(OrderCreator::order_wrapper(1));
+        rearranger.push(OrderCreator::order_wrapper(2));
 
         CHECK(rearranger.pop().value()->unique_id() == 0);
         CHECK(rearranger.pop().value()->unique_id() == 1);
@@ -42,19 +34,19 @@ TEST_CASE("In order pushing", "[Rearranger]")
     {
         trade::booker::Rearranger rearranger;
 
-        rearranger.push(create_order(0));
+        rearranger.push(OrderCreator::order_wrapper(0));
         CHECK(rearranger.pop().value()->unique_id() == 0);
         CHECK(rearranger.pop().has_value() == false);
 
-        rearranger.push(create_order(1));
-        rearranger.push(create_order(2));
+        rearranger.push(OrderCreator::order_wrapper(1));
+        rearranger.push(OrderCreator::order_wrapper(2));
         CHECK(rearranger.pop().value()->unique_id() == 1);
         CHECK(rearranger.pop().value()->unique_id() == 2);
         CHECK(rearranger.pop().has_value() == false);
 
-        rearranger.push(create_order(3));
-        rearranger.push(create_order(4));
-        rearranger.push(create_order(5));
+        rearranger.push(OrderCreator::order_wrapper(3));
+        rearranger.push(OrderCreator::order_wrapper(4));
+        rearranger.push(OrderCreator::order_wrapper(5));
         CHECK(rearranger.pop().value()->unique_id() == 3);
         CHECK(rearranger.pop().value()->unique_id() == 4);
         CHECK(rearranger.pop().value()->unique_id() == 5);
@@ -68,9 +60,9 @@ TEST_CASE("Out of order pushing and popping", "[Rearranger]")
     {
         trade::booker::Rearranger rearranger;
 
-        rearranger.push(create_order(1));
-        rearranger.push(create_order(0));
-        rearranger.push(create_order(2));
+        rearranger.push(OrderCreator::order_wrapper(1));
+        rearranger.push(OrderCreator::order_wrapper(0));
+        rearranger.push(OrderCreator::order_wrapper(2));
 
         CHECK(rearranger.pop().value()->unique_id() == 0);
         CHECK(rearranger.pop().value()->unique_id() == 1);
@@ -82,21 +74,21 @@ TEST_CASE("Out of order pushing and popping", "[Rearranger]")
     {
         trade::booker::Rearranger rearranger;
 
-        rearranger.push(create_order(0));
+        rearranger.push(OrderCreator::order_wrapper(0));
         CHECK(rearranger.pop().value()->unique_id() == 0);
         CHECK(rearranger.pop().has_value() == false);
 
-        rearranger.push(create_order(2));
+        rearranger.push(OrderCreator::order_wrapper(2));
         CHECK(rearranger.pop().has_value() == false);
-        rearranger.push(create_order(1));
+        rearranger.push(OrderCreator::order_wrapper(1));
         CHECK(rearranger.pop().value()->unique_id() == 1);
         CHECK(rearranger.pop().value()->unique_id() == 2);
         CHECK(rearranger.pop().has_value() == false);
 
-        rearranger.push(create_order(4));
+        rearranger.push(OrderCreator::order_wrapper(4));
         CHECK(rearranger.pop().has_value() == false);
-        rearranger.push(create_order(3));
-        rearranger.push(create_order(5));
+        rearranger.push(OrderCreator::order_wrapper(3));
+        rearranger.push(OrderCreator::order_wrapper(5));
         CHECK(rearranger.pop().value()->unique_id() == 3);
         CHECK(rearranger.pop().value()->unique_id() == 4);
         CHECK(rearranger.pop().value()->unique_id() == 5);

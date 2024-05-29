@@ -36,16 +36,23 @@ public:
     [[nodiscard]] liquibook::book::Quantity order_qty() const;
     [[nodiscard]] bool is_limit() const;
 
-public:
-    [[nodiscard]] types::OrderType order_type() const;
-    [[nodiscard]] bool exchange_time() const;
-
     /// 0 if not a stop order.
     /// stop_price is not used yet. Just make matcher happy.
     static consteval liquibook::book::Price stop_price() { return 0; }
 
+public:
+    /// Accept a trade on this order and return true if the order is filled.
+    bool accept(const types::TradeTick& order_tick);
+
+public:
+    [[nodiscard]] types::OrderType order_type() const;
+    [[nodiscard]] bool exchange_time() const;
+    /// Return the quantity that not yet filled.
+    [[nodiscard]] liquibook::book::Quantity quantity_on_market() const;
+
 private:
     std::shared_ptr<types::OrderTick> m_order;
+    liquibook::book::Quantity filled_quantity;
 };
 
 using OrderWrapperPtr = std::shared_ptr<OrderWrapper>;
