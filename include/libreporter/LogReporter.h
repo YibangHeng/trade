@@ -1,8 +1,8 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
 #include <utility>
 
-#include "AppBase.hpp"
 #include "IReporter.hpp"
 #include "NopReporter.hpp"
 

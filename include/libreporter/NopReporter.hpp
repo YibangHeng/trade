@@ -1,6 +1,5 @@
 #pragma once
 
-#include "AppBase.hpp"
 #include "IReporter.hpp"
 
 namespace trade::reporter
