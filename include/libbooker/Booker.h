@@ -28,8 +28,10 @@ public:
     ~Booker() override = default;
 
 public:
+    /// Add a new order to the book.
+    /// Booker will process order in auction stage and continuous stage.
     void add(const OrderTickPtr& order_tick);
-    /// Only accepts trades in call auction stage.
+    /// Only accepts trades in call auction stage (whose exec time == 925000).
     void trade(const TradeTickPtr& trade_tick);
     void switch_to_continuous_stage();
 
@@ -59,15 +61,16 @@ private:
 
 private:
     /// Symbol -> OrderBook.
-    std::unordered_map<std::string, OrderBookPtr> books;
+    std::unordered_map<std::string, OrderBookPtr> m_books;
     /// Symbol -> Rearranger.
-    std::unordered_map<std::string, Rearranger> rearrangers;
-    std::unordered_map<std::string, CallAuctionHolder> call_auction_holders;
+    std::unordered_map<std::string, Rearranger> m_rearrangers;
+    std::unordered_map<std::string, CallAuctionHolder> m_call_auction_holders;
     /// TODO: Use a better way to cache orders.
-    std::unordered_map<int64_t, OrderWrapperPtr> orders;
-    std::array<double, reporter::level_depth> asks;
-    std::array<double, reporter::level_depth> bids;
-    bool in_continuous_stage;
+    std::unordered_map<int64_t, OrderWrapperPtr> m_orders;
+    std::array<double, reporter::level_depth> m_asks;
+    std::array<double, reporter::level_depth> m_bids;
+    /// Indicates if the book is in call auction stage or in continuous trade stage.
+    bool m_in_continuous_stage;
 
 private:
     std::shared_ptr<reporter::IReporter> m_reporter;
