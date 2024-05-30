@@ -66,6 +66,9 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
 
             logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
 
+            if (order_tick->exchange_time() >= 930000) [[likely]]
+                booker.switch_to_continuous_stage();
+
             booker.add(order_tick);
 
             break;
@@ -74,6 +77,8 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
             const auto trade_tick = CUTCommonData::to_trade_tick(message);
 
             logger->debug("Received trade tick: {}", utilities::ToJSON()(*trade_tick));
+
+            booker.trade(trade_tick);
 
             break;
         }

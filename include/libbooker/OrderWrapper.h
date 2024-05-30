@@ -46,7 +46,7 @@ public:
 
 public:
     [[nodiscard]] types::OrderType order_type() const;
-    [[nodiscard]] bool exchange_time() const;
+    [[nodiscard]] int64_t exchange_time() const;
     /// Return the quantity that not yet filled.
     [[nodiscard]] liquibook::book::Quantity quantity_on_market() const;
 

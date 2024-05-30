@@ -532,3 +532,61 @@ TEST_CASE("Limit unordered order matching with M:N matching", "[Booker]")
                                                        "600875.SH:22.33\n");
     }
 }
+
+TEST_CASE("Call auction stage", "[Booker]")
+{
+    SECTION("No trade after call auction")
+    {
+        trade::booker::Booker booker({}, reporter());
+
+        booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", SELL, 22.33, 20, 915000));
+        booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 33.22, 40, 915000));
+        booker.add(OrderCreator::ororder_tick(2, LIMIT, "600875.SH", SELL, 33.33, 80, 915000));
+        booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", BUY, 22.22, 100, 915000));
+        booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", BUY, 22.33, 100, 915000));
+        booker.add(OrderCreator::ororder_tick(5, LIMIT, "600875.SH", BUY, 33.22, 100, 915000));
+
+        booker.trade(OrderCreator::trade_tick(1, 5, "600875.SH", 33.22, 40, 925000));
+        booker.trade(OrderCreator::trade_tick(0, 5, "600875.SH", 33.22, 20, 925000));
+
+        booker.switch_to_continuous_stage();
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0040\n"
+                                                "600875.SH:33.22:0020\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:33.22\n"
+                                                       "600875.SH:33.22\n");
+    }
+
+    SECTION("Continuous trade after call auction")
+    {
+        trade::booker::Booker booker({}, reporter());
+
+        booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", SELL, 22.33, 20, 915000));
+        booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 33.22, 40, 915000));
+        booker.add(OrderCreator::ororder_tick(2, LIMIT, "600875.SH", SELL, 33.33, 80, 915000));
+        booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", BUY, 22.22, 100, 915000));
+        booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", BUY, 22.33, 100, 915000));
+        booker.add(OrderCreator::ororder_tick(5, LIMIT, "600875.SH", BUY, 33.22, 100, 915000));
+
+        booker.trade(OrderCreator::trade_tick(1, 5, "600875.SH", 33.22, 40, 925000));
+        booker.trade(OrderCreator::trade_tick(0, 5, "600875.SH", 33.22, 20, 925000));
+
+        booker.switch_to_continuous_stage();
+
+        booker.add(OrderCreator::ororder_tick(6, MARKET, "600875.SH", BUY, 0, 80, 930000));
+        booker.add(OrderCreator::ororder_tick(7, MARKET, "600875.SH", SELL, 0, 240, 930000));
+
+        CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0040\n"
+                                                "600875.SH:33.22:0020\n"
+                                                "600875.SH:33.33:0080\n"
+                                                "600875.SH:33.22:0040\n"
+                                                "600875.SH:22.33:0100\n"
+                                                "600875.SH:22.22:0100\n");
+        CHECK(g_reporter->get_market_price_result() == "600875.SH:33.22\n"
+                                                       "600875.SH:33.22\n"
+                                                       "600875.SH:33.33\n"
+                                                       "600875.SH:33.22\n"
+                                                       "600875.SH:22.33\n"
+                                                       "600875.SH:22.22\n");
+    }
+}

@@ -1,5 +1,6 @@
 #include "libbooker/Booker.h"
 #include "libbooker/BookerCommonData.h"
+#include "utilities/TimeHelper.hpp"
 #include "utilities/ToJSON.hpp"
 
 trade::booker::Booker::Booker(
@@ -8,6 +9,7 @@ trade::booker::Booker::Booker(
 ) : AppBase("Booker"),
     asks(),
     bids(),
+    in_continuous_stage(),
     m_reporter(reporter)
 {
     for (const auto& symbol : symbols)
@@ -38,50 +40,105 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
         if (!next_order_wrapper.has_value())
             break;
 
-        switch (next_order_wrapper.value()->order_type()) {
-        case types::OrderType::limit:
-        case types::OrderType::market: {
-            books[order_tick->symbol()]->add(next_order_wrapper.value());
-            break;
+        /// If in call auction stage.
+        if (next_order_wrapper.value()->exchange_time() < 925000) {
+            call_auction_holders[next_order_wrapper.value()->symbol()].push(next_order_wrapper.value());
         }
-            /// TODO: Make the matching logic for best price clearer.
-        case types::OrderType::best_price: {
-            double best_price;
+        /// If in continuous trade stage.
+        else {
+            auction(next_order_wrapper.value());
+        }
+    }
+}
 
-            if (next_order_wrapper.value()->is_buy()) {
-                const auto bids = books[order_tick->symbol()]->bids();
+void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
+{
+    /// Only accepts trade made in auction stage.
+    if (trade_tick->exchange_time() == 925000) {
+        call_auction_holders[trade_tick->symbol()].trade(*trade_tick);
 
-                if (bids.empty()) {
-                    logger->error("A best price order {} arrived while no bid exists", next_order_wrapper.value()->unique_id());
-                    break;
-                }
+        /// Report trade.
+        const auto md_trade = std::make_shared<types::MdTrade>();
 
-                best_price = BookerCommonData::to_price(bids.begin()->first.price());
+        md_trade->set_symbol(trade_tick->symbol());
+        md_trade->set_price(trade_tick->exec_price());
+        md_trade->set_quantity(trade_tick->exec_quantity());
+
+        m_reporter->md_trade_generated(md_trade);
+
+        /// Report market price.
+        m_reporter->market_price(trade_tick->symbol(), trade_tick->exec_price());
+    }
+}
+
+void trade::booker::Booker::switch_to_continuous_stage()
+{
+    if (in_continuous_stage) [[likely]]
+        return;
+
+    /// Move all unfinished orders from call auction stage to continuous trade stage.
+    for (auto& call_auction_holder : call_auction_holders | std::views::values) {
+        while (true) {
+            const auto order_tick = call_auction_holder.pop();
+            if (order_tick == nullptr)
+                break;
+
+            logger->info("Added unfinished order in call auction stage: {}", utilities::ToJSON()(*order_tick));
+
+            auction(std::make_shared<OrderWrapper>(order_tick));
+        }
+    }
+
+    in_continuous_stage = true;
+
+    logger->info("Switched to continuous trade stage at {}", utilities::Now<std::string>()());
+}
+
+void trade::booker::Booker::auction(const OrderWrapperPtr& order_wrapper)
+{
+    switch (order_wrapper->order_type()) {
+    case types::OrderType::limit:
+    case types::OrderType::market: {
+        books[order_wrapper->symbol()]->add(order_wrapper);
+        break;
+    }
+        /// TODO: Make the matching logic for best price clearer.
+    case types::OrderType::best_price: {
+        double best_price;
+
+        if (order_wrapper->is_buy()) {
+            const auto bids = books[order_wrapper->symbol()]->bids();
+
+            if (bids.empty()) {
+                logger->error("A best price order {} arrived while no bid exists", order_wrapper->unique_id());
+                break;
             }
-            else {
-                const auto asks = books[order_tick->symbol()]->asks();
 
-                if (asks.empty()) {
-                    logger->error("A best price order {} arrived while no ask exists", next_order_wrapper.value()->unique_id());
-                    break;
-                }
+            best_price = BookerCommonData::to_price(bids.begin()->first.price());
+        }
+        else {
+            const auto asks = books[order_wrapper->symbol()]->asks();
 
-                best_price = BookerCommonData::to_price(asks.begin()->first.price());
+            if (asks.empty()) {
+                logger->error("A best price order {} arrived while no ask exists", order_wrapper->unique_id());
+                break;
             }
 
-            next_order_wrapper.value()->to_limit_order(best_price);
+            best_price = BookerCommonData::to_price(asks.begin()->first.price());
+        }
 
-            books[order_tick->symbol()]->add(next_order_wrapper.value());
-            break;
-        }
-        case types::OrderType::cancel: {
-            books[order_tick->symbol()]->cancel(next_order_wrapper.value());
-            break;
-        }
-        default: {
-            logger->error("Unsupported order type: {}", utilities::ToJSON()(*order_tick));
-        }
-        }
+        order_wrapper->to_limit_order(best_price);
+
+        books[order_wrapper->symbol()]->add(order_wrapper);
+        break;
+    }
+    case types::OrderType::cancel: {
+        books[order_wrapper->symbol()]->cancel(order_wrapper);
+        break;
+    }
+    default: {
+        logger->error("Unsupported order type: {}", static_cast<int>(order_wrapper->order_type()));
+    }
     }
 }
 
@@ -142,11 +199,12 @@ void trade::booker::Booker::on_replace_reject(const OrderWrapperPtr& order, cons
 void trade::booker::Booker::new_booker(const std::string& symbol)
 {
     /// Do nothing if the order book already exists.
-    if (books.contains(symbol))
+    if (books.contains(symbol)) [[likely]]
         return;
 
     books.emplace(symbol, std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>(symbol));
     rearrangers.emplace(symbol, Rearranger());
+    call_auction_holders.emplace(symbol, CallAuctionHolder());
 
     books[symbol]->set_symbol(symbol);
     books[symbol]->set_trade_listener(this);

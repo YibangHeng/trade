@@ -11,7 +11,8 @@ public:
         std::string symbol                       = "",
         const trade::types::SideType side        = trade::types::SideType::invalid_side,
         const double price                       = 0.0,
-        const int64_t quantity                   = 0
+        const int64_t quantity                   = 0,
+        const int64_t exchange_time              = 1000000 /// 10:00.000 AM.
     )
     {
         auto order_tick = std::make_shared<trade::types::OrderTick>();
@@ -22,6 +23,7 @@ public:
         order_tick->set_side(side);
         order_tick->set_price(price);
         order_tick->set_quantity(quantity);
+        order_tick->set_exchange_time(exchange_time);
 
         return order_tick;
     }
@@ -53,10 +55,19 @@ public:
         const std::string& symbol                = "",
         const trade::types::SideType side        = trade::types::SideType::invalid_side,
         const double price                       = 0.0,
-        const int64_t quantity                   = 0
+        const int64_t quantity                   = 0,
+        const int64_t exchange_time              = 1000000 /// 10:00.000 AM.
     )
     {
-        return std::make_shared<trade::booker::OrderWrapper>(ororder_tick(unique_id, order_type, symbol, side, price, quantity));
+        return std::make_shared<trade::booker::OrderWrapper>(ororder_tick(
+            unique_id,
+            order_type,
+            symbol,
+            side,
+            price,
+            quantity,
+            exchange_time
+        ));
     }
 };
 

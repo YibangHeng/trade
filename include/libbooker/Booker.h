@@ -4,6 +4,7 @@
 #include <third/liquibook/src/book/order_book.h>
 
 #include "AppBase.hpp"
+#include "CallAuctionHolder.h"
 #include "OrderWrapper.h"
 #include "Rearranger.h"
 #include "libreporter/IReporter.hpp"
@@ -28,6 +29,12 @@ public:
 
 public:
     void add(const OrderTickPtr& order_tick);
+    /// Only accepts trades in call auction stage.
+    void trade(const TradeTickPtr& trade_tick);
+    void switch_to_continuous_stage();
+
+private:
+    void auction(const OrderWrapperPtr& order_wrapper);
 
 private:
     void on_trade(
@@ -55,10 +62,12 @@ private:
     std::unordered_map<std::string, OrderBookPtr> books;
     /// Symbol -> Rearranger.
     std::unordered_map<std::string, Rearranger> rearrangers;
+    std::unordered_map<std::string, CallAuctionHolder> call_auction_holders;
     /// TODO: Use a better way to cache orders.
     std::unordered_map<int64_t, OrderWrapperPtr> orders;
     std::array<double, reporter::level_depth> asks;
     std::array<double, reporter::level_depth> bids;
+    bool in_continuous_stage;
 
 private:
     std::shared_ptr<reporter::IReporter> m_reporter;

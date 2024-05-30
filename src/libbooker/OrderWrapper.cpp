@@ -56,7 +56,7 @@ trade::types::OrderType trade::booker::OrderWrapper::order_type() const
     return m_order->order_type();
 }
 
-bool trade::booker::OrderWrapper::exchange_time() const
+int64_t trade::booker::OrderWrapper::exchange_time() const
 {
     return m_order->exchange_time();
 }
