@@ -6,6 +6,7 @@
 #include "libbroker/CUTBroker.h"
 #include "libholder/SQLiteHolder.h"
 #include "libreporter/LogReporter.h"
+#include "libreporter/ShmReporter.h"
 #include "trade/trade.h"
 #include "utilities/NetworkHelper.hpp"
 
@@ -33,9 +34,11 @@ int trade::Trade::run()
         return 1;
     }
 
-    m_reporter = std::make_shared<reporter::LogReporter>();
+    m_reporter = std::make_shared<reporter::LogReporter>(
+        std::make_shared<reporter::ShmReporter>()
+    );
 
-    m_holder   = std::make_shared<holder::SQLiteHolder>();
+    m_holder = std::make_shared<holder::SQLiteHolder>();
 
     if (config->get<std::string>("Broker.Type") == "CTP") {
         m_broker = std::make_shared<broker::CTPBroker>(
