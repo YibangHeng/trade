@@ -17,7 +17,8 @@ trade::reporter::ShmReporter::ShmReporter(std::shared_ptr<IReporter> outside)
     m_md_region = std::make_shared<boost::interprocess::mapped_region>(m_md_shm, boost::interprocess::read_write);
 
     /// Assign pointers with start address.
-    m_md_start = static_cast<SMMarketData*>(m_md_region->get_address());
+    m_md_start   = static_cast<SMMarketData*>(m_md_region->get_address());
+    m_md_current = m_md_start;
 
     /// Set memory areas.
     memset(m_md_start, 0, shm_size);
@@ -27,22 +28,38 @@ trade::reporter::ShmReporter::ShmReporter(std::shared_ptr<IReporter> outside)
 
 void trade::reporter::ShmReporter::md_trade_generated(const std::shared_ptr<types::MdTrade> md_trade)
 {
-    static auto trade_p = m_md_start;
-
     /// Check if shared memory is full.
-    if (trade_p - m_md_start > m_md_region->get_size() / sizeof(SMMarketData)) {
+    if (m_md_current - m_md_start > m_md_region->get_size() / sizeof(SMMarketData)) {
         logger->error("Shared memory of trade is full");
         return;
     }
 
-    SMMarketData sm_trade;
+    M_A {m_md_current->symbol} = md_trade->symbol();
+    m_md_current->price        = md_trade->price();
+    m_md_current->quantity     = static_cast<int32_t>(md_trade->quantity());
 
-    M_A {sm_trade.symbol} = md_trade->symbol();
-    sm_trade.price        = md_trade->price();
-    sm_trade.quantity     = static_cast<int32_t>(md_trade->quantity());
+    m_md_current->sell_10      = md_trade->sell_10();
+    m_md_current->sell_9       = md_trade->sell_9();
+    m_md_current->sell_8       = md_trade->sell_8();
+    m_md_current->sell_7       = md_trade->sell_7();
+    m_md_current->sell_6       = md_trade->sell_6();
+    m_md_current->sell_5       = md_trade->sell_5();
+    m_md_current->sell_4       = md_trade->sell_4();
+    m_md_current->sell_3       = md_trade->sell_3();
+    m_md_current->sell_2       = md_trade->sell_2();
+    m_md_current->sell_1       = md_trade->sell_1();
+    m_md_current->buy_1        = md_trade->buy_1();
+    m_md_current->buy_2        = md_trade->buy_2();
+    m_md_current->buy_3        = md_trade->buy_3();
+    m_md_current->buy_4        = md_trade->buy_4();
+    m_md_current->buy_5        = md_trade->buy_5();
+    m_md_current->buy_6        = md_trade->buy_6();
+    m_md_current->buy_7        = md_trade->buy_7();
+    m_md_current->buy_8        = md_trade->buy_8();
+    m_md_current->buy_9        = md_trade->buy_9();
+    m_md_current->buy_10       = md_trade->buy_10();
 
-    memcpy(trade_p, &sm_trade, sizeof(sm_trade));
-    trade_p++;
+    m_md_current++;
 
     m_outside->md_trade_generated(md_trade);
 }

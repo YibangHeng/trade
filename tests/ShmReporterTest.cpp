@@ -26,21 +26,45 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
     trade_0->set_symbol("600875.SH");
     trade_0->set_price(22.22);
     trade_0->set_quantity(100);
+    trade_0->set_sell_3(33.33);
+    trade_0->set_sell_2(22.22);
+    trade_0->set_sell_1(11.11);
+    trade_0->set_buy_1(11.11);
+    trade_0->set_buy_2(22.22);
+    trade_0->set_buy_3(33.33);
 
     const auto trade_1 = std::make_shared<trade::types::MdTrade>();
     trade_1->set_symbol("600875.SH");
     trade_1->set_price(22.33);
     trade_1->set_quantity(200);
+    trade_1->set_sell_3(33.33);
+    trade_1->set_sell_2(22.22);
+    trade_1->set_sell_1(11.11);
+    trade_1->set_buy_1(11.11);
+    trade_1->set_buy_2(22.22);
+    trade_1->set_buy_3(33.33);
 
     const auto trade_2 = std::make_shared<trade::types::MdTrade>();
     trade_2->set_symbol("600875.SH");
     trade_2->set_price(33.22);
     trade_2->set_quantity(300);
+    trade_2->set_sell_3(33.33);
+    trade_2->set_sell_2(22.22);
+    trade_2->set_sell_1(11.11);
+    trade_2->set_buy_1(11.11);
+    trade_2->set_buy_2(22.22);
+    trade_2->set_buy_3(33.33);
 
     const auto trade_3 = std::make_shared<trade::types::MdTrade>();
     trade_3->set_symbol("600875.SH");
     trade_3->set_price(33.33);
     trade_3->set_quantity(400);
+    trade_3->set_sell_3(33.33);
+    trade_3->set_sell_2(22.22);
+    trade_3->set_sell_1(11.11);
+    trade_3->set_buy_1(11.11);
+    trade_3->set_buy_2(22.22);
+    trade_3->set_buy_3(33.33);
 
     SECTION("Write trade and read")
     {
@@ -53,14 +77,41 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
         CHECK(std::string(trade_p[0].symbol) == "600875.SH");
         CHECK(trade_p[0].price == 22.22);
         CHECK(trade_p[0].quantity == 100);
+        CHECK(trade_p[0].sell_3 == 33.33);
+        CHECK(trade_p[0].sell_2 == 22.22);
+        CHECK(trade_p[0].sell_1 == 11.11);
+        CHECK(trade_p[0].buy_1 == 11.11);
+        CHECK(trade_p[0].buy_2 == 22.22);
+        CHECK(trade_p[0].buy_3 == 33.33);
+
         CHECK(std::string(trade_p[1].symbol) == "600875.SH");
         CHECK(trade_p[1].price == 22.33);
         CHECK(trade_p[1].quantity == 200);
+        CHECK(trade_p[1].sell_3 == 33.33);
+        CHECK(trade_p[1].sell_2 == 22.22);
+        CHECK(trade_p[1].sell_1 == 11.11);
+        CHECK(trade_p[1].buy_1 == 11.11);
+        CHECK(trade_p[1].buy_2 == 22.22);
+        CHECK(trade_p[1].buy_3 == 33.33);
+
         CHECK(std::string(trade_p[2].symbol) == "600875.SH");
         CHECK(trade_p[2].price == 33.22);
         CHECK(trade_p[2].quantity == 300);
+        CHECK(trade_p[2].sell_3 == 33.33);
+        CHECK(trade_p[2].sell_2 == 22.22);
+        CHECK(trade_p[2].sell_1 == 11.11);
+        CHECK(trade_p[2].buy_1 == 11.11);
+        CHECK(trade_p[2].buy_2 == 22.22);
+        CHECK(trade_p[2].buy_3 == 33.33);
+
         CHECK(std::string(trade_p[3].symbol) == "600875.SH");
         CHECK(trade_p[3].price == 33.33);
         CHECK(trade_p[3].quantity == 400);
+        CHECK(trade_p[3].sell_3 == 33.33);
+        CHECK(trade_p[3].sell_2 == 22.22);
+        CHECK(trade_p[3].sell_1 == 11.11);
+        CHECK(trade_p[3].buy_1 == 11.11);
+        CHECK(trade_p[3].buy_2 == 22.22);
+        CHECK(trade_p[3].buy_3 == 33.33);
     }
 }

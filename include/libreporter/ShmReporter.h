@@ -75,6 +75,8 @@ private:
     std::shared_ptr<boost::interprocess::mapped_region> m_md_region;
     /// Store the start memory address of market data area.
     SMMarketData* m_md_start;
+    /// Store the current memory address of market data area, which is used for next writing.
+    SMMarketData* m_md_current;
 
 private:
     static constexpr boost::interprocess::offset_t GB = 1024 * 1024 * 1024;
