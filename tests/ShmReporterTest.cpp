@@ -1,7 +1,5 @@
 #include <catch.hpp>
-
-#include <boost/interprocess/mapped_region.hpp>
-#include <boost/interprocess/shared_memory_object.hpp>
+#include <thread>
 
 #include "libreporter/ShmReporter.h"
 
@@ -66,52 +64,116 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
     trade_3->set_buy_2(22.22);
     trade_3->set_buy_3(33.33);
 
-    SECTION("Write trade and read")
+    SECTION("Write and read in one thread")
     {
         reporter->md_trade_generated(trade_0);
         reporter->md_trade_generated(trade_1);
         reporter->md_trade_generated(trade_2);
         reporter->md_trade_generated(trade_3);
 
-        auto trade_p = static_cast<trade::reporter::SMMarketData*>(m_trade_region->get_address());
-        CHECK(std::string(trade_p[0].symbol) == "600875.SH");
-        CHECK(trade_p[0].price == 22.22);
-        CHECK(trade_p[0].quantity == 100);
-        CHECK(trade_p[0].sell_3 == 33.33);
-        CHECK(trade_p[0].sell_2 == 22.22);
-        CHECK(trade_p[0].sell_1 == 11.11);
-        CHECK(trade_p[0].buy_1 == 11.11);
-        CHECK(trade_p[0].buy_2 == 22.22);
-        CHECK(trade_p[0].buy_3 == 33.33);
+        auto shm_mate_info = static_cast<trade::reporter::SMMateInfo*>(m_trade_region->get_address());
 
-        CHECK(std::string(trade_p[1].symbol) == "600875.SH");
-        CHECK(trade_p[1].price == 22.33);
-        CHECK(trade_p[1].quantity == 200);
-        CHECK(trade_p[1].sell_3 == 33.33);
-        CHECK(trade_p[1].sell_2 == 22.22);
-        CHECK(trade_p[1].sell_1 == 11.11);
-        CHECK(trade_p[1].buy_1 == 11.11);
-        CHECK(trade_p[1].buy_2 == 22.22);
-        CHECK(trade_p[1].buy_3 == 33.33);
+        CHECK(shm_mate_info->market_data_count == 4);
 
-        CHECK(std::string(trade_p[2].symbol) == "600875.SH");
-        CHECK(trade_p[2].price == 33.22);
-        CHECK(trade_p[2].quantity == 300);
-        CHECK(trade_p[2].sell_3 == 33.33);
-        CHECK(trade_p[2].sell_2 == 22.22);
-        CHECK(trade_p[2].sell_1 == 11.11);
-        CHECK(trade_p[2].buy_1 == 11.11);
-        CHECK(trade_p[2].buy_2 == 22.22);
-        CHECK(trade_p[2].buy_3 == 33.33);
+        auto md_current = reinterpret_cast<trade::reporter::SMMarketData*>(shm_mate_info + 1);
+        CHECK(std::string(md_current[0].symbol) == "600875.SH");
+        CHECK(md_current[0].price == 22.22);
+        CHECK(md_current[0].quantity == 100);
+        CHECK(md_current[0].sell_3 == 33.33);
+        CHECK(md_current[0].sell_2 == 22.22);
+        CHECK(md_current[0].sell_1 == 11.11);
+        CHECK(md_current[0].buy_1 == 11.11);
+        CHECK(md_current[0].buy_2 == 22.22);
+        CHECK(md_current[0].buy_3 == 33.33);
 
-        CHECK(std::string(trade_p[3].symbol) == "600875.SH");
-        CHECK(trade_p[3].price == 33.33);
-        CHECK(trade_p[3].quantity == 400);
-        CHECK(trade_p[3].sell_3 == 33.33);
-        CHECK(trade_p[3].sell_2 == 22.22);
-        CHECK(trade_p[3].sell_1 == 11.11);
-        CHECK(trade_p[3].buy_1 == 11.11);
-        CHECK(trade_p[3].buy_2 == 22.22);
-        CHECK(trade_p[3].buy_3 == 33.33);
+        CHECK(std::string(md_current[1].symbol) == "600875.SH");
+        CHECK(md_current[1].price == 22.33);
+        CHECK(md_current[1].quantity == 200);
+        CHECK(md_current[1].sell_3 == 33.33);
+        CHECK(md_current[1].sell_2 == 22.22);
+        CHECK(md_current[1].sell_1 == 11.11);
+        CHECK(md_current[1].buy_1 == 11.11);
+        CHECK(md_current[1].buy_2 == 22.22);
+        CHECK(md_current[1].buy_3 == 33.33);
+
+        CHECK(std::string(md_current[2].symbol) == "600875.SH");
+        CHECK(md_current[2].price == 33.22);
+        CHECK(md_current[2].quantity == 300);
+        CHECK(md_current[2].sell_3 == 33.33);
+        CHECK(md_current[2].sell_2 == 22.22);
+        CHECK(md_current[2].sell_1 == 11.11);
+        CHECK(md_current[2].buy_1 == 11.11);
+        CHECK(md_current[2].buy_2 == 22.22);
+        CHECK(md_current[2].buy_3 == 33.33);
+
+        CHECK(std::string(md_current[3].symbol) == "600875.SH");
+        CHECK(md_current[3].price == 33.33);
+        CHECK(md_current[3].quantity == 400);
+        CHECK(md_current[3].sell_3 == 33.33);
+        CHECK(md_current[3].sell_2 == 22.22);
+        CHECK(md_current[3].sell_1 == 11.11);
+        CHECK(md_current[3].buy_1 == 11.11);
+        CHECK(md_current[3].buy_2 == 22.22);
+        CHECK(md_current[3].buy_3 == 33.33);
+    }
+
+    SECTION("Write and read in one thread")
+    {
+        reporter->md_trade_generated(trade_0);
+        reporter->md_trade_generated(trade_1);
+        reporter->md_trade_generated(trade_2);
+        reporter->md_trade_generated(trade_3);
+
+        std::thread reader([] {
+            boost::interprocess::named_upgradable_mutex read_mutex(boost::interprocess::open_or_create, "trade_data_mutex");
+            boost::interprocess::scoped_lock lock(read_mutex);
+
+            auto shm_mate_info = static_cast<trade::reporter::SMMateInfo*>(m_trade_region->get_address());
+
+            CHECK(shm_mate_info->market_data_count == 4);
+
+            auto md_current = reinterpret_cast<trade::reporter::SMMarketData*>(shm_mate_info + 1);
+            CHECK(std::string(md_current[0].symbol) == "600875.SH");
+            CHECK(md_current[0].price == 22.22);
+            CHECK(md_current[0].quantity == 100);
+            CHECK(md_current[0].sell_3 == 33.33);
+            CHECK(md_current[0].sell_2 == 22.22);
+            CHECK(md_current[0].sell_1 == 11.11);
+            CHECK(md_current[0].buy_1 == 11.11);
+            CHECK(md_current[0].buy_2 == 22.22);
+            CHECK(md_current[0].buy_3 == 33.33);
+
+            CHECK(std::string(md_current[1].symbol) == "600875.SH");
+            CHECK(md_current[1].price == 22.33);
+            CHECK(md_current[1].quantity == 200);
+            CHECK(md_current[1].sell_3 == 33.33);
+            CHECK(md_current[1].sell_2 == 22.22);
+            CHECK(md_current[1].sell_1 == 11.11);
+            CHECK(md_current[1].buy_1 == 11.11);
+            CHECK(md_current[1].buy_2 == 22.22);
+            CHECK(md_current[1].buy_3 == 33.33);
+
+            CHECK(std::string(md_current[2].symbol) == "600875.SH");
+            CHECK(md_current[2].price == 33.22);
+            CHECK(md_current[2].quantity == 300);
+            CHECK(md_current[2].sell_3 == 33.33);
+            CHECK(md_current[2].sell_2 == 22.22);
+            CHECK(md_current[2].sell_1 == 11.11);
+            CHECK(md_current[2].buy_1 == 11.11);
+            CHECK(md_current[2].buy_2 == 22.22);
+            CHECK(md_current[2].buy_3 == 33.33);
+
+            CHECK(std::string(md_current[3].symbol) == "600875.SH");
+            CHECK(md_current[3].price == 33.33);
+            CHECK(md_current[3].quantity == 400);
+            CHECK(md_current[3].sell_3 == 33.33);
+            CHECK(md_current[3].sell_2 == 22.22);
+            CHECK(md_current[3].sell_1 == 11.11);
+            CHECK(md_current[3].buy_1 == 11.11);
+            CHECK(md_current[3].buy_2 == 22.22);
+            CHECK(md_current[3].buy_3 == 33.33);
+        });
+
+        reader.join();
     }
 }

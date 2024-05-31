@@ -2,6 +2,7 @@
 
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/sync/named_upgradable_mutex.hpp>
 #include <limits>
 
 #include "AppBase.hpp"
@@ -20,6 +21,16 @@ static_assert(std::numeric_limits<double>::is_iec559);
 
 /// TODO: Use high precision library such as Boost.Multiprecision or GMP to deal
 /// with double precision.
+
+struct PUBLIC_API SMMateInfo {
+    size_t market_data_count  = 0;
+    char last_update_time[32] = {}; /// Time in ISO 8601 format.
+
+private:
+    u_char m_reserved[216] = {}; /// For aligning of cache line.
+};
+
+static_assert(sizeof(SMMateInfo) == 256, "MateInfo should be 256 bytes");
 
 struct PUBLIC_API SMMarketData {
     char symbol[16]  = {};
@@ -73,6 +84,8 @@ private:
 private:
     boost::interprocess::shared_memory_object m_md_shm;
     std::shared_ptr<boost::interprocess::mapped_region> m_md_region;
+    boost::interprocess::named_upgradable_mutex m_named_mutex;
+    SMMateInfo* m_shm_mate_info;
     /// Store the start memory address of market data area.
     SMMarketData* m_md_start;
     /// Store the current memory address of market data area, which is used for next writing.
