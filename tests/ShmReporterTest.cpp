@@ -17,10 +17,10 @@ auto m_trade_region        = std::make_shared<boost::interprocess::mapped_region
 auto m_market_price_region = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 1 * shm_size / 3, shm_size / 3);
 auto m_level_price_region  = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 2 * shm_size / 3, shm_size / 3);
 
-const auto reporter        = std::make_shared<trade::reporter::ShmReporter>();
-
 TEST_CASE("Normal writing and reading", "[ShmReporter]")
 {
+    const auto reporter = std::make_shared<trade::reporter::ShmReporter>();
+
     /// Mock trade data.
     const auto trade_0 = std::make_shared<trade::types::MdTrade>();
     trade_0->set_symbol("600875.SH");
@@ -49,7 +49,7 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
         reporter->md_trade_generated(trade_2);
         reporter->md_trade_generated(trade_3);
 
-        auto trade_p = static_cast<trade::reporter::SMTrade*>(m_trade_region->get_address());
+        auto trade_p = static_cast<trade::reporter::SMMarketData*>(m_trade_region->get_address());
         CHECK(std::string(trade_p[0].symbol) == "600875.SH");
         CHECK(trade_p[0].price == 22.22);
         CHECK(trade_p[0].quantity == 100);

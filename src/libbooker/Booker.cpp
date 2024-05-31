@@ -7,8 +7,6 @@ trade::booker::Booker::Booker(
     const std::vector<std::string>& symbols,
     const std::shared_ptr<reporter::IReporter>& reporter
 ) : AppBase("Booker"),
-    m_asks(),
-    m_bids(),
     m_in_continuous_stage(),
     m_reporter(reporter)
 {
@@ -68,9 +66,6 @@ void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         md_trade->set_quantity(trade_tick->exec_quantity());
 
         m_reporter->md_trade_generated(md_trade);
-
-        /// Report market price.
-        m_reporter->market_price(trade_tick->symbol(), trade_tick->exec_price());
     }
 }
 
@@ -157,31 +152,37 @@ void trade::booker::Booker::on_trade(
     md_trade->set_price(BookerCommonData::to_price(price));
     md_trade->set_quantity(BookerCommonData::to_quantity(qty));
 
+    generate_level_price(book->symbol(), md_trade);
+
     m_reporter->md_trade_generated(md_trade);
-    m_reporter->market_price(book->symbol(), BookerCommonData::to_price(price));
-    generate_level_price(book->symbol());
-    m_reporter->level_price(m_asks, m_bids);
 }
 
-void trade::booker::Booker::generate_level_price(const std::string& symbol)
+void trade::booker::Booker::generate_level_price(const std::string& symbol, const std::shared_ptr<types::MdTrade>& md_trade)
 {
-    /// Set asks and bids to 0 first.
-    m_asks.fill(0.0);
-    m_bids.fill(0.0);
+    auto ask_it = m_books[symbol]->asks().begin();
+    auto bid_it = m_books[symbol]->bids().begin();
 
-    auto index = 0;
-    for (const auto& price : m_books[symbol]->asks() | std::views::keys) {
-        if (index > m_asks.size())
-            break;
-        m_asks[index++] = BookerCommonData::to_price(price.price());
-    }
+    if (ask_it != m_books[symbol]->asks().end()) md_trade->set_sell_1(BookerCommonData::to_price(ask_it++->first.price()));
+    if (ask_it != m_books[symbol]->asks().end()) md_trade->set_sell_2(BookerCommonData::to_price(ask_it++->first.price()));
+    if (ask_it != m_books[symbol]->asks().end()) md_trade->set_sell_3(BookerCommonData::to_price(ask_it++->first.price()));
+    if (ask_it != m_books[symbol]->asks().end()) md_trade->set_sell_4(BookerCommonData::to_price(ask_it++->first.price()));
+    if (ask_it != m_books[symbol]->asks().end()) md_trade->set_sell_5(BookerCommonData::to_price(ask_it++->first.price()));
+    if (ask_it != m_books[symbol]->asks().end()) md_trade->set_sell_6(BookerCommonData::to_price(ask_it++->first.price()));
+    if (ask_it != m_books[symbol]->asks().end()) md_trade->set_sell_7(BookerCommonData::to_price(ask_it++->first.price()));
+    if (ask_it != m_books[symbol]->asks().end()) md_trade->set_sell_8(BookerCommonData::to_price(ask_it++->first.price()));
+    if (ask_it != m_books[symbol]->asks().end()) md_trade->set_sell_9(BookerCommonData::to_price(ask_it++->first.price()));
+    if (ask_it != m_books[symbol]->asks().end()) md_trade->set_sell_10(BookerCommonData::to_price(ask_it++->first.price()));
 
-    index = 0;
-    for (const auto& price : m_books[symbol]->bids() | std::views::keys) {
-        if (index > m_bids.size())
-            break;
-        m_bids[index++] = BookerCommonData::to_price(price.price());
-    }
+    if (bid_it != m_books[symbol]->bids().end()) md_trade->set_buy_1(BookerCommonData::to_price(bid_it++->first.price()));
+    if (bid_it != m_books[symbol]->bids().end()) md_trade->set_buy_2(BookerCommonData::to_price(bid_it++->first.price()));
+    if (bid_it != m_books[symbol]->bids().end()) md_trade->set_buy_3(BookerCommonData::to_price(bid_it++->first.price()));
+    if (bid_it != m_books[symbol]->bids().end()) md_trade->set_buy_4(BookerCommonData::to_price(bid_it++->first.price()));
+    if (bid_it != m_books[symbol]->bids().end()) md_trade->set_buy_5(BookerCommonData::to_price(bid_it++->first.price()));
+    if (bid_it != m_books[symbol]->bids().end()) md_trade->set_buy_6(BookerCommonData::to_price(bid_it++->first.price()));
+    if (bid_it != m_books[symbol]->bids().end()) md_trade->set_buy_7(BookerCommonData::to_price(bid_it++->first.price()));
+    if (bid_it != m_books[symbol]->bids().end()) md_trade->set_buy_8(BookerCommonData::to_price(bid_it++->first.price()));
+    if (bid_it != m_books[symbol]->bids().end()) md_trade->set_buy_9(BookerCommonData::to_price(bid_it++->first.price()));
+    if (bid_it != m_books[symbol]->bids().end()) md_trade->set_buy_10(BookerCommonData::to_price(bid_it++->first.price()));
 }
 
 void trade::booker::Booker::on_reject(const OrderWrapperPtr& order, const char* reason)

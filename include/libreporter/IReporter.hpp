@@ -36,8 +36,6 @@ public:
     /// Market data.
 public:
     virtual void md_trade_generated(std::shared_ptr<types::MdTrade> md_trade)                            = 0;
-    virtual void market_price(std::string symbol, double price)                                          = 0;
-    virtual void level_price(std::array<double, level_depth> asks, std::array<double, level_depth> bids) = 0;
 };
 
 } // namespace trade::reporter

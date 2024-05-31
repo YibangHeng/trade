@@ -44,7 +44,7 @@ private:
         liquibook::book::Quantity qty,
         liquibook::book::Price price
     ) override;
-    void generate_level_price(const std::string& symbol);
+    void generate_level_price(const std::string& symbol, const std::shared_ptr<types::MdTrade>& md_trade);
 
 private:
     void on_accept(const OrderWrapperPtr& order) override {}
@@ -67,8 +67,6 @@ private:
     std::unordered_map<std::string, CallAuctionHolder> m_call_auction_holders;
     /// TODO: Use a better way to cache orders.
     std::unordered_map<int64_t, OrderWrapperPtr> m_orders;
-    std::array<double, reporter::level_depth> m_asks;
-    std::array<double, reporter::level_depth> m_bids;
     /// Indicates if the book is in call auction stage or in continuous trade stage.
     bool m_in_continuous_stage;
 

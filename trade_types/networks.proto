@@ -201,7 +201,27 @@ message Trade
 /// 交易所撮合的成交信息
 message MdTrade
 {
-    string symbol  = 4; /// 合约代码
-    double price   = 7; /// 价格
-    int64 quantity = 8; /// 当笔数量
+    string symbol           = 1;    /// 合约代码
+    double price            = 2;    /// 价格
+    int64 quantity          = 3;    /// 当笔数量
+    optional double sell_10 = 1010; /// 卖 10
+    optional double sell_9  = 1009; /// 卖 9
+    optional double sell_8  = 1008; /// 卖 8
+    optional double sell_7  = 1007; /// 卖 7
+    optional double sell_6  = 1006; /// 卖 6
+    optional double sell_5  = 1005; /// 卖 5
+    optional double sell_4  = 1004; /// 卖 4
+    optional double sell_3  = 1003; /// 卖 3
+    optional double sell_2  = 1002; /// 卖 2
+    optional double sell_1  = 1001; /// 卖 1
+    optional double buy_1   = 2001; /// 买 1
+    optional double buy_2   = 2002; /// 买 2
+    optional double buy_3   = 2003; /// 买 3
+    optional double buy_4   = 2004; /// 买 4
+    optional double buy_5   = 2005; /// 买 5
+    optional double buy_6   = 2006; /// 买 6
+    optional double buy_7   = 2007; /// 买 7
+    optional double buy_8   = 2008; /// 买 8
+    optional double buy_9   = 2009; /// 买 9
+    optional double buy_10  = 2010; /// 买 10
 }

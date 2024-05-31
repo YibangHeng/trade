@@ -31,8 +31,6 @@ public:
     /// Market data.
 public:
     void md_trade_generated(std::shared_ptr<types::MdTrade> md_trade) override {}
-    void market_price(std::string symbol, double price) override {}
-    void level_price(std::array<double, level_depth> asks, std::array<double, level_depth> bids) override {}
 };
 
 } // namespace trade::reporter
