@@ -193,6 +193,7 @@ std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_
 
     const auto order_tick = std::make_shared<types::OrderTick>();
 
+    order_tick->set_unique_id(raw_order->m_header.m_sequence);
     order_tick->set_symbol(raw_order->m_header.m_symbol);
     order_tick->set_order_type(to_order_type(raw_order->m_order_type));
     order_tick->set_side(to_md_side(raw_order->m_side));
@@ -210,9 +211,12 @@ std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_
 
     const auto trade_tick = std::make_shared<types::TradeTick>();
 
+    trade_tick->set_ask_unique_id(raw_trade->m_ask_app_seq_num);
+    trade_tick->set_bid_unique_id(raw_trade->m_bid_app_seq_num);
     trade_tick->set_symbol(raw_trade->m_header.m_symbol);
     trade_tick->set_exec_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_trade->m_exe_px)));
     trade_tick->set_exec_quantity(booker::BookerCommonData::to_quantity(raw_trade->m_exe_qty));
+    trade_tick->set_x_ost_szse_exe_type(to_order_type(raw_trade->m_exe_type));
 
     return trade_tick;
 }

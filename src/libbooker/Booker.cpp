@@ -54,8 +54,19 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
 
 void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
 {
-    /// Only accepts trade made in auction stage.
-    if (trade_tick->exchange_time() == 925000) {
+    /// SZSE reports cancel orders as trade ticks.
+    /// In this case, let Booker::add() handle it.
+    if (trade_tick->x_ost_szse_exe_type() == types::OrderType::cancel) [[likely]] {
+        const auto order_tick = std::make_shared<types::OrderTick>();
+
+        /// Canceling only requires unique_id.
+        /// See Booker's unit tests.
+        order_tick->set_unique_id(trade_tick->ask_unique_id() + trade_tick->bid_unique_id());
+
+        add(order_tick);
+    }
+    /// Otherwise, only accepts trade made in auction stage.
+    else if (trade_tick->exchange_time() == 925000) [[unlikely]] {
         m_call_auction_holders[trade_tick->symbol()].trade(*trade_tick);
 
         /// Report trade.

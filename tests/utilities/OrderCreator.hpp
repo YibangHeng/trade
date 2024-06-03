@@ -71,11 +71,13 @@ public:
     }
 };
 
+#define INV_ORDER_TYPE trade::types::OrderType::invalid_order_type
 #define LIMIT trade::types::OrderType::limit
 #define MARKET trade::types::OrderType::market
 #define BEST_PRICE trade::types::OrderType::best_price
 #define CANCEL trade::types::OrderType::cancel
 
+#define INV_SIDE trade::types::SideType::invalid_side
 #define BUY trade::types::SideType::buy
 #define SELL trade::types::SideType::sell
 
