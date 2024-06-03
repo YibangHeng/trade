@@ -342,9 +342,12 @@ public:
     {
         const auto received_bytes = recvfrom(m_receiver_fd, buffer.get(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &addr_len);
 
-        if (received_bytes < 0) {
+        if (received_bytes < 0)
+            /// TODO: Compared to returning the original raw pointer, returning
+            /// an empty string over 100,000,000 loops will result in ~5s of
+            /// performance degradation, while returning std:nullopt will result
+            /// in ~3s performance degradation.
             return "";
-        }
 
         return {buffer.get(), static_cast<std::string::size_type>(received_bytes)};
     }
