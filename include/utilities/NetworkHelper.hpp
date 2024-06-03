@@ -1,6 +1,7 @@
 #pragma once
 
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <fmt/format.h>
 #include <google/protobuf/message.h>
 #include <zmq.h>
@@ -271,7 +272,7 @@ template<typename T>
 class MCClient
 {
 public:
-    explicit MCClient(const std::string& address, const uint16_t port)
+    explicit MCClient(const std::string& address, const uint16_t port, const bool non_blocking = false)
         : m_receive_addr(),
           m_mreq(),
           addr_len(sizeof(m_receive_addr))
@@ -297,6 +298,16 @@ public:
         m_receive_addr.sin_family      = AF_INET;
         m_receive_addr.sin_addr.s_addr = htonl(INADDR_ANY);
         m_receive_addr.sin_port        = htons(port);
+
+        /// Set up non-blocking IO.
+        if (non_blocking) {
+            code = fcntl(m_receiver_fd, F_GETFL, 0);
+
+            if (code < 0 || fcntl(m_receiver_fd, F_SETFL, code | O_NONBLOCK) < 0) {
+                close(m_receiver_fd);
+                throw std::runtime_error(fmt::format("Failed to set receiving socket to non-blocking {}: {}", address, strerror(errno)));
+            }
+        }
 
         /// Bind to receive address.
         code = bind(m_receiver_fd, reinterpret_cast<sockaddr*>(&m_receive_addr), sizeof(m_receive_addr));
@@ -331,9 +342,12 @@ public:
     {
         const auto received_bytes = recvfrom(m_receiver_fd, buffer.get(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &addr_len);
 
-        if (received_bytes < 0) {
+        if (received_bytes < 0)
+            /// TODO: Compared to returning the original raw pointer, returning
+            /// an empty string over 100,000,000 loops will result in ~5s of
+            /// performance degradation, while returning std:nullopt will result
+            /// in ~3s performance degradation.
             return "";
-        }
 
         return {buffer.get(), static_cast<std::string::size_type>(received_bytes)};
     }
