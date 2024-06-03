@@ -1,5 +1,7 @@
 #pragma once
 
+#include "visibility.h"
+
 namespace trade::broker
 {
 
@@ -26,7 +28,7 @@ struct SZSEHpfPackageHead {
     int32_t m_md_stream_id;
 };
 
-struct SZSEHpfOrderTick {
+struct PUBLIC_API SZSEHpfOrderTick {
     SZSEHpfPackageHead m_header;
     uint32_t m_px;
     uint64_t m_qty;
@@ -35,7 +37,7 @@ struct SZSEHpfOrderTick {
     char m_reserved[7];
 };
 
-struct SZSEHpfTradeTick {
+struct PUBLIC_API SZSEHpfTradeTick {
     SZSEHpfPackageHead m_header;
     int64_t m_bid_app_seq_num;
     int64_t m_ask_app_seq_num;
@@ -43,6 +45,8 @@ struct SZSEHpfTradeTick {
     uint64_t m_exe_qty;
     char m_exe_type;
 };
+
+constexpr size_t max_udp_size = std::max(sizeof(SZSEHpfOrderTick), sizeof(SZSEHpfTradeTick));
 
 #pragma pack(pop)
 
