@@ -7,6 +7,7 @@
 #include "raw_md_recorder/RawMdRecorder.h"
 #include "utilities/MakeAssignable.hpp"
 #include "utilities/NetworkHelper.hpp"
+#include "utilities/TimeHelper.hpp"
 
 trade::RawMdRecorder::RawMdRecorder(const int argc, char* argv[])
     : AppBase("RawMdRecorder")
@@ -132,18 +133,26 @@ void trade::RawMdRecorder::write(const std::string& raw_message)
         new_order_writer(order_tick->m_header.m_symbol);
 
         m_order_writers[order_tick->m_header.m_symbol]
-            << order_tick->m_header.m_sequence
-            << order_tick->m_header.m_tick1
-            << order_tick->m_header.m_tick2
-            << order_tick->m_header.m_message_type
-            << order_tick->m_header.m_security_type
-            << order_tick->m_header.m_sub_security_type
-            << order_tick->m_header.m_symbol
-            << order_tick->m_header.m_exchange_id
-            << order_tick->m_header.m_quote_update_time
-            << order_tick->m_header.m_channel_num
-            << order_tick->m_header.m_sequence_num
-            << order_tick->m_header.m_md_stream_id
+            /// SZSEHpfPackageHead.
+            << order_tick->m_header.m_sequence << ","
+            << order_tick->m_header.m_tick1 << ","
+            << order_tick->m_header.m_tick2 << ","
+            << order_tick->m_header.m_message_type << ","
+            << order_tick->m_header.m_security_type << ","
+            << order_tick->m_header.m_sub_security_type << ","
+            << order_tick->m_header.m_symbol << ","
+            << order_tick->m_header.m_exchange_id << ","
+            << order_tick->m_header.m_quote_update_time << ","
+            << order_tick->m_header.m_channel_num << ","
+            << order_tick->m_header.m_sequence_num << ","
+            << order_tick->m_header.m_md_stream_id << ","
+            /// SZSEHpfOrderTick.
+            << order_tick->m_px << ","
+            << order_tick->m_qty << ","
+            << order_tick->m_side << ","
+            << order_tick->m_order_type << ","
+            /// Time.
+            << utilities::Now<std::string>()()
             << std::endl;
 
         break;
@@ -154,23 +163,27 @@ void trade::RawMdRecorder::write(const std::string& raw_message)
         new_trade_writer(trade_tick->m_header.m_symbol);
 
         m_trade_writers[trade_tick->m_header.m_symbol]
-            << trade_tick->m_header.m_sequence
-            << trade_tick->m_header.m_tick1
-            << trade_tick->m_header.m_tick2
-            << trade_tick->m_header.m_message_type
-            << trade_tick->m_header.m_security_type
-            << trade_tick->m_header.m_sub_security_type
-            << trade_tick->m_header.m_symbol
-            << trade_tick->m_header.m_exchange_id
-            << trade_tick->m_header.m_quote_update_time
-            << trade_tick->m_header.m_channel_num
-            << trade_tick->m_header.m_sequence_num
-            << trade_tick->m_header.m_md_stream_id
-            << trade_tick->m_bid_app_seq_num
-            << trade_tick->m_ask_app_seq_num
-            << trade_tick->m_exe_px
-            << trade_tick->m_exe_qty
-            << trade_tick->m_exe_type
+            /// SZSEHpfPackageHead.
+            << trade_tick->m_header.m_sequence << ","
+            << trade_tick->m_header.m_tick1 << ","
+            << trade_tick->m_header.m_tick2 << ","
+            << trade_tick->m_header.m_message_type << ","
+            << trade_tick->m_header.m_security_type << ","
+            << trade_tick->m_header.m_sub_security_type << ","
+            << trade_tick->m_header.m_symbol << ","
+            << trade_tick->m_header.m_exchange_id << ","
+            << trade_tick->m_header.m_quote_update_time << ","
+            << trade_tick->m_header.m_channel_num << ","
+            << trade_tick->m_header.m_sequence_num << ","
+            << trade_tick->m_header.m_md_stream_id << ","
+            /// SZSEHpfTradeTick.
+            << trade_tick->m_bid_app_seq_num << ","
+            << trade_tick->m_ask_app_seq_num << ","
+            << trade_tick->m_exe_px << ","
+            << trade_tick->m_exe_qty << ","
+            << trade_tick->m_exe_type << ","
+            /// Time.
+            << utilities::Now<std::string>()()
             << std::endl;
 
         break;
@@ -202,7 +215,9 @@ void trade::RawMdRecorder::new_order_writer(const std::string& symbol)
             << "m_px,"
             << "m_qty,"
             << "m_side,"
-            << "m_order_type"
+            << "m_order_type,"
+            /// Time.
+            << "time"
             << std::endl;
     }
 }
@@ -231,7 +246,9 @@ void trade::RawMdRecorder::new_trade_writer(const std::string& symbol)
             << "m_ask_app_seq_num,"
             << "m_exe_px,"
             << "m_exe_qty,"
-            << "m_exe_type"
+            << "m_exe_type,"
+            /// Time.
+            << "time"
             << std::endl;
     }
 }
