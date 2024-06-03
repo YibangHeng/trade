@@ -10,6 +10,9 @@
     #include <date/tz.h>
 #endif
 
+#include <chrono>
+#include <fmt/chrono.h>
+#include <fmt/format.h>
 #include <google/protobuf/timestamp.pb.h>
 #include <google/protobuf/util/time_util.h>
 #include <sstream>
@@ -108,10 +111,10 @@ template<>
 class Now<std::string>
 {
 public:
-    /// Returns the current time in ISO 8601 format.
+    /// Returns the current time in format 2000-01-01 08:00:00.000000000.
     std::string operator()() const
     {
-        return google::protobuf::util::TimeUtil::ToString(google::protobuf::util::TimeUtil::GetCurrentTime());
+        return fmt::format("{:%Y-%m-%d %H:%M:%S}", std::chrono::system_clock::now());
     }
 };
 
