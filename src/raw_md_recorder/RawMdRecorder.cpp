@@ -1,4 +1,5 @@
 #include <csignal>
+#include <filesystem>
 #include <iostream>
 
 #include "info.h"
@@ -85,7 +86,7 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
     desc.add_options()("port,p", boost::program_options::value<uint16_t>()->default_value(5555), "multicast port");
 
     /// Output folder.
-    desc.add_options()("output-folder,o", boost::program_options::value<std::string>()->default_value("./output/"), "folder to store output files");
+    desc.add_options()("output-folder,o", boost::program_options::value<std::string>()->default_value("./output"), "folder to store output files");
 
     try {
         store(parse_command_line(argc, argv, desc), m_arguments);
@@ -194,8 +195,13 @@ void trade::RawMdRecorder::write(const std::string& raw_message)
 
 void trade::RawMdRecorder::new_order_writer(const std::string& symbol)
 {
-    if (m_order_writers.contains(symbol)) [[unlikely]] {
-        m_order_writers.emplace(symbol, std::ofstream(fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "order", symbol)));
+    if (!m_order_writers.contains(symbol)) [[unlikely]] {
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "order", symbol);
+
+        create_directories(std::filesystem::path(file_path).parent_path());
+        m_order_writers.emplace(symbol, std::ofstream(file_path));
+
+        logger->info("Opened new order writer at {}", file_path.string());
 
         m_order_writers[symbol]
             /// SZSEHpfPackageHead.
@@ -224,8 +230,13 @@ void trade::RawMdRecorder::new_order_writer(const std::string& symbol)
 
 void trade::RawMdRecorder::new_trade_writer(const std::string& symbol)
 {
-    if (m_trade_writers.contains(symbol)) [[unlikely]] {
-        m_trade_writers.emplace(symbol, std::ofstream(fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "trade", symbol)));
+    if (!m_trade_writers.contains(symbol)) [[unlikely]] {
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "order", symbol);
+
+        create_directories(std::filesystem::path(file_path).parent_path());
+        m_trade_writers.emplace(symbol, std::ofstream(file_path));
+
+        logger->info("Opened new trade writer at {}", file_path.string());
 
         m_trade_writers[symbol]
             /// SZSEHpfPackageHead.
