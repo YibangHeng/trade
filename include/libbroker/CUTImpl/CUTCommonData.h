@@ -47,11 +47,13 @@ public:
     /// @return std::tuple<exchange, order_sys_id>. Empty string if exchange_id
     /// is not in format.
     [[nodiscard]] static std::tuple<std::string, std::string> from_exchange_id(const std::string& exchange_id);
-    [[nodiscard]] static types::X_OST_SZSEDatagramType get_datagram_type(const std::string& message);
-    [[nodiscard]] static uint8_t to_szse_datagram_type(types::X_OST_SZSEDatagramType message_type);
-    [[nodiscard]] static types::X_OST_SZSEDatagramType to_szse_datagram_type(uint8_t message_type);
-    [[nodiscard]] static booker::OrderTickPtr to_order_tick(const std::string& message);
-    [[nodiscard]] static booker::TradeTickPtr to_trade_tick(const std::string& message);
+    [[nodiscard]] static types::X_OST_DatagramType get_datagram_type(const std::string& message, types::ExchangeType exchange_type);
+    [[nodiscard]] static uint8_t to_szse_datagram_type(types::X_OST_DatagramType message_type);
+    [[nodiscard]] static types::X_OST_DatagramType to_szse_datagram_type(uint8_t message_type);
+    [[nodiscard]] static uint8_t to_sse_datagram_type(types::X_OST_DatagramType message_type);
+    [[nodiscard]] static types::X_OST_DatagramType to_sse_datagram_type(uint8_t message_type);
+    [[nodiscard]] static booker::OrderTickPtr to_order_tick(const std::string& message, types::ExchangeType exchange_type);
+    [[nodiscard]] static booker::TradeTickPtr to_trade_tick(const std::string& message, types::ExchangeType exchange_type);
 
 public:
     TUTSystemNameType m_system_name;

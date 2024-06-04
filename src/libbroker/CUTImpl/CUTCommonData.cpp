@@ -48,9 +48,11 @@ trade::types::ExchangeType trade::broker::CUTCommonData::to_exchange(const TUTEx
 trade::types::OrderType trade::broker::CUTCommonData::to_order_type(const char order_type)
 {
     switch (order_type) {
-    case '2': return types::OrderType::limit;
+    case '2':
+    case 'A': return types::OrderType::limit;
     case '1': return types::OrderType::market;
-    case 'U': return types::OrderType::best_price;
+    case 'U':
+    case 'D': return types::OrderType::best_price;
     case '4': return types::OrderType::cancel;
     default: return types::OrderType::invalid_order_type;
     }
@@ -162,61 +164,127 @@ std::tuple<std::string, std::string> trade::broker::CUTCommonData::from_exchange
     return std::make_tuple(exchange, order_sys_id);
 }
 
-trade::types::X_OST_SZSEDatagramType trade::broker::CUTCommonData::get_datagram_type(const std::string& message)
+trade::types::X_OST_DatagramType trade::broker::CUTCommonData::get_datagram_type(const std::string& message, const types::ExchangeType exchange_type)
 {
-    return to_szse_datagram_type(reinterpret_cast<const SZSEHpfPackageHead*>(message.data())->m_message_type);
+    switch (exchange_type) {
+    case types::ExchangeType::szse:
+        return to_szse_datagram_type(reinterpret_cast<const SZSEHpfPackageHead*>(message.data())->m_message_type);
+    case types::ExchangeType::sse:
+        return to_sse_datagram_type(reinterpret_cast<const SSEHpfPackageHead*>(message.data())->m_msg_type);
+    default:
+        return types::X_OST_DatagramType::invalid_ost_datagram_type;
+    }
 }
 
-uint8_t trade::broker::CUTCommonData::to_szse_datagram_type(const types::X_OST_SZSEDatagramType message_type)
+uint8_t trade::broker::CUTCommonData::to_szse_datagram_type(const types::X_OST_DatagramType message_type)
 {
     switch (message_type) {
-    case types::X_OST_SZSEDatagramType::order: return 23;
-    case types::X_OST_SZSEDatagramType::trade: return 24;
+    case types::X_OST_DatagramType::order: return 23;
+    case types::X_OST_DatagramType::trade: return 24;
     default: return 0;
     }
 }
 
-trade::types::X_OST_SZSEDatagramType trade::broker::CUTCommonData::to_szse_datagram_type(const uint8_t message_type)
+trade::types::X_OST_DatagramType trade::broker::CUTCommonData::to_szse_datagram_type(const uint8_t message_type)
 {
     switch (message_type) {
-    case 23: return types::X_OST_SZSEDatagramType::order;
-    case 24: return types::X_OST_SZSEDatagramType::trade;
-    default: return types::X_OST_SZSEDatagramType::invalid_ost_szse_datagram_type;
+    case 23: return types::X_OST_DatagramType::order;
+    case 24: return types::X_OST_DatagramType::trade;
+    default: return types::X_OST_DatagramType::invalid_ost_datagram_type;
     }
 }
 
-std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_tick(const std::string& message)
+uint8_t trade::broker::CUTCommonData::to_sse_datagram_type(const types::X_OST_DatagramType message_type)
 {
-    assert(message.size() == sizeof(SZSEHpfOrderTick));
-
-    const auto raw_order  = reinterpret_cast<const SZSEHpfOrderTick*>(message.data());
-
-    const auto order_tick = std::make_shared<types::OrderTick>();
-
-    order_tick->set_unique_id(raw_order->m_header.m_sequence);
-    order_tick->set_symbol(raw_order->m_header.m_symbol);
-    order_tick->set_order_type(to_order_type(raw_order->m_order_type));
-    order_tick->set_side(to_md_side(raw_order->m_side));
-    order_tick->set_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_order->m_px)));
-    order_tick->set_quantity(booker::BookerCommonData::to_quantity(raw_order->m_qty));
-
-    return order_tick;
+    switch (message_type) {
+    case types::X_OST_DatagramType::order: return 1;
+    case types::X_OST_DatagramType::trade: return 3;
+    default: return 0;
+    }
 }
 
-std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_tick(const std::string& message)
+trade::types::X_OST_DatagramType trade::broker::CUTCommonData::to_sse_datagram_type(const uint8_t message_type)
 {
-    assert(message.size() == sizeof(SZSEHpfTradeTick));
+    switch (message_type) {
+    case 1: return types::X_OST_DatagramType::order;
+    case 3: return types::X_OST_DatagramType::trade;
+    default: return types::X_OST_DatagramType::invalid_ost_datagram_type;
+    }
+}
 
-    const auto raw_trade  = reinterpret_cast<const SZSEHpfTradeTick*>(message.data());
+std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_tick(const std::string& message, const types::ExchangeType exchange_type)
+{
+    auto order_tick = std::make_shared<types::OrderTick>();
 
-    const auto trade_tick = std::make_shared<types::TradeTick>();
+    switch (exchange_type) {
+    case types::ExchangeType::sse: {
+        assert(message.size() == sizeof(SSEHpfOrderTick));
 
-    trade_tick->set_ask_unique_id(raw_trade->m_ask_app_seq_num);
-    trade_tick->set_bid_unique_id(raw_trade->m_bid_app_seq_num);
-    trade_tick->set_symbol(raw_trade->m_header.m_symbol);
-    trade_tick->set_exec_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_trade->m_exe_px)));
-    trade_tick->set_exec_quantity(booker::BookerCommonData::to_quantity(raw_trade->m_exe_qty));
-    trade_tick->set_x_ost_szse_exe_type(to_order_type(raw_trade->m_exe_type));
+        const auto raw_order = reinterpret_cast<const SSEHpfOrderTick*>(message.data());
 
-    return trade_tick;
+        order_tick->set_unique_id(raw_order->m_biz_index);
+        order_tick->set_symbol(raw_order->m_symbol_id);
+        order_tick->set_order_type(to_order_type(raw_order->m_order_type));
+        order_tick->set_side(to_md_side(raw_order->m_side_flag));
+        order_tick->set_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_order->m_order_price)));
+        order_tick->set_quantity(booker::BookerCommonData::to_quantity(raw_order->m_balance));
+
+        return order_tick;
+    }
+    case types::ExchangeType::szse: {
+        assert(message.size() == sizeof(SZSEHpfOrderTick));
+
+        const auto raw_order = reinterpret_cast<const SZSEHpfOrderTick*>(message.data());
+
+        order_tick->set_unique_id(raw_order->m_header.m_sequence);
+        order_tick->set_symbol(raw_order->m_header.m_symbol);
+        order_tick->set_order_type(to_order_type(raw_order->m_order_type));
+        order_tick->set_side(to_md_side(raw_order->m_side));
+        order_tick->set_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_order->m_px)));
+        order_tick->set_quantity(booker::BookerCommonData::to_quantity(raw_order->m_qty));
+
+        return order_tick;
+    }
+    default: {
+        return nullptr;
+    }
+    }
+}
+
+std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_tick(const std::string& message, const types::ExchangeType exchange_type)
+{
+    auto trade_tick = std::make_shared<types::TradeTick>();
+
+    switch (exchange_type) {
+    case types::ExchangeType::sse: {
+        assert(message.size() == sizeof(SSEHpfTradeTick));
+
+        const auto raw_trade = reinterpret_cast<const SSEHpfTradeTick*>(message.data());
+
+        trade_tick->set_ask_unique_id(raw_trade->m_seq_num_ask);
+        trade_tick->set_bid_unique_id(raw_trade->m_seq_num_bid);
+        trade_tick->set_symbol(raw_trade->m_symbol_id);
+        trade_tick->set_exec_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_trade->m_trade_price)));
+        trade_tick->set_exec_quantity(booker::BookerCommonData::to_quantity(raw_trade->m_trade_volume));
+
+        return trade_tick;
+    }
+    case types::ExchangeType::szse: {
+        assert(message.size() == sizeof(SZSEHpfTradeTick));
+
+        const auto raw_trade = reinterpret_cast<const SZSEHpfTradeTick*>(message.data());
+
+        trade_tick->set_ask_unique_id(raw_trade->m_ask_app_seq_num);
+        trade_tick->set_bid_unique_id(raw_trade->m_bid_app_seq_num);
+        trade_tick->set_symbol(raw_trade->m_header.m_symbol);
+        trade_tick->set_exec_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_trade->m_exe_px)));
+        trade_tick->set_exec_quantity(booker::BookerCommonData::to_quantity(raw_trade->m_exe_qty));
+        trade_tick->set_x_ost_szse_exe_type(to_order_type(raw_trade->m_exe_type));
+
+        return trade_tick;
+    }
+    default: {
+        return nullptr;
+    }
+    }
 }

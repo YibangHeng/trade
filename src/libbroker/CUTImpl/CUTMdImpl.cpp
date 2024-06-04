@@ -2,6 +2,7 @@
 
 #include "libbroker/CUTImpl/CUTCommonData.h"
 #include "libbroker/CUTImpl/CUTMdImpl.h"
+#include "libbroker/CUTImpl/RawStructure.h"
 #include "utilities/NetworkHelper.hpp"
 #include "utilities/ToJSON.hpp"
 
@@ -56,13 +57,22 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
     utilities::MCClient<char[1024]> client(multicast_address, multicast_port);
 
     while (is_running) {
-        const auto message      = client.receive();
+        const auto message = client.receive();
 
-        const auto message_type = CUTCommonData::get_datagram_type(message);
+        /// TODO: Is it OK to check message type by message size?
+        types::ExchangeType exchange_type;
+        if (message.size() == sizeof(SSEHpfOrderTick) || message.size() == sizeof(SSEHpfTradeTick))
+            exchange_type = types::ExchangeType::sse;
+        else if (message.size() == sizeof(SZSEHpfOrderTick) || message.size() == sizeof(SZSEHpfTradeTick))
+            exchange_type = types::ExchangeType::szse;
+        else {
+            logger->error("Invalid message size: received {} bytes, expected 64, 72 or 96", message.size());
+            continue;
+        }
 
-        switch (message_type) {
-        case types::X_OST_SZSEDatagramType::order: {
-            const auto order_tick = CUTCommonData::to_order_tick(message);
+        switch (CUTCommonData::get_datagram_type(message, exchange_type)) {
+        case types::X_OST_DatagramType::order: {
+            const auto order_tick = CUTCommonData::to_order_tick(message, exchange_type);
 
             logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
 
@@ -73,8 +83,8 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
 
             break;
         }
-        case types::X_OST_SZSEDatagramType::trade: {
-            const auto trade_tick = CUTCommonData::to_trade_tick(message);
+        case types::X_OST_DatagramType::trade: {
+            const auto trade_tick = CUTCommonData::to_trade_tick(message, exchange_type);
 
             logger->debug("Received trade tick: {}", utilities::ToJSON()(*trade_tick));
 

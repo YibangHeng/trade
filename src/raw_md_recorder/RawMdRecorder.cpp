@@ -23,7 +23,7 @@ int trade::RawMdRecorder::run()
         return m_exit_code;
     }
 
-    utilities::MCClient<u_char[broker::max_udp_size]> client("239.255.255.255", 5555, true);
+    utilities::MCClient<u_char[broker::max_szse_udp_size]> client("239.255.255.255", 5555, true);
 
     while (m_is_running) {
         const auto raw_message = client.receive();
