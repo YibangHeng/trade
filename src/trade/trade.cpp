@@ -5,6 +5,7 @@
 #include "libbroker/CTPBroker.h"
 #include "libbroker/CUTBroker.h"
 #include "libholder/SQLiteHolder.h"
+#include "libreporter/AsyncReporter.h"
 #include "libreporter/LogReporter.h"
 #include "libreporter/ShmReporter.h"
 #include "trade/trade.h"
@@ -34,8 +35,10 @@ int trade::Trade::run()
         return 1;
     }
 
-    m_reporter = std::make_shared<reporter::LogReporter>(
-        std::make_shared<reporter::ShmReporter>()
+    m_reporter = std::make_shared<reporter::AsyncReporter>(
+        std::make_shared<reporter::LogReporter>(
+            std::make_shared<reporter::ShmReporter>()
+        )
     );
 
     m_holder = std::make_shared<holder::SQLiteHolder>();

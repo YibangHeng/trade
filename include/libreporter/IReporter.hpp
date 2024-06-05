@@ -35,7 +35,7 @@ public:
 
     /// Market data.
 public:
-    virtual void md_trade_generated(std::shared_ptr<types::MdTrade> md_trade)                            = 0;
+    virtual void md_trade_generated(std::shared_ptr<types::MdTrade> md_trade) = 0;
 };
 
 } // namespace trade::reporter
