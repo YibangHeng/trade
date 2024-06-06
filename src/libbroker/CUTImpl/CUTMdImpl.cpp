@@ -1,8 +1,7 @@
-#include <regex>
-
-#include "libbroker/CUTImpl/CUTCommonData.h"
 #include "libbroker/CUTImpl/CUTMdImpl.h"
+#include "libbroker/CUTImpl/CUTCommonData.h"
 #include "libbroker/CUTImpl/RawStructure.h"
+#include "utilities/AddressHelper.hpp"
 #include "utilities/NetworkHelper.hpp"
 #include "utilities/ToJSON.hpp"
 
@@ -53,7 +52,7 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
 
 void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
 {
-    const auto [multicast_address, multicast_port] = extract_address(address);
+    const auto [multicast_address, multicast_port] = utilities::AddressHelper::extract_address(address);
     utilities::MCClient<char[1024]> client(multicast_address, multicast_port);
 
     while (is_running) {
@@ -95,19 +94,4 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
         default: break;
         }
     }
-}
-
-/// Extract multicast address and port from address string.
-std::tuple<std::string, uint16_t> trade::broker::CUTMdImpl::extract_address(const std::string& address)
-{
-    const std::regex re(R"(^(\d{1,3}(?:\.\d{1,3}){3}):(\d+)$)");
-    std::smatch address_match;
-
-    std::regex_search(address, address_match, re);
-
-    if (address_match.size() == 3) {
-        return std::make_tuple(std::string(address_match[1]), static_cast<uint16_t>(std::stoi(address_match[2])));
-    }
-
-    return std::make_tuple(std::string {}, static_cast<uint16_t>(0));
 }

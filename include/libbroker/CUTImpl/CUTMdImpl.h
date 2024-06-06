@@ -29,9 +29,6 @@ private:
     void odtd_receiver(const std::string& address);
 
 private:
-    static std::tuple<std::string, uint16_t> extract_address(const std::string& address);
-
-private:
     booker::Booker booker;
 
 private:
