@@ -79,7 +79,7 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
     /// Multicast addresses.
     const std::vector<std::string> default_addresses = {"239.255.255.255:5555"};
     desc.add_options()("addresses,a", boost::program_options::value<std::vector<std::string>>()->default_value(default_addresses, "239.255.255.255:5555")->multitoken(), "multicast addresses");
-    desc.add_options()("interface_address,i", boost::program_options::value<std::string>()->default_value("0.0.0.0"), "local interface address");
+    desc.add_options()("interface-address,i", boost::program_options::value<std::string>()->default_value("0.0.0.0"), "local interface address");
 
     /// Output folder.
     desc.add_options()("output-folder,o", boost::program_options::value<std::string>()->default_value("./output"), "folder to store output files");
@@ -199,10 +199,8 @@ void trade::RawMdRecorder::write_sse(const std::string& message)
             << order_tick->m_order_no << ","
             << order_tick->m_order_price << ","
             << order_tick->m_balance << ","
-            << order_tick->m_reserved1 << ","
             << order_tick->m_side_flag << ","
             << order_tick->m_biz_index << ","
-            << order_tick->m_reserved2
             /// Time.
             << utilities::Now<std::string>()()
             << std::endl;
@@ -240,7 +238,6 @@ void trade::RawMdRecorder::write_sse(const std::string& message)
             << trade_tick->m_seq_num_ask << ","
             << trade_tick->m_side_flag << ","
             << trade_tick->m_biz_index << ","
-            << trade_tick->m_reserved
             /// Time.
             << utilities::Now<std::string>()()
             << std::endl;
@@ -333,23 +330,29 @@ void trade::RawMdRecorder::new_sse_order_writer(const std::string& symbol)
 
         m_order_writers[symbol]
             /// SSEHpfPackageHead.
-            << "m_sequence,"
-            << "m_tick1,"
-            << "m_tick2,"
-            << "m_message_type,"
-            << "m_security_type,"
-            << "m_sub_security_type,"
-            << "m_symbol,"
+            << "m_seq_num,"
+            << "m_reserved,"
+            << "m_msg_type,"
+            << "m_msg_len,"
             << "m_exchange_id,"
-            << "m_quote_update_time,"
-            << "m_channel_num,"
-            << "m_sequence_num,"
-            << "m_md_stream_id,"
+            << "m_data_year,"
+            << "m_data_month,"
+            << "m_data_day,"
+            << "m_send_time,"
+            << "m_category_id,"
+            << "m_msg_seq_id,"
+            << "m_seq_lost_flag,"
             /// SSEHpfOrderTick.
-            << "m_px,"
-            << "m_qty,"
-            << "m_side,"
+            << "m_order_index,"
+            << "m_channel_id,"
+            << "m_symbol_id,"
+            << "m_order_time,"
             << "m_order_type,"
+            << "m_order_no,"
+            << "m_order_price,"
+            << "m_balance,"
+            << "m_side_flag,"
+            << "m_biz_index,"
             /// Time.
             << "time"
             << std::endl;
@@ -368,24 +371,30 @@ void trade::RawMdRecorder::new_sse_trade_writer(const std::string& symbol)
 
         m_trade_writers[symbol]
             /// SSEHpfPackageHead.
-            << "m_sequence,"
-            << "m_tick1,"
-            << "m_tick2,"
-            << "m_message_type,"
-            << "m_security_type,"
-            << "m_sub_security_type,"
-            << "m_symbol,"
+            << "m_seq_num,"
+            << "m_reserved,"
+            << "m_msg_type,"
+            << "m_msg_len,"
             << "m_exchange_id,"
-            << "m_quote_update_time,"
-            << "m_channel_num,"
-            << "m_sequence_num,"
-            << "m_md_stream_id,"
+            << "m_data_year,"
+            << "m_data_month,"
+            << "m_data_day,"
+            << "m_send_time,"
+            << "m_category_id,"
+            << "m_msg_seq_id,"
+            << "m_seq_lost_flag,"
             /// SSEHpfTradeTick.
-            << "m_bid_app_seq_num,"
-            << "m_ask_app_seq_num,"
-            << "m_exe_px,"
-            << "m_exe_qty,"
-            << "m_exe_type,"
+            << "m_trade_seq_num,"
+            << "m_channel_id,"
+            << "m_symbol_id,"
+            << "m_trade_time,"
+            << "m_trade_price,"
+            << "m_trade_volume,"
+            << "m_trade_value,"
+            << "m_seq_num_bid,"
+            << "m_seq_num_ask,"
+            << "m_side_flag,"
+            << "m_biz_index,"
             /// Time.
             << "time"
             << std::endl;
@@ -430,7 +439,7 @@ void trade::RawMdRecorder::new_szse_order_writer(const std::string& symbol)
 void trade::RawMdRecorder::new_szse_trade_writer(const std::string& symbol)
 {
     if (!m_trade_writers.contains(symbol)) [[unlikely]] {
-        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "order", symbol);
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "trade", symbol);
 
         create_directories(std::filesystem::path(file_path).parent_path());
         m_trade_writers.emplace(symbol, std::ofstream(file_path));
