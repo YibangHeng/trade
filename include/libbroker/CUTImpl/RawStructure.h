@@ -2,6 +2,8 @@
 
 #include "visibility.h"
 
+/// Also check ./SZSEHpfTick.lua.
+
 namespace trade::broker
 {
 
