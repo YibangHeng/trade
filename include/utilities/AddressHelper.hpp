@@ -10,7 +10,7 @@ class AddressHelper
 public:
     /// Extract multicast address and port from address string.
     /// @param address The IPv4 address string in format %d.%d.%d.%d:%d.
-    /// @return A tuple of (address, port).
+    /// @return A tuple of (ip, port).
     static std::tuple<std::string, uint16_t> extract_address(const std::string& address)
     {
         const std::regex re(R"(^(\d{1,3}(?:\.\d{1,3}){3}):(\d+)$)");

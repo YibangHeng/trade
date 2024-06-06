@@ -26,6 +26,7 @@ private:
     bool argv_parse(int argc, char* argv[]);
 
 private:
+    void write_worker(const std::string& address, const std::string& interface_addres);
     void write(const std::string& message, types::ExchangeType exchange_type);
     void write_sse(const std::string& message);
     void write_szse(const std::string& message);

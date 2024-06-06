@@ -7,6 +7,7 @@
 #include "libbroker/CUTImpl/CUTCommonData.h"
 #include "libbroker/CUTImpl/RawStructure.h"
 #include "raw_md_recorder/RawMdRecorder.h"
+#include "utilities/AddressHelper.hpp"
 #include "utilities/MakeAssignable.hpp"
 #include "utilities/NetworkHelper.hpp"
 #include "utilities/TimeHelper.hpp"
@@ -24,27 +25,15 @@ int trade::RawMdRecorder::run()
         return m_exit_code;
     }
 
-    utilities::MCClient<u_char[broker::max_udp_size]> client(m_arguments["address"].as<std::string>(), m_arguments["port"].as<uint16_t>(), true);
+    const auto addresses = m_arguments["addresses"].as<std::vector<std::string>>();
 
-    while (m_is_running) {
-        const auto message = client.receive();
+    std::vector<std::thread> threads;
 
-        /// Non-blocking receiver may return empty string.
-        if (message.empty())
-            continue;
+    for (const auto& address : addresses)
+        threads.emplace_back(&RawMdRecorder::write_worker, this, address, m_arguments["interface-address"].as<std::string>());
 
-        types::ExchangeType exchange_type;
-        if (message.size() == sizeof(broker::SSEHpfOrderTick) || message.size() == sizeof(broker::SSEHpfTradeTick))
-            exchange_type = types::ExchangeType::sse;
-        else if (message.size() == sizeof(broker::SZSEHpfOrderTick) || message.size() == sizeof(broker::SZSEHpfTradeTick))
-            exchange_type = types::ExchangeType::szse;
-        else {
-            logger->error("Invalid message size: received {} bytes, expected 64, 72 or 96", message.size());
-            continue;
-        }
-
-        write(message, exchange_type);
-    }
+    for (auto& thread : threads)
+        thread.join();
 
     logger->info("App exited with code {}", m_exit_code.load());
 
@@ -87,9 +76,10 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
 
     desc.add_options()("debug,d", "enable debug output");
 
-    /// Multicast address.
-    desc.add_options()("address,a", boost::program_options::value<std::string>()->default_value("239.255.255.255"), "multicast address");
-    desc.add_options()("port,p", boost::program_options::value<uint16_t>()->default_value(5555), "multicast port");
+    /// Multicast addresses.
+    const std::vector<std::string> default_addresses = {"239.255.255.255:5555"};
+    desc.add_options()("addresses,a", boost::program_options::value<std::vector<std::string>>()->default_value(default_addresses, "239.255.255.255:5555")->multitoken(), "multicast addresses");
+    desc.add_options()("interface_address,i", boost::program_options::value<std::string>()->default_value("0.0.0.0"), "local interface address");
 
     /// Output folder.
     desc.add_options()("output-folder,o", boost::program_options::value<std::string>()->default_value("./output"), "folder to store output files");
@@ -126,6 +116,36 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
     }
 
     return true;
+}
+
+void trade::RawMdRecorder::write_worker(const std::string& address, const std::string& interface_address)
+{
+    const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
+    utilities::MCClient<u_char[broker::max_udp_size]> client(multicast_ip, multicast_port, interface_address, true);
+
+    logger->info("Joined multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
+
+    while (m_is_running) {
+        const auto message = client.receive();
+
+        /// Non-blocking receiver may return empty string.
+        if (message.empty())
+            continue;
+
+        types::ExchangeType exchange_type;
+        if (message.size() == sizeof(broker::SSEHpfOrderTick) || message.size() == sizeof(broker::SSEHpfTradeTick))
+            exchange_type = types::ExchangeType::sse;
+        else if (message.size() == sizeof(broker::SZSEHpfOrderTick) || message.size() == sizeof(broker::SZSEHpfTradeTick))
+            exchange_type = types::ExchangeType::szse;
+        else {
+            logger->error("Invalid message size: received {} bytes, expected 64, 72 or 96", message.size());
+            continue;
+        }
+
+        write(message, exchange_type);
+    }
+
+    logger->info("Left multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
 }
 
 void trade::RawMdRecorder::write(const std::string& message, types::ExchangeType exchange_type)

@@ -272,7 +272,12 @@ template<typename T>
 class MCClient
 {
 public:
-    explicit MCClient(const std::string& address, const uint16_t port, const bool non_blocking = false)
+    explicit MCClient(
+        const std::string& address,
+        const uint16_t port,
+        const std::string& interface_address = "0.0.0.0",
+        const bool non_blocking              = false
+    )
         : m_receive_addr(),
           m_mreq(),
           addr_len(sizeof(m_receive_addr))
@@ -319,7 +324,7 @@ public:
 
         /// Set up multicast address.
         m_mreq.imr_multiaddr.s_addr = inet_addr(address.c_str());
-        m_mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+        m_mreq.imr_interface.s_addr = inet_addr(interface_address.c_str());
 
         /// Request that the kernel join a multicast group.
         code = setsockopt(m_receiver_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &m_mreq, sizeof(m_mreq));

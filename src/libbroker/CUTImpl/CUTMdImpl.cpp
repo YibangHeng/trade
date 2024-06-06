@@ -11,7 +11,6 @@ trade::broker::CUTMdImpl::CUTMdImpl(
     std::shared_ptr<reporter::IReporter> reporter
 ) : AppBase("CUTMdImpl", std::move(config)),
     booker({}, reporter), /// TODO: Initialize tradable symbols here.
-    thread(nullptr),
     m_holder(std::move(holder)),
     m_reporter(std::move(reporter))
 {
@@ -25,12 +24,16 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
 
     is_running = true;
 
-    /// Start receiving in a separate thread.
-    thread = new std::thread([this] {
-        odtd_receiver(config->get<std::string>("Server.MdAddress"));
-    });
+    /// Split multicast addresses and start receiving in separate threads.
+    auto addresses_view = config->get<std::string>("Server.MdAddresses") | std::views::split(',');
 
-    logger->info("Subscribed to ODTD multicast address: {}", config->get<std::string>("Server.MdAddress"));
+    for (auto&& address_part : addresses_view) {
+        std::string address(&*address_part.begin(), std::ranges::distance(address_part));
+
+        threads.emplace_back(&CUTMdImpl::odtd_receiver, this, address, config->get<std::string>("Server.InterfaceAddress"));
+
+        logger->info("Subscribed to ODTD multicast address: {} at {}", address, config->get<std::string>("Server.InterfaceAddress"));
+    }
 }
 
 void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>& symbols)
@@ -42,18 +45,19 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
 
     is_running = false;
 
-    if (thread->joinable())
-        thread->join();
+    for (auto&& thread : threads) {
+        if (thread.joinable())
+            thread.join();
 
-    logger->info("Unsubscribed from ODTD multicast address: {}", *symbols.begin());
-
-    delete thread;
+        /// TODO: Find a way to get multicast address here.
+        logger->info("Unsubscribed from ODTD multicast address: {} at {}", "unknown", config->get<std::string>("Server.InterfaceAddress"));
+    }
 }
 
-void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
+void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const std::string& interface_addres)
 {
-    const auto [multicast_address, multicast_port] = utilities::AddressHelper::extract_address(address);
-    utilities::MCClient<char[1024]> client(multicast_address, multicast_port);
+    const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
+    utilities::MCClient<char[1024]> client(multicast_ip, multicast_port, interface_addres, true);
 
     while (is_running) {
         const auto message = client.receive();
