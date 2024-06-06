@@ -24,7 +24,7 @@ int trade::RawMdRecorder::run()
         return m_exit_code;
     }
 
-    utilities::MCClient<u_char[broker::max_szse_udp_size]> client("239.255.255.255", 5555, true);
+    utilities::MCClient<u_char[broker::max_udp_size]> client(m_arguments["address"].as<std::string>(), m_arguments["port"].as<uint16_t>(), true);
 
     while (m_is_running) {
         const auto message = client.receive();

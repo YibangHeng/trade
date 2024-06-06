@@ -104,6 +104,7 @@ static_assert(sizeof(SZSEHpfTradeTick) == 72, "SZSEHpfTradeTick should be 72 byt
 
 constexpr size_t max_sse_udp_size  = std::max(sizeof(SSEHpfOrderTick), sizeof(SSEHpfTradeTick));
 constexpr size_t max_szse_udp_size = std::max(sizeof(SZSEHpfOrderTick), sizeof(SZSEHpfTradeTick));
+constexpr size_t max_udp_size      = std::max(max_sse_udp_size, max_szse_udp_size);
 
 #pragma pack(pop)
 
