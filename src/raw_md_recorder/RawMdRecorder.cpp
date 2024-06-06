@@ -176,34 +176,35 @@ void trade::RawMdRecorder::write_sse(const std::string& message)
 
         new_sse_order_writer(order_tick->m_symbol_id);
 
-        m_order_writers[order_tick->m_symbol_id]
+        m_order_writers[order_tick->m_symbol_id] << fmt::format(
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
             /// SSEHpfPackageHead.
-            << order_tick->m_head.m_seq_num << ","
-            << order_tick->m_head.m_reserved << ","
-            << order_tick->m_head.m_msg_type << ","
-            << order_tick->m_head.m_msg_len << ","
-            << order_tick->m_head.m_exchange_id << ","
-            << order_tick->m_head.m_data_year << ","
-            << order_tick->m_head.m_data_month << ","
-            << order_tick->m_head.m_data_day << ","
-            << order_tick->m_head.m_send_time << ","
-            << order_tick->m_head.m_category_id << ","
-            << order_tick->m_head.m_msg_seq_id << ","
-            << order_tick->m_head.m_seq_lost_flag << ","
+            order_tick->m_head.m_seq_num,
+            order_tick->m_head.m_reserved,
+            order_tick->m_head.m_msg_type,
+            order_tick->m_head.m_msg_len,
+            order_tick->m_head.m_exchange_id,
+            order_tick->m_head.m_data_year,
+            order_tick->m_head.m_data_month,
+            order_tick->m_head.m_data_day,
+            order_tick->m_head.m_send_time,
+            order_tick->m_head.m_category_id,
+            order_tick->m_head.m_msg_seq_id,
+            order_tick->m_head.m_seq_lost_flag,
             /// SSEHpfOrderTick.
-            << order_tick->m_order_index << ","
-            << order_tick->m_channel_id << ","
-            << order_tick->m_symbol_id << ","
-            << order_tick->m_order_time << ","
-            << order_tick->m_order_type << ","
-            << order_tick->m_order_no << ","
-            << order_tick->m_order_price << ","
-            << order_tick->m_balance << ","
-            << order_tick->m_side_flag << ","
-            << order_tick->m_biz_index << ","
+            order_tick->m_order_index,
+            order_tick->m_channel_id,
+            order_tick->m_symbol_id,
+            order_tick->m_order_time,
+            order_tick->m_order_type,
+            order_tick->m_order_no,
+            order_tick->m_order_price,
+            order_tick->m_balance,
+            order_tick->m_side_flag,
+            order_tick->m_biz_index,
             /// Time.
-            << utilities::Now<std::string>()()
-            << std::endl;
+            utilities::Now<std::string>()()
+        );
 
         break;
     }
@@ -212,35 +213,36 @@ void trade::RawMdRecorder::write_sse(const std::string& message)
 
         new_sse_trade_writer(trade_tick->m_symbol_id);
 
-        m_trade_writers[trade_tick->m_symbol_id]
+        m_trade_writers[trade_tick->m_symbol_id] << fmt::format(
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
             /// SSEHpfPackageHead.
-            << trade_tick->m_head.m_seq_num << ","
-            << trade_tick->m_head.m_reserved << ","
-            << trade_tick->m_head.m_msg_type << ","
-            << trade_tick->m_head.m_msg_len << ","
-            << trade_tick->m_head.m_exchange_id << ","
-            << trade_tick->m_head.m_data_year << ","
-            << trade_tick->m_head.m_data_month << ","
-            << trade_tick->m_head.m_data_day << ","
-            << trade_tick->m_head.m_send_time << ","
-            << trade_tick->m_head.m_category_id << ","
-            << trade_tick->m_head.m_msg_seq_id << ","
-            << trade_tick->m_head.m_seq_lost_flag << ","
+            trade_tick->m_head.m_seq_num,
+            trade_tick->m_head.m_reserved,
+            trade_tick->m_head.m_msg_type,
+            trade_tick->m_head.m_msg_len,
+            trade_tick->m_head.m_exchange_id,
+            trade_tick->m_head.m_data_year,
+            trade_tick->m_head.m_data_month,
+            trade_tick->m_head.m_data_day,
+            trade_tick->m_head.m_send_time,
+            trade_tick->m_head.m_category_id,
+            trade_tick->m_head.m_msg_seq_id,
+            trade_tick->m_head.m_seq_lost_flag,
             /// SSEHpfTradeTick.
-            << trade_tick->m_trade_seq_num << ","
-            << trade_tick->m_channel_id << ","
-            << trade_tick->m_symbol_id << ","
-            << trade_tick->m_trade_time << ","
-            << trade_tick->m_trade_price << ","
-            << trade_tick->m_trade_volume << ","
-            << trade_tick->m_trade_value << ","
-            << trade_tick->m_seq_num_bid << ","
-            << trade_tick->m_seq_num_ask << ","
-            << trade_tick->m_side_flag << ","
-            << trade_tick->m_biz_index << ","
+            trade_tick->m_trade_seq_num,
+            trade_tick->m_channel_id,
+            trade_tick->m_symbol_id,
+            trade_tick->m_trade_time,
+            trade_tick->m_trade_price,
+            trade_tick->m_trade_volume,
+            trade_tick->m_trade_value,
+            trade_tick->m_seq_num_bid,
+            trade_tick->m_seq_num_ask,
+            trade_tick->m_side_flag,
+            trade_tick->m_biz_index,
             /// Time.
-            << utilities::Now<std::string>()()
-            << std::endl;
+            utilities::Now<std::string>()()
+        );
 
         break;
     }
@@ -258,28 +260,29 @@ void trade::RawMdRecorder::write_szse(const std::string& message)
 
         new_szse_order_writer(order_tick->m_header.m_symbol);
 
-        m_order_writers[order_tick->m_header.m_symbol]
+        m_order_writers[order_tick->m_header.m_symbol] << fmt::format(
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
             /// SZSEHpfPackageHead.
-            << order_tick->m_header.m_sequence << ","
-            << order_tick->m_header.m_tick1 << ","
-            << order_tick->m_header.m_tick2 << ","
-            << order_tick->m_header.m_message_type << ","
-            << order_tick->m_header.m_security_type << ","
-            << order_tick->m_header.m_sub_security_type << ","
-            << order_tick->m_header.m_symbol << ","
-            << order_tick->m_header.m_exchange_id << ","
-            << order_tick->m_header.m_quote_update_time << ","
-            << order_tick->m_header.m_channel_num << ","
-            << order_tick->m_header.m_sequence_num << ","
-            << order_tick->m_header.m_md_stream_id << ","
+            order_tick->m_header.m_sequence,
+            order_tick->m_header.m_tick1,
+            order_tick->m_header.m_tick2,
+            order_tick->m_header.m_message_type,
+            order_tick->m_header.m_security_type,
+            order_tick->m_header.m_sub_security_type,
+            order_tick->m_header.m_symbol,
+            order_tick->m_header.m_exchange_id,
+            order_tick->m_header.m_quote_update_time,
+            order_tick->m_header.m_channel_num,
+            order_tick->m_header.m_sequence_num,
+            order_tick->m_header.m_md_stream_id,
             /// SZSEHpfOrderTick.
-            << order_tick->m_px << ","
-            << order_tick->m_qty << ","
-            << order_tick->m_side << ","
-            << order_tick->m_order_type << ","
+            order_tick->m_px,
+            order_tick->m_qty,
+            order_tick->m_side,
+            order_tick->m_order_type,
             /// Time.
-            << utilities::Now<std::string>()()
-            << std::endl;
+            utilities::Now<std::string>()()
+        );
 
         break;
     }
@@ -288,29 +291,30 @@ void trade::RawMdRecorder::write_szse(const std::string& message)
 
         new_szse_trade_writer(trade_tick->m_header.m_symbol);
 
-        m_trade_writers[trade_tick->m_header.m_symbol]
+        m_trade_writers[trade_tick->m_header.m_symbol] << fmt::format(
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
             /// SZSEHpfPackageHead.
-            << trade_tick->m_header.m_sequence << ","
-            << trade_tick->m_header.m_tick1 << ","
-            << trade_tick->m_header.m_tick2 << ","
-            << trade_tick->m_header.m_message_type << ","
-            << trade_tick->m_header.m_security_type << ","
-            << trade_tick->m_header.m_sub_security_type << ","
-            << trade_tick->m_header.m_symbol << ","
-            << trade_tick->m_header.m_exchange_id << ","
-            << trade_tick->m_header.m_quote_update_time << ","
-            << trade_tick->m_header.m_channel_num << ","
-            << trade_tick->m_header.m_sequence_num << ","
-            << trade_tick->m_header.m_md_stream_id << ","
+            trade_tick->m_header.m_sequence,
+            trade_tick->m_header.m_tick1,
+            trade_tick->m_header.m_tick2,
+            trade_tick->m_header.m_message_type,
+            trade_tick->m_header.m_security_type,
+            trade_tick->m_header.m_sub_security_type,
+            trade_tick->m_header.m_symbol,
+            trade_tick->m_header.m_exchange_id,
+            trade_tick->m_header.m_quote_update_time,
+            trade_tick->m_header.m_channel_num,
+            trade_tick->m_header.m_sequence_num,
+            trade_tick->m_header.m_md_stream_id,
             /// SZSEHpfTradeTick.
-            << trade_tick->m_bid_app_seq_num << ","
-            << trade_tick->m_ask_app_seq_num << ","
-            << trade_tick->m_exe_px << ","
-            << trade_tick->m_exe_qty << ","
-            << trade_tick->m_exe_type << ","
+            trade_tick->m_bid_app_seq_num,
+            trade_tick->m_ask_app_seq_num,
+            trade_tick->m_exe_px,
+            trade_tick->m_exe_qty,
+            trade_tick->m_exe_type,
             /// Time.
-            << utilities::Now<std::string>()()
-            << std::endl;
+            utilities::Now<std::string>()()
+        );
 
         break;
     }

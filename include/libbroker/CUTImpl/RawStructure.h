@@ -13,11 +13,7 @@ union EndianTest
     char c[4];
 };
 
-constexpr EndianTest endianTest = {0x01020304};
-static_assert(
-    endianTest.c[0] == 0x04 && endianTest.c[1] == 0x03 && endianTest.c[2] == 0x02 && endianTest.c[3] == 0x01,
-    "Endian check failed. The program must be compiled under little-endian system"
-);
+static_assert(std::endian::native == std::endian::little, "Endian check failed. The program must be compiled under little-endian system");
 
 /// For using memcpy().
 #pragma pack(push, 1)
