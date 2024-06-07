@@ -30,7 +30,7 @@ int trade::RawMdRecorder::run()
     std::vector<std::thread> threads;
 
     for (const auto& address : addresses)
-        threads.emplace_back(&RawMdRecorder::write_worker, this, address, m_arguments["interface-address"].as<std::string>());
+        threads.emplace_back(&RawMdRecorder::odtd_receiver, this, address, m_arguments["interface-address"].as<std::string>());
 
     for (auto& thread : threads)
         thread.join();
@@ -118,7 +118,7 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
     return true;
 }
 
-void trade::RawMdRecorder::write_worker(const std::string& address, const std::string& interface_address)
+void trade::RawMdRecorder::odtd_receiver(const std::string& address, const std::string& interface_address)
 {
     const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
     utilities::MCClient<u_char[broker::max_udp_size]> client(multicast_ip, multicast_port, interface_address, true);
@@ -132,23 +132,13 @@ void trade::RawMdRecorder::write_worker(const std::string& address, const std::s
         if (message.empty())
             continue;
 
-        types::ExchangeType exchange_type;
-        if (message.size() == sizeof(broker::SSEHpfOrderTick) || message.size() == sizeof(broker::SSEHpfTradeTick))
-            exchange_type = types::ExchangeType::sse;
-        else if (message.size() == sizeof(broker::SZSEHpfOrderTick) || message.size() == sizeof(broker::SZSEHpfTradeTick))
-            exchange_type = types::ExchangeType::szse;
-        else {
-            logger->error("Invalid message size: received {} bytes, expected 64, 72 or 96", message.size());
-            continue;
-        }
-
-        write(message, exchange_type);
+        write(message, broker::CUTCommonData::get_exchange_type(message));
     }
 
     logger->info("Left multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
 }
 
-void trade::RawMdRecorder::write(const std::string& message, types::ExchangeType exchange_type)
+void trade::RawMdRecorder::write(const std::string& message, const types::ExchangeType exchange_type)
 {
     switch (exchange_type) {
     case types::ExchangeType::sse: {
@@ -168,86 +158,42 @@ void trade::RawMdRecorder::write(const std::string& message, types::ExchangeType
 
 void trade::RawMdRecorder::write_sse(const std::string& message)
 {
-    const auto dategram_type = broker::CUTCommonData::to_sse_datagram_type(reinterpret_cast<const broker::SSEHpfPackageHead*>(message.data())->m_msg_type);
+    const auto order_tick = reinterpret_cast<const broker::SSEHpfTick*>(message.data());
 
-    switch (dategram_type) {
-    case types::X_OST_DatagramType::order: {
-        const auto order_tick = reinterpret_cast<const broker::SSEHpfOrderTick*>(message.data());
+    new_sse_writer(order_tick->m_symbol_id);
 
-        new_sse_order_writer(order_tick->m_symbol_id);
-
-        m_order_writers[order_tick->m_symbol_id] << fmt::format(
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
-            /// SSEHpfPackageHead.
-            order_tick->m_head.m_seq_num,
-            order_tick->m_head.m_reserved,
-            order_tick->m_head.m_msg_type,
-            order_tick->m_head.m_msg_len,
-            order_tick->m_head.m_exchange_id,
-            order_tick->m_head.m_data_year,
-            order_tick->m_head.m_data_month,
-            order_tick->m_head.m_data_day,
-            order_tick->m_head.m_send_time,
-            order_tick->m_head.m_category_id,
-            order_tick->m_head.m_msg_seq_id,
-            order_tick->m_head.m_seq_lost_flag,
-            /// SSEHpfOrderTick.
-            order_tick->m_order_index,
-            order_tick->m_channel_id,
-            order_tick->m_symbol_id,
-            order_tick->m_order_time,
-            order_tick->m_order_type,
-            order_tick->m_order_no,
-            order_tick->m_order_price,
-            order_tick->m_balance,
-            order_tick->m_side_flag,
-            order_tick->m_biz_index,
-            /// Time.
-            utilities::Now<std::string>()()
-        );
-
-        break;
-    }
-    case types::X_OST_DatagramType::trade: {
-        const auto trade_tick = reinterpret_cast<const broker::SSEHpfTradeTick*>(message.data());
-
-        new_sse_trade_writer(trade_tick->m_symbol_id);
-
-        m_trade_writers[trade_tick->m_symbol_id] << fmt::format(
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
-            /// SSEHpfPackageHead.
-            trade_tick->m_head.m_seq_num,
-            trade_tick->m_head.m_reserved,
-            trade_tick->m_head.m_msg_type,
-            trade_tick->m_head.m_msg_len,
-            trade_tick->m_head.m_exchange_id,
-            trade_tick->m_head.m_data_year,
-            trade_tick->m_head.m_data_month,
-            trade_tick->m_head.m_data_day,
-            trade_tick->m_head.m_send_time,
-            trade_tick->m_head.m_category_id,
-            trade_tick->m_head.m_msg_seq_id,
-            trade_tick->m_head.m_seq_lost_flag,
-            /// SSEHpfTradeTick.
-            trade_tick->m_trade_seq_num,
-            trade_tick->m_channel_id,
-            trade_tick->m_symbol_id,
-            trade_tick->m_trade_time,
-            trade_tick->m_trade_price,
-            trade_tick->m_trade_volume,
-            trade_tick->m_trade_value,
-            trade_tick->m_seq_num_bid,
-            trade_tick->m_seq_num_ask,
-            trade_tick->m_side_flag,
-            trade_tick->m_biz_index,
-            /// Time.
-            utilities::Now<std::string>()()
-        );
-
-        break;
-    }
-    default: break;
-    }
+    m_order_writers[order_tick->m_symbol_id] << fmt::format(
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        /// SSEHpfPackageHead.
+        order_tick->m_head.m_seq_num,
+        order_tick->m_head.m_msg_type,
+        order_tick->m_head.m_msg_len,
+        order_tick->m_head.m_exchange_id,
+        order_tick->m_head.m_data_year,
+        order_tick->m_head.m_data_month,
+        order_tick->m_head.m_data_day,
+        order_tick->m_head.m_send_time,
+        order_tick->m_head.m_category_id,
+        order_tick->m_head.m_msg_seq_id,
+        order_tick->m_head.m_seq_lost_flag,
+        /// SSEHpfTick.
+        order_tick->m_tick_index,
+        order_tick->m_channel_id,
+        order_tick->m_symbol_id,
+        order_tick->m_secu_type,
+        order_tick->m_sub_secu_type,
+        order_tick->m_tick_time,
+        order_tick->m_tick_type,
+        order_tick->m_buy_order_no,
+        order_tick->m_sell_order_no,
+        order_tick->m_order_price,
+        order_tick->m_qty,
+        order_tick->m_trade_money,
+        order_tick->m_side_flag,
+        order_tick->m_instrument_status,
+        /// Time.
+        utilities::Now<std::string>()()
+    );
 }
 
 void trade::RawMdRecorder::write_szse(const std::string& message)
@@ -322,10 +268,10 @@ void trade::RawMdRecorder::write_szse(const std::string& message)
     }
 }
 
-void trade::RawMdRecorder::new_sse_order_writer(const std::string& symbol)
+void trade::RawMdRecorder::new_sse_writer(const std::string& symbol)
 {
     if (!m_order_writers.contains(symbol)) [[unlikely]] {
-        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "order", symbol);
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "sse_order_and_trade", symbol);
 
         create_directories(std::filesystem::path(file_path).parent_path());
         m_order_writers.emplace(symbol, std::ofstream(file_path));
@@ -335,7 +281,6 @@ void trade::RawMdRecorder::new_sse_order_writer(const std::string& symbol)
         m_order_writers[symbol]
             /// SSEHpfPackageHead.
             << "m_seq_num,"
-            << "m_reserved,"
             << "m_msg_type,"
             << "m_msg_len,"
             << "m_exchange_id,"
@@ -347,58 +292,20 @@ void trade::RawMdRecorder::new_sse_order_writer(const std::string& symbol)
             << "m_msg_seq_id,"
             << "m_seq_lost_flag,"
             /// SSEHpfOrderTick.
-            << "m_order_index,"
+            << "m_tick_index,"
             << "m_channel_id,"
             << "m_symbol_id,"
-            << "m_order_time,"
-            << "m_order_type,"
-            << "m_order_no,"
+            << "m_secu_type,"
+            << "m_sub_secu_type,"
+            << "m_tick_time,"
+            << "m_tick_type,"
+            << "m_buy_order_no,"
+            << "m_sell_order_no,"
             << "m_order_price,"
-            << "m_balance,"
+            << "m_qty,"
+            << "m_trade_money,"
             << "m_side_flag,"
-            << "m_biz_index,"
-            /// Time.
-            << "time"
-            << std::endl;
-    }
-}
-
-void trade::RawMdRecorder::new_sse_trade_writer(const std::string& symbol)
-{
-    if (!m_trade_writers.contains(symbol)) [[unlikely]] {
-        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "trade", symbol);
-
-        create_directories(std::filesystem::path(file_path).parent_path());
-        m_trade_writers.emplace(symbol, std::ofstream(file_path));
-
-        logger->info("Opened new trade writer at {}", file_path.string());
-
-        m_trade_writers[symbol]
-            /// SSEHpfPackageHead.
-            << "m_seq_num,"
-            << "m_reserved,"
-            << "m_msg_type,"
-            << "m_msg_len,"
-            << "m_exchange_id,"
-            << "m_data_year,"
-            << "m_data_month,"
-            << "m_data_day,"
-            << "m_send_time,"
-            << "m_category_id,"
-            << "m_msg_seq_id,"
-            << "m_seq_lost_flag,"
-            /// SSEHpfTradeTick.
-            << "m_trade_seq_num,"
-            << "m_channel_id,"
-            << "m_symbol_id,"
-            << "m_trade_time,"
-            << "m_trade_price,"
-            << "m_trade_volume,"
-            << "m_trade_value,"
-            << "m_seq_num_bid,"
-            << "m_seq_num_ask,"
-            << "m_side_flag,"
-            << "m_biz_index,"
+            << "m_instrument_status,"
             /// Time.
             << "time"
             << std::endl;
@@ -408,7 +315,7 @@ void trade::RawMdRecorder::new_sse_trade_writer(const std::string& symbol)
 void trade::RawMdRecorder::new_szse_order_writer(const std::string& symbol)
 {
     if (!m_order_writers.contains(symbol)) [[unlikely]] {
-        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "order", symbol);
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "szse_order", symbol);
 
         create_directories(std::filesystem::path(file_path).parent_path());
         m_order_writers.emplace(symbol, std::ofstream(file_path));
@@ -443,7 +350,7 @@ void trade::RawMdRecorder::new_szse_order_writer(const std::string& symbol)
 void trade::RawMdRecorder::new_szse_trade_writer(const std::string& symbol)
 {
     if (!m_trade_writers.contains(symbol)) [[unlikely]] {
-        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "trade", symbol);
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "szse_trade", symbol);
 
         create_directories(std::filesystem::path(file_path).parent_path());
         m_trade_writers.emplace(symbol, std::ofstream(file_path));

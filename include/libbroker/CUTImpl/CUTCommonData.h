@@ -47,6 +47,7 @@ public:
     /// @return std::tuple<exchange, order_sys_id>. Empty string if exchange_id
     /// is not in format.
     [[nodiscard]] static std::tuple<std::string, std::string> from_exchange_id(const std::string& exchange_id);
+    [[nodiscard]] static types::ExchangeType get_exchange_type(const std::string& message);
     [[nodiscard]] static types::X_OST_DatagramType get_datagram_type(const std::string& message, types::ExchangeType exchange_type);
     [[nodiscard]] static uint8_t to_szse_datagram_type(types::X_OST_DatagramType message_type);
     [[nodiscard]] static types::X_OST_DatagramType to_szse_datagram_type(uint8_t message_type);

@@ -49,7 +49,8 @@ static_assert(offsetof(SSEHpfPackageHead, m_msg_seq_id) == 21);
 static_assert(offsetof(SSEHpfPackageHead, m_seq_lost_flag) == 25);
 static_assert(sizeof(SSEHpfPackageHead) == 26, "SSEHpfPackageHead should be 26 bytes");
 
-struct PUBLIC_API SSEHpfOrderTick {
+/// SSE has deprecated this struct.
+struct [[deprecated]] PUBLIC_API SSEHpfOrderTick {
     SSEHpfPackageHead m_head;
     uint32_t m_order_index;
     uint32_t m_channel_id;
@@ -65,22 +66,8 @@ struct PUBLIC_API SSEHpfOrderTick {
     uint32_t m_reserved2;
 };
 
-static_assert(offsetof(SSEHpfOrderTick, m_head) == 0);
-static_assert(offsetof(SSEHpfOrderTick, m_order_index) == 26);
-static_assert(offsetof(SSEHpfOrderTick, m_channel_id) == 30);
-static_assert(offsetof(SSEHpfOrderTick, m_symbol_id) == 34);
-static_assert(offsetof(SSEHpfOrderTick, m_order_time) == 43);
-static_assert(offsetof(SSEHpfOrderTick, m_order_type) == 47);
-static_assert(offsetof(SSEHpfOrderTick, m_order_no) == 48);
-static_assert(offsetof(SSEHpfOrderTick, m_order_price) == 56);
-static_assert(offsetof(SSEHpfOrderTick, m_balance) == 60);
-static_assert(offsetof(SSEHpfOrderTick, m_reserved1) == 68);
-static_assert(offsetof(SSEHpfOrderTick, m_side_flag) == 83);
-static_assert(offsetof(SSEHpfOrderTick, m_biz_index) == 84);
-static_assert(offsetof(SSEHpfOrderTick, m_reserved2) == 92);
-static_assert(sizeof(SSEHpfOrderTick) == 96, "SSEHpfOrderTick should be 96 bytes");
-
-struct PUBLIC_API SSEHpfTradeTick {
+/// SSE has deprecated this struct.
+struct [[deprecated]] PUBLIC_API SSEHpfTradeTick {
     SSEHpfPackageHead m_head;
     uint32_t m_trade_seq_num;
     uint32_t m_channel_id;
@@ -96,20 +83,42 @@ struct PUBLIC_API SSEHpfTradeTick {
     uint32_t m_reserved;
 };
 
-static_assert(offsetof(SSEHpfTradeTick, m_head) == 0);
-static_assert(offsetof(SSEHpfTradeTick, m_trade_seq_num) == 26);
-static_assert(offsetof(SSEHpfTradeTick, m_channel_id) == 30);
-static_assert(offsetof(SSEHpfTradeTick, m_symbol_id) == 34);
-static_assert(offsetof(SSEHpfTradeTick, m_trade_time) == 43);
-static_assert(offsetof(SSEHpfTradeTick, m_trade_price) == 47);
-static_assert(offsetof(SSEHpfTradeTick, m_trade_volume) == 51);
-static_assert(offsetof(SSEHpfTradeTick, m_trade_value) == 59);
-static_assert(offsetof(SSEHpfTradeTick, m_seq_num_bid) == 67);
-static_assert(offsetof(SSEHpfTradeTick, m_seq_num_ask) == 75);
-static_assert(offsetof(SSEHpfTradeTick, m_side_flag) == 83);
-static_assert(offsetof(SSEHpfTradeTick, m_biz_index) == 84);
-static_assert(offsetof(SSEHpfTradeTick, m_reserved) == 92);
-static_assert(sizeof(SSEHpfTradeTick) == 96, "SSEHpfTradeTick should be 96 bytes");
+struct PUBLIC_API SSEHpfTick {
+    SSEHpfPackageHead m_head;
+    uint32_t m_tick_index;
+    uint32_t m_channel_id;
+    char m_symbol_id[9];
+    uint8_t m_secu_type;
+    uint8_t m_sub_secu_type;
+    uint32_t m_tick_time;
+    char m_tick_type;
+    uint64_t m_buy_order_no;
+    uint64_t m_sell_order_no;
+    uint32_t m_order_price;
+    uint64_t m_qty;
+    uint64_t m_trade_money;
+    char m_side_flag;
+    uint8_t m_instrument_status;
+    char m_reserved[8];
+};
+
+static_assert(offsetof(SSEHpfTick, m_head) == 0);
+static_assert(offsetof(SSEHpfTick, m_tick_index) == 26);
+static_assert(offsetof(SSEHpfTick, m_channel_id) == 30);
+static_assert(offsetof(SSEHpfTick, m_symbol_id) == 34);
+static_assert(offsetof(SSEHpfTick, m_secu_type) == 43);
+static_assert(offsetof(SSEHpfTick, m_sub_secu_type) == 44);
+static_assert(offsetof(SSEHpfTick, m_tick_time) == 45);
+static_assert(offsetof(SSEHpfTick, m_tick_type) == 49);
+static_assert(offsetof(SSEHpfTick, m_buy_order_no) == 50);
+static_assert(offsetof(SSEHpfTick, m_sell_order_no) == 58);
+static_assert(offsetof(SSEHpfTick, m_order_price) == 66);
+static_assert(offsetof(SSEHpfTick, m_qty) == 70);
+static_assert(offsetof(SSEHpfTick, m_trade_money) == 78);
+static_assert(offsetof(SSEHpfTick, m_side_flag) == 86);
+static_assert(offsetof(SSEHpfTick, m_instrument_status) == 87);
+static_assert(offsetof(SSEHpfTick, m_reserved) == 88);
+static_assert(sizeof(SSEHpfTick) == 96, "SSEHpfTick should be 96 bytes");
 
 struct SZSEHpfPackageHead {
     uint32_t m_sequence;
@@ -174,7 +183,7 @@ static_assert(offsetof(SZSEHpfTradeTick, m_exe_qty) == 63);
 static_assert(offsetof(SZSEHpfTradeTick, m_exe_type) == 71);
 static_assert(sizeof(SZSEHpfTradeTick) == 72, "SZSEHpfTradeTick should be 72 bytes");
 
-constexpr size_t max_sse_udp_size  = std::max(sizeof(SSEHpfOrderTick), sizeof(SSEHpfTradeTick));
+constexpr size_t max_sse_udp_size  = 96; // std::max(sizeof(SSEHpfTick), sizeof(SSEHpfOrderTick), sizeof(SSEHpfTradeTick));
 constexpr size_t max_szse_udp_size = std::max(sizeof(SZSEHpfOrderTick), sizeof(SZSEHpfTradeTick));
 constexpr size_t max_udp_size      = std::max(max_sse_udp_size, max_szse_udp_size);
 

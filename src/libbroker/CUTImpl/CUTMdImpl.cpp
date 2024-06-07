@@ -62,16 +62,8 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
     while (is_running) {
         const auto message = client.receive();
 
-        /// TODO: Is it OK to check message type by message size?
-        types::ExchangeType exchange_type;
-        if (message.size() == sizeof(SSEHpfOrderTick) || message.size() == sizeof(SSEHpfTradeTick))
-            exchange_type = types::ExchangeType::sse;
-        else if (message.size() == sizeof(SZSEHpfOrderTick) || message.size() == sizeof(SZSEHpfTradeTick))
-            exchange_type = types::ExchangeType::szse;
-        else {
-            logger->error("Invalid message size: received {} bytes, expected 64, 72 or 96", message.size());
-            continue;
-        }
+        /// Check where the message comes from first.
+        const auto exchange_type = CUTCommonData::get_exchange_type(message);
 
         switch (CUTCommonData::get_datagram_type(message, exchange_type)) {
         case types::X_OST_DatagramType::order: {
