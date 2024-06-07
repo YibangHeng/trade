@@ -26,17 +26,14 @@ public:
     void unsubscribe(const std::unordered_set<std::string>& symbols);
 
 private:
-    void odtd_receiver(const std::string& address);
-
-private:
-    static std::tuple<std::string, uint16_t> extract_address(const std::string& address);
+    void odtd_receiver(const std::string& address, const std::string& interface_addres);
 
 private:
     booker::Booker booker;
 
 private:
     std::atomic<bool> is_running;
-    std::thread* thread;
+    std::vector<std::thread> threads;
 
 private:
     std::shared_ptr<holder::IHolder> m_holder;

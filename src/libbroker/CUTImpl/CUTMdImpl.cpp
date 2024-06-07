@@ -1,8 +1,7 @@
-#include <regex>
-
-#include "libbroker/CUTImpl/CUTCommonData.h"
 #include "libbroker/CUTImpl/CUTMdImpl.h"
+#include "libbroker/CUTImpl/CUTCommonData.h"
 #include "libbroker/CUTImpl/RawStructure.h"
+#include "utilities/AddressHelper.hpp"
 #include "utilities/NetworkHelper.hpp"
 #include "utilities/ToJSON.hpp"
 
@@ -12,7 +11,6 @@ trade::broker::CUTMdImpl::CUTMdImpl(
     std::shared_ptr<reporter::IReporter> reporter
 ) : AppBase("CUTMdImpl", std::move(config)),
     booker({}, reporter), /// TODO: Initialize tradable symbols here.
-    thread(nullptr),
     m_holder(std::move(holder)),
     m_reporter(std::move(reporter))
 {
@@ -26,12 +24,16 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
 
     is_running = true;
 
-    /// Start receiving in a separate thread.
-    thread = new std::thread([this] {
-        odtd_receiver(config->get<std::string>("Server.MdAddress"));
-    });
+    /// Split multicast addresses and start receiving in separate threads.
+    auto addresses_view = config->get<std::string>("Server.MdAddresses") | std::views::split(',');
 
-    logger->info("Subscribed to ODTD multicast address: {}", config->get<std::string>("Server.MdAddress"));
+    for (auto&& address_part : addresses_view) {
+        std::string address(&*address_part.begin(), std::ranges::distance(address_part));
+
+        threads.emplace_back(&CUTMdImpl::odtd_receiver, this, address, config->get<std::string>("Server.InterfaceAddress"));
+
+        logger->info("Subscribed to ODTD multicast address: {} at {}", address, config->get<std::string>("Server.InterfaceAddress"));
+    }
 }
 
 void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>& symbols)
@@ -43,32 +45,25 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
 
     is_running = false;
 
-    if (thread->joinable())
-        thread->join();
+    for (auto&& thread : threads) {
+        if (thread.joinable())
+            thread.join();
 
-    logger->info("Unsubscribed from ODTD multicast address: {}", *symbols.begin());
-
-    delete thread;
+        /// TODO: Find a way to get multicast address here.
+        logger->info("Unsubscribed from ODTD multicast address: {} at {}", "unknown", config->get<std::string>("Server.InterfaceAddress"));
+    }
 }
 
-void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
+void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const std::string& interface_addres)
 {
-    const auto [multicast_address, multicast_port] = extract_address(address);
-    utilities::MCClient<char[1024]> client(multicast_address, multicast_port);
+    const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
+    utilities::MCClient<char[1024]> client(multicast_ip, multicast_port, interface_addres, true);
 
     while (is_running) {
         const auto message = client.receive();
 
-        /// TODO: Is it OK to check message type by message size?
-        types::ExchangeType exchange_type;
-        if (message.size() == sizeof(SSEHpfOrderTick) || message.size() == sizeof(SSEHpfTradeTick))
-            exchange_type = types::ExchangeType::sse;
-        else if (message.size() == sizeof(SZSEHpfOrderTick) || message.size() == sizeof(SZSEHpfTradeTick))
-            exchange_type = types::ExchangeType::szse;
-        else {
-            logger->error("Invalid message size: received {} bytes, expected 64, 72 or 96", message.size());
-            continue;
-        }
+        /// Check where the message comes from first.
+        const auto exchange_type = CUTCommonData::get_exchange_type(message);
 
         switch (CUTCommonData::get_datagram_type(message, exchange_type)) {
         case types::X_OST_DatagramType::order: {
@@ -95,19 +90,4 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address)
         default: break;
         }
     }
-}
-
-/// Extract multicast address and port from address string.
-std::tuple<std::string, uint16_t> trade::broker::CUTMdImpl::extract_address(const std::string& address)
-{
-    const std::regex re(R"(^(\d{1,3}(?:\.\d{1,3}){3}):(\d+)$)");
-    std::smatch address_match;
-
-    std::regex_search(address, address_match, re);
-
-    if (address_match.size() == 3) {
-        return std::make_tuple(std::string(address_match[1]), static_cast<uint16_t>(std::stoi(address_match[2])));
-    }
-
-    return std::make_tuple(std::string {}, static_cast<uint16_t>(0));
 }

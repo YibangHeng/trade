@@ -164,6 +164,17 @@ std::tuple<std::string, std::string> trade::broker::CUTCommonData::from_exchange
     return std::make_tuple(exchange, order_sys_id);
 }
 
+trade::types::ExchangeType trade::broker::CUTCommonData::get_exchange_type(const std::string& message)
+{
+    /// TODO: Is it OK to check message type by message size?
+    switch (message.size()) {
+    case sizeof(SSEHpfTick): return types::ExchangeType::sse;
+    case sizeof(SZSEHpfOrderTick):
+    case sizeof(SZSEHpfTradeTick): return types::ExchangeType::szse;
+    default: return types::ExchangeType::invalid_exchange;
+    }
+}
+
 trade::types::X_OST_DatagramType trade::broker::CUTCommonData::get_datagram_type(const std::string& message, const types::ExchangeType exchange_type)
 {
     switch (exchange_type) {
@@ -218,16 +229,18 @@ std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_
 
     switch (exchange_type) {
     case types::ExchangeType::sse: {
-        assert(message.size() == sizeof(SSEHpfOrderTick));
+        assert(message.size() == sizeof(SSEHpfTick));
 
-        const auto raw_order = reinterpret_cast<const SSEHpfOrderTick*>(message.data());
+        const auto raw_order = reinterpret_cast<const SSEHpfTick*>(message.data());
 
-        order_tick->set_unique_id(raw_order->m_biz_index);
+        assert(raw_order->m_tick_type == 'A' || raw_order->m_tick_type == 'D'); /// A stands for 新增订单 and D stands for 删除订单.
+
+        order_tick->set_unique_id(raw_order->m_tick_index);
         order_tick->set_symbol(raw_order->m_symbol_id);
-        order_tick->set_order_type(to_order_type(raw_order->m_order_type));
+        order_tick->set_order_type(to_order_type(raw_order->m_tick_type)); /// TODO!!!!!!!!!!!!!!!!!!!!!!!!!1
         order_tick->set_side(to_md_side(raw_order->m_side_flag));
         order_tick->set_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_order->m_order_price)));
-        order_tick->set_quantity(booker::BookerCommonData::to_quantity(raw_order->m_balance));
+        order_tick->set_quantity(booker::BookerCommonData::to_quantity(raw_order->m_qty));
 
         return order_tick;
     }
@@ -257,15 +270,13 @@ std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_
 
     switch (exchange_type) {
     case types::ExchangeType::sse: {
-        assert(message.size() == sizeof(SSEHpfTradeTick));
+        const auto raw_trade = reinterpret_cast<const SSEHpfTick*>(message.data());
 
-        const auto raw_trade = reinterpret_cast<const SSEHpfTradeTick*>(message.data());
-
-        trade_tick->set_ask_unique_id(raw_trade->m_seq_num_ask);
-        trade_tick->set_bid_unique_id(raw_trade->m_seq_num_bid);
+        trade_tick->set_ask_unique_id(raw_trade->m_sell_order_no);
+        trade_tick->set_bid_unique_id(raw_trade->m_buy_order_no);
         trade_tick->set_symbol(raw_trade->m_symbol_id);
-        trade_tick->set_exec_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_trade->m_trade_price)));
-        trade_tick->set_exec_quantity(booker::BookerCommonData::to_quantity(raw_trade->m_trade_volume));
+        trade_tick->set_exec_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_trade->m_order_price)));
+        trade_tick->set_exec_quantity(booker::BookerCommonData::to_quantity(raw_trade->m_qty));
 
         return trade_tick;
     }
