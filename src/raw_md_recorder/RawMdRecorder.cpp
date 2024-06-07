@@ -163,7 +163,7 @@ void trade::RawMdRecorder::write_sse(const std::string& message)
     new_sse_writer(order_tick->m_symbol_id);
 
     m_order_writers[order_tick->m_symbol_id] << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         /// SSEHpfPackageHead.
         order_tick->m_head.m_seq_num,
         order_tick->m_head.m_msg_type,
@@ -198,10 +198,10 @@ void trade::RawMdRecorder::write_sse(const std::string& message)
 
 void trade::RawMdRecorder::write_szse(const std::string& message)
 {
-    const auto dategram_type = broker::CUTCommonData::to_szse_datagram_type(reinterpret_cast<const broker::SZSEHpfPackageHead*>(message.data())->m_message_type);
+    const auto dategram_type = broker::CUTCommonData::to_szse_tick_type(reinterpret_cast<const broker::SZSEHpfPackageHead*>(message.data())->m_message_type);
 
     switch (dategram_type) {
-    case types::X_OST_DatagramType::order: {
+    case types::X_OST_TickType::order: {
         const auto order_tick = reinterpret_cast<const broker::SZSEHpfOrderTick*>(message.data());
 
         new_szse_order_writer(order_tick->m_header.m_symbol);
@@ -232,13 +232,13 @@ void trade::RawMdRecorder::write_szse(const std::string& message)
 
         break;
     }
-    case types::X_OST_DatagramType::trade: {
+    case types::X_OST_TickType::trade: {
         const auto trade_tick = reinterpret_cast<const broker::SZSEHpfTradeTick*>(message.data());
 
         new_szse_trade_writer(trade_tick->m_header.m_symbol);
 
         m_trade_writers[trade_tick->m_header.m_symbol] << fmt::format(
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
             /// SZSEHpfPackageHead.
             trade_tick->m_header.m_sequence,
             trade_tick->m_header.m_tick1,

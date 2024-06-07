@@ -128,7 +128,7 @@ enum RejectionCode
 
 /// 以下为扩展枚举类型，仅适用于部分接口
 
-enum X_OST_DatagramType
+enum X_OST_TickType
 {
     invalid_ost_datagram_type = 0;
 

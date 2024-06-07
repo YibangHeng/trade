@@ -16,10 +16,12 @@ public:
 public:
     [[nodiscard]] static TUTExchangeIDType to_exchange(types::ExchangeType exchange);
     [[nodiscard]] static types::ExchangeType to_exchange(TUTExchangeIDType exchange);
-    [[nodiscard]] static types::OrderType to_order_type(char order_type);
+    [[nodiscard]] static types::OrderType to_order_type_from_sse();
+    [[nodiscard]] static types::OrderType to_order_type_from_szse(char order_type);
     [[nodiscard]] static TUTDirectionType to_side(types::SideType side);
     [[nodiscard]] static types::SideType to_side(TUTDirectionType side);
-    [[nodiscard]] static types::SideType to_md_side(TUTDirectionType side);
+    [[nodiscard]] static types::SideType to_md_side_from_sse(char side);
+    [[nodiscard]] static types::SideType to_md_side_from_szse(char side);
     [[nodiscard]] static TUTOffsetFlagType to_position_side(types::PositionSideType position_side);
     [[nodiscard]] static types::PositionSideType to_position_side(TUTOffsetFlagType position_side);
     /// Concatenate front_id, session_id and order_ref to broker_id in format of
@@ -48,11 +50,11 @@ public:
     /// is not in format.
     [[nodiscard]] static std::tuple<std::string, std::string> from_exchange_id(const std::string& exchange_id);
     [[nodiscard]] static types::ExchangeType get_exchange_type(const std::string& message);
-    [[nodiscard]] static types::X_OST_DatagramType get_datagram_type(const std::string& message, types::ExchangeType exchange_type);
-    [[nodiscard]] static uint8_t to_szse_datagram_type(types::X_OST_DatagramType message_type);
-    [[nodiscard]] static types::X_OST_DatagramType to_szse_datagram_type(uint8_t message_type);
-    [[nodiscard]] static uint8_t to_sse_datagram_type(types::X_OST_DatagramType message_type);
-    [[nodiscard]] static types::X_OST_DatagramType to_sse_datagram_type(uint8_t message_type);
+    [[nodiscard]] static types::X_OST_TickType get_tick_type(const std::string& message, types::ExchangeType exchange_type);
+    [[nodiscard]] static char to_sse_tick_type(types::X_OST_TickType message_type);
+    [[nodiscard]] static types::X_OST_TickType to_sse_tick_type(char message_type);
+    [[nodiscard]] static uint8_t to_szse_tick_type(types::X_OST_TickType message_type);
+    [[nodiscard]] static types::X_OST_TickType to_szse_tick_type(uint8_t message_type);
     [[nodiscard]] static booker::OrderTickPtr to_order_tick(const std::string& message, types::ExchangeType exchange_type);
     [[nodiscard]] static booker::TradeTickPtr to_trade_tick(const std::string& message, types::ExchangeType exchange_type);
 

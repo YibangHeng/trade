@@ -46,8 +46,7 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
     is_running = false;
 
     for (auto&& thread : threads) {
-        if (thread.joinable())
-            thread.join();
+        thread.joinable() ? thread.join() : void();
 
         /// TODO: Find a way to get multicast address here.
         logger->info("Unsubscribed from ODTD multicast address: {} at {}", "unknown", config->get<std::string>("Server.InterfaceAddress"));
@@ -65,11 +64,9 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
         /// Check where the message comes from first.
         const auto exchange_type = CUTCommonData::get_exchange_type(message);
 
-        switch (CUTCommonData::get_datagram_type(message, exchange_type)) {
-        case types::X_OST_DatagramType::order: {
+        switch (CUTCommonData::get_tick_type(message, exchange_type)) {
+        case types::X_OST_TickType::order: {
             const auto order_tick = CUTCommonData::to_order_tick(message, exchange_type);
-
-            logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
 
             if (order_tick->exchange_time() >= 930000) [[likely]]
                 booker.switch_to_continuous_stage();
@@ -78,10 +75,8 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
 
             break;
         }
-        case types::X_OST_DatagramType::trade: {
+        case types::X_OST_TickType::trade: {
             const auto trade_tick = CUTCommonData::to_trade_tick(message, exchange_type);
-
-            logger->debug("Received trade tick: {}", utilities::ToJSON()(*trade_tick));
 
             booker.trade(trade_tick);
 

@@ -166,7 +166,7 @@ std::vector<trade::broker::SZSEHpfOrderTick> trade::OSTMdServer::read_od(const s
         auto& order_tick                   = order_ticks.back();
 
         order_tick.m_header.m_sequence     = ticker_taper();
-        order_tick.m_header.m_message_type = broker::CUTCommonData::to_szse_datagram_type(types::X_OST_DatagramType::order);
+        order_tick.m_header.m_message_type = broker::CUTCommonData::to_szse_tick_type(types::X_OST_TickType::order);
 
         M_A {order_tick.m_header.m_symbol} = security_id;
         order_tick.m_px                    = booker::BookerCommonData::to_price(price);
