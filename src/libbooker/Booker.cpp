@@ -30,6 +30,8 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
     else {
         order_wrapper = std::make_shared<OrderWrapper>(order_tick);
         m_orders.emplace(order_tick->unique_id(), order_wrapper);
+
+        logger->info("Received order {} with order type {}", order_tick->unique_id(), OrderType_Name(order_tick->order_type()));
     }
 
     /// Push the order into the queue first.
@@ -225,5 +227,5 @@ void trade::booker::Booker::new_booker(const std::string& symbol)
     m_books[symbol]->set_symbol(symbol);
     m_books[symbol]->set_trade_listener(this);
 
-    logger->debug("Created new order book for symbol {}", symbol);
+    logger->info("Created new order book for symbol {}", symbol);
 }

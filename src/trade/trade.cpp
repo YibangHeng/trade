@@ -84,6 +84,10 @@ int trade::Trade::run()
 
     m_exit_code = network_events();
 
+    if (config->get<bool>("Functionality.EnableMd")) {
+        m_broker->unsubscribe({});
+    }
+
     if (config->get<bool>("Functionality.EnableTrade")) {
         m_broker->start_logout();
 

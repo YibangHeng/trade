@@ -68,6 +68,7 @@ private:
     std::unordered_map<std::string, OrderBookPtr> m_books;
     /// Symbol -> Rearranger.
     std::unordered_map<std::string, Rearranger> m_rearrangers;
+    /// Symbol -> CallAuctionHolder.
     std::unordered_map<std::string, CallAuctionHolder> m_call_auction_holders;
     /// TODO: Use a better way to cache orders.
     std::unordered_map<int64_t, OrderWrapperPtr> m_orders;

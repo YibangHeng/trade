@@ -38,9 +38,8 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
 
 void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>& symbols)
 {
-    if (symbols.size() != 1) {
-        logger->error("Wrong usage of unsubscribe of CUT: symbols treated as multicast address and must be exactly one");
-        return;
+    if (!symbols.empty()) {
+        throw std::runtime_error("Wrong usage of unsubscribe of CUT: symbols treated as multicast address and must be specified in config");
     }
 
     is_running = false;
