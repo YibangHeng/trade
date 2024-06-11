@@ -6,6 +6,7 @@
 #include "libbroker/CUTBroker.h"
 #include "libholder/SQLiteHolder.h"
 #include "libreporter/AsyncReporter.h"
+#include "libreporter/CSVReporter.h"
 #include "libreporter/LogReporter.h"
 #include "libreporter/ShmReporter.h"
 #include "trade/trade.h"
@@ -35,12 +36,15 @@ int trade::Trade::run()
         return 1;
     }
 
-    m_reporter = std::make_shared<reporter::AsyncReporter>(
-        std::make_shared<reporter::LogReporter>(
-            std::make_shared<reporter::ShmReporter>()
-        )
-    );
+    const auto log_reporter   = std::make_shared<reporter::LogReporter>();
+    const auto csv_reporter   = std::make_shared<reporter::CSVReporter>(config->get<std::string>("Output.CSVOutputFolder"), log_reporter);
+    const auto shm_reporter   = std::make_shared<reporter::ShmReporter>(csv_reporter);
+    const auto async_reporter = std::make_shared<reporter::AsyncReporter>(shm_reporter);
 
+    /// Reporter.
+    m_reporter = async_reporter;
+
+    /// Holder.
     m_holder = std::make_shared<holder::SQLiteHolder>();
 
     if (config->get<std::string>("Broker.Type") == "CTP") {

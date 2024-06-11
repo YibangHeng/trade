@@ -44,7 +44,9 @@ private:
     std::atomic<int> m_exit_code;
 
 private:
+    /// Symbol -> ofstream.
     std::unordered_map<std::string, std::ofstream> m_order_writers;
+    /// Symbol -> ofstream.
     std::unordered_map<std::string, std::ofstream> m_trade_writers;
 
 private:
