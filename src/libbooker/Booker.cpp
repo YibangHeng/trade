@@ -38,6 +38,7 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
     while (true) {
         /// Loop until no more orders in the queue.
         const auto& next_order_wrapper = m_rearrangers[order_wrapper->symbol()].pop();
+
         if (!next_order_wrapper.has_value())
             break;
 

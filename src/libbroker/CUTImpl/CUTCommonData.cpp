@@ -45,10 +45,13 @@ trade::types::ExchangeType trade::broker::CUTCommonData::to_exchange(const TUTEx
     }
 }
 
-trade::types::OrderType trade::broker::CUTCommonData::to_order_type_from_sse()
+trade::types::OrderType trade::broker::CUTCommonData::to_order_type_from_sse(const char tick_type)
 {
-    /// SSE does not distinguish between order types.
-    return types::OrderType::limit;
+    switch (tick_type) {
+    case 'A': return types::OrderType::limit;
+    case 'D': return types::OrderType::cancel;
+    default: return types::OrderType::invalid_order_type;
+    }
 }
 
 trade::types::OrderType trade::broker::CUTCommonData::to_order_type_from_szse(const char order_type)
@@ -252,9 +255,9 @@ std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_
 
         const auto raw_order = reinterpret_cast<const SSEHpfTick*>(message.data());
 
-        order_tick->set_unique_id(raw_order->m_tick_index);
+        order_tick->set_unique_id(static_cast<int64_t>(raw_order->m_buy_order_no + raw_order->m_sell_order_no));
+        order_tick->set_order_type(to_order_type_from_sse(raw_order->m_tick_type));
         order_tick->set_symbol(raw_order->m_symbol_id);
-        order_tick->set_order_type(to_order_type_from_sse());
         order_tick->set_side(to_md_side_from_sse(raw_order->m_side_flag));
         order_tick->set_price(raw_order->m_order_price / 1000.);                 /// TODO: Use convertor instead.
         order_tick->set_quantity(static_cast<int64_t>(raw_order->m_qty) / 1000); /// TODO: Use convertor instead.
@@ -267,11 +270,11 @@ std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_
         const auto raw_order = reinterpret_cast<const SZSEHpfOrderTick*>(message.data());
 
         order_tick->set_unique_id(raw_order->m_header.m_sequence);
-        order_tick->set_symbol(raw_order->m_header.m_symbol);
         order_tick->set_order_type(to_order_type_from_szse(raw_order->m_order_type));
+        order_tick->set_symbol(raw_order->m_header.m_symbol);
         order_tick->set_side(to_md_side_from_szse(raw_order->m_side));
-        order_tick->set_price(raw_order->m_px / 1000.);                          /// TODO: Use convertor instead.
-        order_tick->set_quantity(static_cast<int64_t>(raw_order->m_qty) / 1000); /// TODO: Use convertor instead.
+        order_tick->set_price(raw_order->m_px / 100000.);                       /// TODO: Use convertor instead.
+        order_tick->set_quantity(static_cast<int64_t>(raw_order->m_qty) / 100); /// TODO: Use convertor instead.
 
         return order_tick;
     }
@@ -289,11 +292,11 @@ std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_
     case types::ExchangeType::sse: {
         const auto raw_trade = reinterpret_cast<const SSEHpfTick*>(message.data());
 
-        trade_tick->set_ask_unique_id(raw_trade->m_sell_order_no);
-        trade_tick->set_bid_unique_id(raw_trade->m_buy_order_no);
+        trade_tick->set_ask_unique_id(static_cast<int64_t>(raw_trade->m_sell_order_no));
+        trade_tick->set_bid_unique_id(static_cast<int64_t>(raw_trade->m_buy_order_no));
         trade_tick->set_symbol(raw_trade->m_symbol_id);
-        trade_tick->set_exec_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_trade->m_order_price)));
-        trade_tick->set_exec_quantity(booker::BookerCommonData::to_quantity(raw_trade->m_qty));
+        trade_tick->set_exec_price(raw_trade->m_order_price / 1000.);                 /// TODO: Use convertor instead.
+        trade_tick->set_exec_quantity(static_cast<int64_t>(raw_trade->m_qty / 1000)); /// TODO: Use convertor instead.
 
         return trade_tick;
     }
@@ -305,8 +308,8 @@ std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_
         trade_tick->set_ask_unique_id(raw_trade->m_ask_app_seq_num);
         trade_tick->set_bid_unique_id(raw_trade->m_bid_app_seq_num);
         trade_tick->set_symbol(raw_trade->m_header.m_symbol);
-        trade_tick->set_exec_price(booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(raw_trade->m_exe_px)));
-        trade_tick->set_exec_quantity(booker::BookerCommonData::to_quantity(raw_trade->m_exe_qty));
+        trade_tick->set_exec_price(raw_trade->m_exe_px / 10000.);                        /// TODO: Use convertor instead.
+        trade_tick->set_exec_quantity(static_cast<int64_t>(raw_trade->m_exe_qty / 100)); /// TODO: Use convertor instead.
         trade_tick->set_x_ost_szse_exe_type(to_order_type_from_szse(raw_trade->m_exe_type));
 
         return trade_tick;

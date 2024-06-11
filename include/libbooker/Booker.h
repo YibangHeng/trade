@@ -28,10 +28,14 @@ public:
     ~Booker() override = default;
 
 public:
-    /// Add a new order to the book.
+    /// Add a new order/cancel to the book.
     /// Booker will process order in auction stage and continuous stage.
     void add(const OrderTickPtr& order_tick);
-    /// Only accepts trades in call auction stage (whose exec time == 925000).
+    /// Accept trades in call auction stage (whose exec time == 925000).
+    ///
+    /// Also accept SZSE new cancel.
+    /// SZSE reports cancel orders as trade ticks. In this case, let
+    /// Booker::add() handle it.
     void trade(const TradeTickPtr& trade_tick);
     void switch_to_continuous_stage();
 

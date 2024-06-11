@@ -16,7 +16,7 @@ public:
 public:
     [[nodiscard]] static TUTExchangeIDType to_exchange(types::ExchangeType exchange);
     [[nodiscard]] static types::ExchangeType to_exchange(TUTExchangeIDType exchange);
-    [[nodiscard]] static types::OrderType to_order_type_from_sse();
+    [[nodiscard]] static types::OrderType to_order_type_from_sse(char tick_type);
     [[nodiscard]] static types::OrderType to_order_type_from_szse(char order_type);
     [[nodiscard]] static TUTDirectionType to_side(types::SideType side);
     [[nodiscard]] static types::SideType to_side(TUTDirectionType side);
