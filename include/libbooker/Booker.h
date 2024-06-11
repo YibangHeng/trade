@@ -6,7 +6,6 @@
 #include "AppBase.hpp"
 #include "CallAuctionHolder.h"
 #include "OrderWrapper.h"
-#include "Rearranger.h"
 #include "libreporter/IReporter.hpp"
 #include "visibility.h"
 
@@ -66,8 +65,6 @@ private:
 private:
     /// Symbol -> OrderBook.
     std::unordered_map<std::string, OrderBookPtr> m_books;
-    /// Symbol -> Rearranger.
-    std::unordered_map<std::string, Rearranger> m_rearrangers;
     /// Symbol -> CallAuctionHolder.
     std::unordered_map<std::string, CallAuctionHolder> m_call_auction_holders;
     /// TODO: Use a better way to cache orders.

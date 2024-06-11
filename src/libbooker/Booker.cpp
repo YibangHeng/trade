@@ -34,24 +34,13 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
         logger->info("Received order {} with order type {}", order_tick->unique_id(), OrderType_Name(order_tick->order_type()));
     }
 
-    /// Push the order into the queue first.
-    m_rearrangers[order_wrapper->symbol()].push(order_wrapper);
-
-    while (true) {
-        /// Loop until no more orders in the queue.
-        const auto& next_order_wrapper = m_rearrangers[order_wrapper->symbol()].pop();
-
-        if (!next_order_wrapper.has_value())
-            break;
-
-        /// If in call auction stage.
-        if (next_order_wrapper.value()->exchange_time() < 925000) {
-            m_call_auction_holders[next_order_wrapper.value()->symbol()].push(next_order_wrapper.value());
-        }
-        /// If in continuous trade stage.
-        else {
-            auction(next_order_wrapper.value());
-        }
+    /// If in call auction stage.
+    if (order_wrapper->exchange_time() < 925000) {
+        m_call_auction_holders[order_wrapper->symbol()].push(order_wrapper);
+    }
+    /// If in continuous trade stage.
+    else {
+        auction(order_wrapper);
     }
 }
 
@@ -221,7 +210,6 @@ void trade::booker::Booker::new_booker(const std::string& symbol)
         return;
 
     m_books.emplace(symbol, std::make_shared<liquibook::book::OrderBook<OrderWrapperPtr>>(symbol));
-    m_rearrangers.emplace(symbol, Rearranger());
     m_call_auction_holders.emplace(symbol, CallAuctionHolder());
 
     m_books[symbol]->set_symbol(symbol);
