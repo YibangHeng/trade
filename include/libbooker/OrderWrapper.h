@@ -37,7 +37,7 @@ public:
     [[nodiscard]] bool is_limit() const;
 
     /// 0 if not a stop order.
-    /// stop_price is not used yet. Just make matcher happy.
+    /// stop_price is not used yet. Just make booker happy.
     static consteval liquibook::book::Price stop_price() { return 0; }
 
 public:
@@ -49,6 +49,9 @@ public:
     [[nodiscard]] int64_t exchange_time() const;
     /// Return the quantity that not yet filled.
     [[nodiscard]] liquibook::book::Quantity quantity_on_market() const;
+
+public:
+    void mark_as_cancel() const;
 
 private:
     OrderTickPtr m_order;

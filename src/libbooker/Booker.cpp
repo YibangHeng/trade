@@ -24,8 +24,13 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
     if (m_orders.contains(order_tick->unique_id())) {
         order_wrapper = m_orders[order_tick->unique_id()];
 
-        if (order_tick->order_type() != types::OrderType::cancel)
+        if (order_tick->order_type() != types::OrderType::cancel) {
             logger->error("Received duplicated order {} with order type {}", order_tick->unique_id(), OrderType_Name(order_tick->order_type()));
+            return;
+        }
+
+        /// Changing order status manually is needed since booker does not use order_tick.
+        order_wrapper->mark_as_cancel();
     }
     else {
         order_wrapper = std::make_shared<OrderWrapper>(order_tick);
