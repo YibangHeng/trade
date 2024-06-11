@@ -269,7 +269,7 @@ std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_
 
         const auto raw_order = reinterpret_cast<const SZSEHpfOrderTick*>(message.data());
 
-        order_tick->set_unique_id(raw_order->m_header.m_sequence);
+        order_tick->set_unique_id(raw_order->m_header.m_sequence_num);
         order_tick->set_order_type(to_order_type_from_szse(raw_order->m_order_type));
         order_tick->set_symbol(raw_order->m_header.m_symbol);
         order_tick->set_side(to_md_side_from_szse(raw_order->m_side));
