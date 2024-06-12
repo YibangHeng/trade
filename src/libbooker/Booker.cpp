@@ -63,7 +63,7 @@ void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         add(order_tick);
     }
     /// Otherwise, only accepts trade made in auction stage.
-    else if (trade_tick->exchange_time() == 925000) [[unlikely]] {
+    else if (trade_tick->exchange_time() == 92500) [[unlikely]] {
         m_call_auction_holders[trade_tick->symbol()].trade(*trade_tick);
 
         /// Report trade.
