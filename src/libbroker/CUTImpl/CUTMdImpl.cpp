@@ -10,7 +10,6 @@ trade::broker::CUTMdImpl::CUTMdImpl(
     std::shared_ptr<holder::IHolder> holder,
     std::shared_ptr<reporter::IReporter> reporter
 ) : AppBase("CUTMdImpl", std::move(config)),
-    booker({}, reporter), /// TODO: Initialize tradable symbols here.
     m_holder(std::move(holder)),
     m_reporter(std::move(reporter))
 {
@@ -52,8 +51,10 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
     }
 }
 
-void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const std::string& interface_addres)
+void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const std::string& interface_addres) const
 {
+    booker::Booker booker({}, m_reporter); /// TODO: Initialize tradable symbols here.
+
     const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
     utilities::MCClient<char[1024]> client(multicast_ip, multicast_port, interface_addres, true);
 

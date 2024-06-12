@@ -61,7 +61,7 @@ void trade::reporter::LogReporter::trade_accepted(const std::shared_ptr<types::T
 
 void trade::reporter::LogReporter::md_trade_generated(const std::shared_ptr<types::MdTrade> md_trade)
 {
-    md_logger->info("Trade generated： {}", utilities::ToJSON()(*md_trade));
+    md_logger->debug("Trade generated: {}", utilities::ToJSON()(*md_trade));
 
     m_outside->md_trade_generated(md_trade);
 }

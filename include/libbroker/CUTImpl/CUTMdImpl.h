@@ -26,10 +26,7 @@ public:
     void unsubscribe(const std::unordered_set<std::string>& symbols);
 
 private:
-    void odtd_receiver(const std::string& address, const std::string& interface_addres);
-
-private:
-    booker::Booker booker;
+    void odtd_receiver(const std::string& address, const std::string& interface_addres) const;
 
 private:
     std::atomic<bool> is_running;
