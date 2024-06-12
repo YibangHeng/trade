@@ -57,6 +57,12 @@ public:
     [[nodiscard]] static types::X_OST_TickType to_szse_tick_type(uint8_t message_type);
     [[nodiscard]] static booker::OrderTickPtr to_order_tick(const std::string& message, types::ExchangeType exchange_type);
     [[nodiscard]] static booker::TradeTickPtr to_trade_tick(const std::string& message, types::ExchangeType exchange_type);
+    [[nodiscard]] static double to_sse_price(uint32_t order_price);
+    [[nodiscard]] static double to_szse_price(uint32_t exe_px);
+    [[nodiscard]] static int64_t to_sse_quantity(uint32_t qty);
+    [[nodiscard]] static int64_t to_szse_quantity(uint32_t exe_qty);
+    [[nodiscard]] static int64_t to_sse_time(uint32_t tick_time);
+    [[nodiscard]] static int64_t to_szse_time(uint64_t quote_update_time);
 
 public:
     TUTSystemNameType m_system_name;

@@ -259,9 +259,9 @@ std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_
         order_tick->set_order_type(to_order_type_from_sse(raw_order->m_tick_type));
         order_tick->set_symbol(raw_order->m_symbol_id);
         order_tick->set_side(to_md_side_from_sse(raw_order->m_side_flag));
-        order_tick->set_price(raw_order->m_order_price / 1000.);                 /// TODO: Use convertor instead.
-        order_tick->set_quantity(static_cast<int64_t>(raw_order->m_qty) / 1000); /// TODO: Use convertor instead.
-        order_tick->set_exchange_time(raw_order->m_tick_time / 100);             /// TODO: Use convertor instead.
+        order_tick->set_price(to_sse_price(raw_order->m_order_price));
+        order_tick->set_quantity(to_sse_quantity(raw_order->m_qty));
+        order_tick->set_exchange_time(to_sse_time(raw_order->m_tick_time));
 
         return order_tick;
     }
@@ -274,8 +274,9 @@ std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_
         order_tick->set_order_type(to_order_type_from_szse(raw_order->m_order_type));
         order_tick->set_symbol(raw_order->m_header.m_symbol);
         order_tick->set_side(to_md_side_from_szse(raw_order->m_side));
-        order_tick->set_price(raw_order->m_px / 10000.);                        /// TODO: Use convertor instead.
-        order_tick->set_quantity(static_cast<int64_t>(raw_order->m_qty) / 100); /// TODO: Use convertor instead.
+        order_tick->set_price(to_szse_price(raw_order->m_px));
+        order_tick->set_quantity(to_szse_quantity(raw_order->m_qty));
+        order_tick->set_exchange_time(to_szse_time(raw_order->m_header.m_quote_update_time));
 
         return order_tick;
     }
@@ -296,8 +297,9 @@ std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_
         trade_tick->set_ask_unique_id(static_cast<int64_t>(raw_trade->m_sell_order_no));
         trade_tick->set_bid_unique_id(static_cast<int64_t>(raw_trade->m_buy_order_no));
         trade_tick->set_symbol(raw_trade->m_symbol_id);
-        trade_tick->set_exec_price(raw_trade->m_order_price / 1000.);                 /// TODO: Use convertor instead.
-        trade_tick->set_exec_quantity(static_cast<int64_t>(raw_trade->m_qty / 1000)); /// TODO: Use convertor instead.
+        trade_tick->set_exec_price(to_sse_price(raw_trade->m_order_price));
+        trade_tick->set_exec_quantity(to_sse_quantity(raw_trade->m_qty));
+        trade_tick->set_exchange_time(to_sse_time(raw_trade->m_tick_time));
 
         return trade_tick;
     }
@@ -309,8 +311,9 @@ std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_
         trade_tick->set_ask_unique_id(raw_trade->m_ask_app_seq_num);
         trade_tick->set_bid_unique_id(raw_trade->m_bid_app_seq_num);
         trade_tick->set_symbol(raw_trade->m_header.m_symbol);
-        trade_tick->set_exec_price(raw_trade->m_exe_px / 10000.);                        /// TODO: Use convertor instead.
-        trade_tick->set_exec_quantity(static_cast<int64_t>(raw_trade->m_exe_qty / 100)); /// TODO: Use convertor instead.
+        trade_tick->set_exec_price(to_szse_price(raw_trade->m_exe_px));
+        trade_tick->set_exec_quantity(to_szse_quantity(raw_trade->m_exe_qty));
+        trade_tick->set_exchange_time(to_szse_time(raw_trade->m_header.m_quote_update_time));
         trade_tick->set_x_ost_szse_exe_type(to_order_type_from_szse(raw_trade->m_exe_type));
 
         return trade_tick;
@@ -319,4 +322,36 @@ std::shared_ptr<trade::types::TradeTick> trade::broker::CUTCommonData::to_trade_
         return nullptr;
     }
     }
+}
+
+double trade::broker::CUTCommonData::to_sse_price(const uint32_t order_price)
+{
+    return order_price / 1000.;
+}
+
+double trade::broker::CUTCommonData::to_szse_price(const uint32_t exe_px)
+{
+    return exe_px / 10000.;
+}
+
+int64_t trade::broker::CUTCommonData::to_sse_quantity(const uint32_t qty)
+{
+    return qty / 1000;
+}
+
+int64_t trade::broker::CUTCommonData::to_szse_quantity(const uint32_t exe_qty)
+{
+    return exe_qty / 100;
+}
+
+int64_t trade::broker::CUTCommonData::to_sse_time(const uint32_t tick_time)
+{
+    /// tick_time example: 9250000.
+    return tick_time / 100;
+}
+
+int64_t trade::broker::CUTCommonData::to_szse_time(const uint64_t quote_update_time)
+{
+    /// quote_update_time exmaple: 20240612092500000.
+    return static_cast<int64_t>(quote_update_time % 1000000000 / 1000);
 }
