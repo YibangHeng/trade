@@ -111,10 +111,18 @@ template<>
 class Now<std::string>
 {
 public:
-    /// Returns the current time in format 2000-01-01 08:00:00.000000000.
+    /// Returns the current local time in format 2000-01-01 08:00:00.000.
     std::string operator()() const
     {
-        return fmt::format("{:%Y-%m-%d %H:%M:%S}", std::chrono::system_clock::now());
+        const auto now          = std::chrono::system_clock::now();
+
+        const std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+        auto local_time         = *std::localtime(&now_c);
+
+        const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch())
+                                % 1000;
+
+        return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:03d}", local_time, milliseconds.count());
     }
 };
 
