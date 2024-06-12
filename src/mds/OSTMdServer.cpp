@@ -32,7 +32,7 @@ int trade::OSTMdServer::run()
         memcpy(buf.get(), &tick, sizeof(broker::SSEHpfTick));
         server.send(std::string(buf.get(), sizeof(broker::SSEHpfTick)));
 
-        logger->info("Emitted order tick: {:>6} {:>6} {:>6.2f} {:>6} {:>1} {:>1}", tick.m_buy_order_no + tick.m_sell_order_no, tick.m_symbol_id, tick.m_order_price / 1000., tick.m_qty / 1000, tick.m_side_flag, tick.m_tick_type);
+        logger->info("Emitted order tick: {:>6} {:>6} {:>6.2f} {:>6} {:>1} {:>1} {:>6}", tick.m_buy_order_no + tick.m_sell_order_no, tick.m_symbol_id, tick.m_order_price / 1000., tick.m_qty / 1000, tick.m_side_flag, tick.m_tick_type, tick.m_tick_time / 100);
 
         if (m_arguments["emit-interval"].as<int64_t>() > 0)
             std::this_thread::sleep_for(std::chrono::milliseconds(m_arguments["emit-interval"].as<int64_t>()));
