@@ -261,6 +261,7 @@ std::shared_ptr<trade::types::OrderTick> trade::broker::CUTCommonData::to_order_
         order_tick->set_side(to_md_side_from_sse(raw_order->m_side_flag));
         order_tick->set_price(raw_order->m_order_price / 1000.);                 /// TODO: Use convertor instead.
         order_tick->set_quantity(static_cast<int64_t>(raw_order->m_qty) / 1000); /// TODO: Use convertor instead.
+        order_tick->set_exchange_time(raw_order->m_tick_time / 100);             /// TODO: Use convertor instead.
 
         return order_tick;
     }

@@ -67,7 +67,7 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
         case types::X_OST_TickType::order: {
             const auto order_tick = CUTCommonData::to_order_tick(message, exchange_type);
 
-            if (order_tick->exchange_time() >= 930000) [[likely]]
+            if (order_tick->exchange_time() >= 93000) [[likely]]
                 booker.switch_to_continuous_stage();
 
             booker.add(order_tick);

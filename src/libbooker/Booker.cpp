@@ -20,6 +20,8 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
 
     OrderWrapperPtr order_wrapper;
 
+    logger->debug("Received order {} with order type {}", order_tick->unique_id(), OrderType_Name(order_tick->order_type()));
+
     /// Check if order already exists.
     if (m_orders.contains(order_tick->unique_id())) {
         order_wrapper = m_orders[order_tick->unique_id()];
@@ -35,12 +37,10 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
     else {
         order_wrapper = std::make_shared<OrderWrapper>(order_tick);
         m_orders.emplace(order_tick->unique_id(), order_wrapper);
-
-        logger->info("Received order {} with order type {}", order_tick->unique_id(), OrderType_Name(order_tick->order_type()));
     }
 
     /// If in call auction stage.
-    if (order_wrapper->exchange_time() < 925000) {
+    if (order_wrapper->exchange_time() < 92500) {
         m_call_auction_holders[order_wrapper->symbol()].push(order_wrapper);
     }
     /// If in continuous trade stage.
