@@ -5,7 +5,6 @@
 #include "enums.pb.h"
 #include "info.h"
 #include "libbooker/BookerCommonData.h"
-#include "libbroker/CUTImpl/CUTCommonData.h"
 #include "mds/OSTMdServer.h"
 #include "utilities/MakeAssignable.hpp"
 #include "utilities/NetworkHelper.hpp"
@@ -25,15 +24,15 @@ int trade::OSTMdServer::run()
 
     utilities::MCServer server("239.255.255.255", 5555);
 
-    const auto buf = std::unique_ptr<char>(new char[sizeof(broker::SZSEHpfOrderTick)]);
+    const auto buf = std::unique_ptr<char>(new char[sizeof(broker::SSEHpfTick)]);
 
     while (m_is_running) {
-        const auto order_tick = emit_od_tick(m_arguments["od-files"].as<std::string>());
+        const auto tick = emit_sse_tick(m_arguments["sse-tick-file"].as<std::string>());
 
-        memcpy(buf.get(), &order_tick, sizeof(broker::SZSEHpfOrderTick));
-        server.send(std::string(buf.get(), sizeof(broker::SZSEHpfOrderTick)));
+        memcpy(buf.get(), &tick, sizeof(broker::SSEHpfTick));
+        server.send(std::string(buf.get(), sizeof(broker::SSEHpfTick)));
 
-        logger->info("Emitted order tick: {:>6} {:>6.2f} {:>6} {:<4} {:>1}", order_tick.m_header.m_symbol, booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(order_tick.m_px)), booker::BookerCommonData::to_quantity(order_tick.m_qty), SideType_Name(booker::BookerCommonData::to_side(order_tick.m_side)), order_tick.m_order_type);
+        logger->info("Emitted order tick: {:>6} {:>6} {:>6.2f} {:>6} {:>1} {:>1}", tick.m_buy_order_no + tick.m_sell_order_no, tick.m_symbol_id, tick.m_order_price / 1000., tick.m_qty / 1000, tick.m_side_flag, tick.m_tick_type);
 
         if (m_arguments["emit-interval"].as<int64_t>() > 0)
             std::this_thread::sleep_for(std::chrono::milliseconds(m_arguments["emit-interval"].as<int64_t>()));
@@ -89,8 +88,7 @@ bool trade::OSTMdServer::argv_parse(const int argc, char* argv[])
     desc.add_options()("enable-loop,l", "Enable loop emitting");
 
     /// Order/Trade ticks files.
-    desc.add_options()("od-files,o", boost::program_options::value<std::string>()->default_value("./data/cut-odtd/od.csv"), "Order ticks file");
-    desc.add_options()("td-files,t", boost::program_options::value<std::string>()->default_value("./data/cut-odtd/od.csv"), "Trade ticks file");
+    desc.add_options()("sse-tick-file", boost::program_options::value<std::string>()->default_value("./data/sse-tick-file.csv"), "SSE tick file");
 
     try {
         store(parse_command_line(argc, argv, desc), m_arguments);
@@ -126,12 +124,12 @@ bool trade::OSTMdServer::argv_parse(const int argc, char* argv[])
     return true;
 }
 
-const trade::broker::SZSEHpfOrderTick& trade::OSTMdServer::emit_od_tick(const std::string& path)
+const trade::broker::SSEHpfTick& trade::OSTMdServer::emit_sse_tick(const std::string& path)
 {
-    static std::vector<broker::SZSEHpfOrderTick> order_ticks;
+    static std::vector<broker::SSEHpfTick> order_ticks;
 
     if (order_ticks.empty()) {
-        order_ticks = read_od(path);
+        order_ticks = read_sse_tick(path);
 
         if (order_ticks.empty())
             throw std::runtime_error(fmt::format("No order ticks read from {}", path));
@@ -146,35 +144,132 @@ const trade::broker::SZSEHpfOrderTick& trade::OSTMdServer::emit_od_tick(const st
     return order_ticks[index++ % order_ticks.size()];
 }
 
-std::vector<trade::broker::SZSEHpfOrderTick> trade::OSTMdServer::read_od(const std::string& path)
+std::vector<trade::broker::SSEHpfTick> trade::OSTMdServer::read_sse_tick(const std::string& path) const
 {
-    io::CSVReader<5> in(path);
-    in.read_header(io::ignore_extra_column, "securityId", "price", "tradeQty", "side", "orderType");
+    io::CSVReader<25> in(path);
 
-    std::vector<broker::SZSEHpfOrderTick> order_ticks;
+    in.read_header(
+        io::ignore_extra_column,
+        /// SSEHpfPackageHead.
+        "seq_num",
+        "msg_type",
+        "msg_len",
+        "exchange_id",
+        "data_year",
+        "data_month",
+        "data_day",
+        "send_time",
+        "category_id",
+        "msg_seq_id",
+        "seq_lost_flag",
+        /// SSEHpfTick.
+        "tick_index",
+        "channel_id",
+        "symbol_id",
+        "secu_type",
+        "sub_secu_type",
+        "tick_time",
+        "tick_type",
+        "buy_order_no",
+        "sell_order_no",
+        "order_price",
+        "qty",
+        "trade_money",
+        "side_flag",
+        "instrument_status"
+    );
+
+    std::vector<broker::SSEHpfTick> order_ticks;
     order_ticks.reserve(in.get_file_line());
 
-    std::string security_id;
-    double price;
-    int64_t trade_qty;
-    char side;
-    char order_type;
+    /// SSEHpfPackageHead.
+    uint32_t m_seq_num;
+    uint8_t m_msg_type;
+    uint16_t m_msg_len;
+    uint8_t m_exchange_id;
+    uint16_t m_data_year;
+    uint8_t m_data_month;
+    uint8_t m_data_day;
+    uint32_t m_send_time;
+    uint8_t m_category_id;
+    uint32_t m_msg_seq_id;
+    uint8_t m_seq_lost_flag;
+    /// SSEHpfTick.
+    uint32_t m_tick_index;
+    uint32_t m_channel_id;
+    std::string m_symbol_id;
+    uint8_t m_secu_type;
+    uint8_t m_sub_secu_type;
+    uint32_t m_tick_time;
+    char m_tick_type;
+    uint64_t m_buy_order_no;
+    uint64_t m_sell_order_no;
+    uint32_t m_order_price;
+    uint64_t m_qty;
+    uint64_t m_trade_money;
+    char m_side_flag;
+    uint8_t m_instrument_status;
 
-    while (in.read_row(security_id, price, trade_qty, side, order_type)) {
+    while (in.read_row(
+        /// SSEHpfPackageHead.
+        m_seq_num,
+        m_msg_type,
+        m_msg_len,
+        m_exchange_id,
+        m_data_year,
+        m_data_month,
+        m_data_day,
+        m_send_time,
+        m_category_id,
+        m_msg_seq_id,
+        m_seq_lost_flag,
+        /// SSEHpfTick.
+        m_tick_index,
+        m_channel_id,
+        m_symbol_id,
+        m_secu_type,
+        m_sub_secu_type,
+        m_tick_time,
+        m_tick_type,
+        m_buy_order_no,
+        m_sell_order_no,
+        m_order_price,
+        m_qty,
+        m_trade_money,
+        m_side_flag,
+        m_instrument_status
+    )) {
         order_ticks.emplace_back();
 
-        auto& order_tick                   = order_ticks.back();
+        auto& order_tick = order_ticks.back();
 
-        order_tick.m_header.m_sequence     = ticker_taper();
-        order_tick.m_header.m_message_type = broker::CUTCommonData::to_szse_tick_type(types::X_OST_TickType::order);
-
-        M_A {order_tick.m_header.m_symbol} = security_id;
-        order_tick.m_px                    = booker::BookerCommonData::to_price(price);
-        order_tick.m_qty                   = booker::BookerCommonData::to_quantity(trade_qty);
-        order_tick.m_side                  = side;
-        order_tick.m_order_type            = order_type;
-
-        logger->debug("Load order tick: {:>6} {:>6.2f} {:>6} {:<4} {:>1}", order_tick.m_header.m_symbol, booker::BookerCommonData::to_price(static_cast<liquibook::book::Price>(order_tick.m_px)), booker::BookerCommonData::to_quantity(order_tick.m_qty), SideType_Name(booker::BookerCommonData::to_side(order_tick.m_side)), order_tick.m_order_type);
+        /// SSEHpfPackageHead.
+        order_tick.m_head.m_seq_num       = m_seq_num;
+        order_tick.m_head.m_msg_type      = m_msg_type;
+        order_tick.m_head.m_msg_len       = m_msg_len;
+        order_tick.m_head.m_exchange_id   = m_exchange_id;
+        order_tick.m_head.m_data_year     = m_data_year;
+        order_tick.m_head.m_data_month    = m_data_month;
+        order_tick.m_head.m_data_day      = m_data_day;
+        order_tick.m_head.m_send_time     = m_send_time;
+        order_tick.m_head.m_category_id   = m_category_id;
+        order_tick.m_head.m_msg_seq_id    = m_msg_seq_id;
+        order_tick.m_head.m_seq_lost_flag = m_seq_lost_flag;
+        /// SSEHpfTick.
+        order_tick.m_tick_index        = m_tick_index;
+        order_tick.m_channel_id        = m_channel_id;
+        M_A {order_tick.m_symbol_id}   = m_symbol_id;
+        order_tick.m_secu_type         = m_secu_type;
+        order_tick.m_sub_secu_type     = m_sub_secu_type;
+        order_tick.m_tick_time         = m_tick_time;
+        order_tick.m_tick_type         = m_tick_type;
+        order_tick.m_buy_order_no      = m_buy_order_no;
+        order_tick.m_sell_order_no     = m_sell_order_no;
+        order_tick.m_order_price       = m_order_price;
+        order_tick.m_qty               = m_qty;
+        order_tick.m_trade_money       = m_trade_money;
+        order_tick.m_side_flag         = m_side_flag;
+        order_tick.m_instrument_status = m_instrument_status;
     }
 
     logger->debug("Loaded {} order ticks", order_ticks.size());
