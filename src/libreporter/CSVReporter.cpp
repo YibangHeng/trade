@@ -42,7 +42,7 @@ void trade::reporter::CSVReporter::md_trade_generated(const std::shared_ptr<type
 void trade::reporter::CSVReporter::new_md_trade_writer(const std::string& symbol)
 {
     if (!m_md_trade_writers.contains(symbol)) [[unlikely]] {
-        const std::filesystem::path file_path = fmt::format("{}/{}/{}-md-trade.csv", m_output_folder, "md_trade", symbol);
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}-md-trade.csv", m_output_folder, utilities::Date<std::string>()(), symbol);
 
         create_directories(std::filesystem::path(file_path).parent_path());
         m_md_trade_writers.emplace(symbol, std::ofstream(file_path));

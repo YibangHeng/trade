@@ -140,4 +140,27 @@ public:
     }
 };
 
+template<typename>
+class Date
+{
+public:
+    Date() = delete;
+};
+
+template<>
+class Date<std::string>
+{
+public:
+    /// Returns the current local date in format 20000101.
+    std::string operator()() const
+    {
+        const auto now          = std::chrono::system_clock::now();
+
+        const std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+        auto local_time         = *std::localtime(&now_c);
+
+        return fmt::format("{:%Y%m%d}", local_time);
+    }
+};
+
 } // namespace trade::utilities
