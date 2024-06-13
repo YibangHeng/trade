@@ -24,7 +24,9 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
     is_running = true;
 
     /// Split multicast addresses and start receiving in separate threads.
-    auto addresses_view = config->get<std::string>("Server.MdAddresses") | std::views::split(',');
+    auto addresses = config->get<std::string>("Server.MdAddresses");
+    std::erase_if(addresses, [](const char c) { return std::isblank(c); });
+    auto addresses_view = addresses | std::views::split(',');
 
     for (auto&& address_part : addresses_view) {
         std::string address(&*address_part.begin(), std::ranges::distance(address_part));
