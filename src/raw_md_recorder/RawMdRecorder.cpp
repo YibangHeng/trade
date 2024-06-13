@@ -271,7 +271,7 @@ void trade::RawMdRecorder::write_szse(const std::string& message)
 void trade::RawMdRecorder::new_sse_writer(const std::string& symbol)
 {
     if (!m_order_writers.contains(symbol)) [[unlikely]] {
-        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "sse_order_and_trade", symbol);
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}-sse-tick.csv", m_arguments["output-folder"].as<std::string>(), "sse_order_and_trade", symbol);
 
         create_directories(std::filesystem::path(file_path).parent_path());
         m_order_writers.emplace(symbol, std::ofstream(file_path));
@@ -315,7 +315,7 @@ void trade::RawMdRecorder::new_sse_writer(const std::string& symbol)
 void trade::RawMdRecorder::new_szse_order_writer(const std::string& symbol)
 {
     if (!m_order_writers.contains(symbol)) [[unlikely]] {
-        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "szse_order", symbol);
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}-szse-order.csv", m_arguments["output-folder"].as<std::string>(), "szse_order", symbol);
 
         create_directories(std::filesystem::path(file_path).parent_path());
         m_order_writers.emplace(symbol, std::ofstream(file_path));
@@ -350,7 +350,7 @@ void trade::RawMdRecorder::new_szse_order_writer(const std::string& symbol)
 void trade::RawMdRecorder::new_szse_trade_writer(const std::string& symbol)
 {
     if (!m_trade_writers.contains(symbol)) [[unlikely]] {
-        const std::filesystem::path file_path = fmt::format("{}/{}/{}.csv", m_arguments["output-folder"].as<std::string>(), "szse_trade", symbol);
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}-szse-trade.csv", m_arguments["output-folder"].as<std::string>(), "szse_trade", symbol);
 
         create_directories(std::filesystem::path(file_path).parent_path());
         m_trade_writers.emplace(symbol, std::ofstream(file_path));
