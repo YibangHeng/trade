@@ -130,8 +130,9 @@ enum RejectionCode
 
 enum X_OST_TickType
 {
-    invalid_ost_datagram_type = 0;
+    invalid_ost_tick_type = 0;
 
-    order                     = 1000; /// 逐笔委托消息
-    trade                     = 1001; /// 逐笔成交消息
+    order                 = 1000; /// 逐笔委托消息
+    trade                 = 1001; /// 逐笔成交消息
+    l2_snap               = 1002; /// 快照行情消息
 }

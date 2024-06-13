@@ -183,9 +183,11 @@ trade::types::ExchangeType trade::broker::CUTCommonData::get_exchange_type(const
 {
     /// TODO: Is it OK to check message type by message size?
     switch (message.size()) {
-    case sizeof(SSEHpfTick): return types::ExchangeType::sse;
+    case sizeof(SSEHpfTick):
+    case sizeof(SSEHpfL2Snap): return types::ExchangeType::sse;
     case sizeof(SZSEHpfOrderTick):
-    case sizeof(SZSEHpfTradeTick): return types::ExchangeType::szse;
+    case sizeof(SZSEHpfTradeTick):
+    case sizeof(SZSEHpfL2Snap): return types::ExchangeType::szse;
     default: return types::ExchangeType::invalid_exchange;
     }
 }
@@ -199,7 +201,7 @@ trade::types::X_OST_TickType trade::broker::CUTCommonData::get_tick_type(const s
     case types::ExchangeType::szse:
         return to_szse_tick_type(reinterpret_cast<const SZSEHpfPackageHead*>(message.data())->m_message_type);
     default:
-        return types::X_OST_TickType::invalid_ost_datagram_type;
+        return types::X_OST_TickType::invalid_ost_tick_type;
     }
 }
 
@@ -220,7 +222,7 @@ trade::types::X_OST_TickType trade::broker::CUTCommonData::to_sse_tick_type(cons
     case 'A':
     case 'D': return types::X_OST_TickType::order;
     case 'T': return types::X_OST_TickType::trade;
-    default: return types::X_OST_TickType::invalid_ost_datagram_type;
+    default: return types::X_OST_TickType::invalid_ost_tick_type;
     }
 }
 
@@ -236,9 +238,10 @@ uint8_t trade::broker::CUTCommonData::to_szse_tick_type(const types::X_OST_TickT
 trade::types::X_OST_TickType trade::broker::CUTCommonData::to_szse_tick_type(const uint8_t message_type)
 {
     switch (message_type) {
+    case 21: return types::X_OST_TickType::l2_snap;
     case 23: return types::X_OST_TickType::order;
     case 24: return types::X_OST_TickType::trade;
-    default: return types::X_OST_TickType::invalid_ost_datagram_type;
+    default: return types::X_OST_TickType::invalid_ost_tick_type;
     }
 }
 

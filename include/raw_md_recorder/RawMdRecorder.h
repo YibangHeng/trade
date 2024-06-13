@@ -32,9 +32,12 @@ private:
     void write_sse(const std::string& message);
     void write_szse(const std::string& message);
 
-    void new_sse_writer(const std::string& symbol);
+    void new_sse_tick_writer(const std::string& symbol);
+    void new_sse_l2_snap_writer(const std::string& symbol);
+
     void new_szse_order_writer(const std::string& symbol);
     void new_szse_trade_writer(const std::string& symbol);
+    void new_szse_l2_snap_writer(const std::string& symbol);
 
 private:
     boost::program_options::variables_map m_arguments;
@@ -43,11 +46,14 @@ private:
     std::atomic<bool> m_is_running;
     std::atomic<int> m_exit_code;
 
+    /// Symbol -> ofstream.
 private:
-    /// Symbol -> ofstream.
-    std::unordered_map<std::string, std::ofstream> m_order_writers;
-    /// Symbol -> ofstream.
-    std::unordered_map<std::string, std::ofstream> m_trade_writers;
+    std::unordered_map<std::string, std::ofstream> m_sse_tick_writers;
+    std::unordered_map<std::string, std::ofstream> m_sse_l2_snap_writers;
+
+    std::unordered_map<std::string, std::ofstream> m_szse_order_writers;
+    std::unordered_map<std::string, std::ofstream> m_szse_trade_writers;
+    std::unordered_map<std::string, std::ofstream> m_szse_l2_snap_writers;
 
 private:
     static std::set<RawMdRecorder*> m_instances;
