@@ -142,11 +142,11 @@ void trade::RawMdRecorder::write(const std::string& message)
 {
     /// TODO: Is it OK to check message type by message size?
     switch (message.size()) {
-    case sizeof(broker::SSEHpfTick): write_sse_tick(message);
-    case sizeof(broker::SSEHpfL2Snap): write_sse_l2snap(message);
-    case sizeof(broker::SZSEHpfOrderTick): write_szse_order_tick(message);
-    case sizeof(broker::SZSEHpfTradeTick): write_szse_trade_tick(message);
-    case sizeof(broker::SZSEHpfL2Snap): write_szse_l2snap(message);
+    case sizeof(broker::SSEHpfTick): write_sse_tick(message); break;
+    case sizeof(broker::SSEHpfL2Snap): write_sse_l2snap(message); break;
+    case sizeof(broker::SZSEHpfOrderTick): write_szse_order_tick(message); break;
+    case sizeof(broker::SZSEHpfTradeTick): write_szse_trade_tick(message); break;
+    case sizeof(broker::SZSEHpfL2Snap): write_szse_l2snap(message); break;
     default: break;
     }
 }
@@ -470,7 +470,7 @@ void trade::RawMdRecorder::new_sse_tick_writer(const std::string& symbol)
 void trade::RawMdRecorder::new_sse_l2_snap_writer(const std::string& symbol)
 {
     if (!m_sse_l2_snap_writers.contains(symbol)) [[unlikely]] {
-        const std::filesystem::path file_path = fmt::format("{}/{}/{}-sse-l2-snap.csv", m_arguments["output-folder"].as<std::string>(), "sse_order_and_trade", symbol);
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}-sse-l2-snap.csv", m_arguments["output-folder"].as<std::string>(), "sse_l2_snap", symbol);
 
         create_directories(std::filesystem::path(file_path).parent_path());
         m_sse_l2_snap_writers.emplace(symbol, std::ofstream(file_path));

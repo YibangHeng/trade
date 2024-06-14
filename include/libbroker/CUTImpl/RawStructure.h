@@ -311,7 +311,7 @@ static_assert(offsetof(SZSEHpfL2Snap, m_bid_unit) == 136);
 static_assert(offsetof(SZSEHpfL2Snap, m_ask_unit) == 256);
 static_assert(sizeof(SZSEHpfL2Snap) == 376, "SZSEL2Snap should be 376 bytes");
 
-constexpr size_t max_sse_udp_size  = std::max({sizeof(SSEHpfTick) /* , sizeof(SSEHpfOrderTick), sizeof(SSEHpfTradeTick) */});
+constexpr size_t max_sse_udp_size  = std::max({sizeof(SSEHpfTick), sizeof(SSEHpfL2Snap) /*, sizeof(SSEHpfOrderTick), sizeof(SSEHpfTradeTick) */});
 constexpr size_t max_szse_udp_size = std::max({sizeof(SZSEHpfOrderTick), sizeof(SZSEHpfTradeTick), sizeof(SZSEHpfL2Snap)});
 constexpr size_t max_udp_size      = std::max(max_sse_udp_size, max_szse_udp_size);
 
