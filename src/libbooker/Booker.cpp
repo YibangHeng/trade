@@ -89,7 +89,7 @@ void trade::booker::Booker::switch_to_continuous_stage()
             if (order_tick == nullptr)
                 break;
 
-            logger->info("Added unfinished order in call auction stage: {}", utilities::ToJSON()(*order_tick));
+            logger->debug("Added unfinished order in call auction stage: {}", utilities::ToJSON()(*order_tick));
 
             auction(std::make_shared<OrderWrapper>(order_tick));
         }

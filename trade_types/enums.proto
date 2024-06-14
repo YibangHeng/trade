@@ -125,14 +125,3 @@ enum RejectionCode
     fund_not_enough     = 4000; /// 可用资金不足
     position_not_enough = 4001; /// 可用仓位不足
 }
-
-/// 以下为扩展枚举类型，仅适用于部分接口
-
-enum X_OST_TickType
-{
-    invalid_ost_tick_type = 0;
-
-    order                 = 1000; /// 逐笔委托消息
-    trade                 = 1001; /// 逐笔成交消息
-    l2_snap               = 1002; /// 快照行情消息
-}

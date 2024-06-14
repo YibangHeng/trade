@@ -132,314 +132,295 @@ void trade::RawMdRecorder::odtd_receiver(const std::string& address, const std::
         if (message.empty())
             continue;
 
-        write(message, broker::CUTCommonData::get_exchange_type(message));
+        write(message);
     }
 
     logger->info("Left multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
 }
 
-void trade::RawMdRecorder::write(const std::string& message, const types::ExchangeType exchange_type)
+void trade::RawMdRecorder::write(const std::string& message)
 {
-    switch (exchange_type) {
-    case types::ExchangeType::sse: {
-        write_sse(message);
-        break;
-    }
-    case types::ExchangeType::szse: {
-        write_szse(message);
-        break;
-    }
-    default: {
-        logger->error("Invalid exchange type: {}", static_cast<int>(exchange_type));
-        break;
-    }
-    }
-}
-
-void trade::RawMdRecorder::write_sse(const std::string& message)
-{
+    /// TODO: Is it OK to check message type by message size?
     switch (message.size()) {
-    case sizeof(broker::SSEHpfTick): {
-        const auto sse_tick = reinterpret_cast<const broker::SSEHpfTick*>(message.data());
-
-        new_sse_tick_writer(sse_tick->m_symbol_id);
-
-        m_sse_tick_writers[sse_tick->m_symbol_id] << fmt::format(
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
-            /// SSEHpfPackageHead.
-            sse_tick->m_head.m_seq_num,
-            sse_tick->m_head.m_msg_type,
-            sse_tick->m_head.m_msg_len,
-            sse_tick->m_head.m_exchange_id,
-            sse_tick->m_head.m_data_year,
-            sse_tick->m_head.m_data_month,
-            sse_tick->m_head.m_data_day,
-            sse_tick->m_head.m_send_time,
-            sse_tick->m_head.m_category_id,
-            sse_tick->m_head.m_msg_seq_id,
-            sse_tick->m_head.m_seq_lost_flag,
-            /// SSEHpfTick.
-            sse_tick->m_tick_index,
-            sse_tick->m_channel_id,
-            sse_tick->m_symbol_id,
-            sse_tick->m_secu_type,
-            sse_tick->m_sub_secu_type,
-            sse_tick->m_tick_time,
-            sse_tick->m_tick_type,
-            sse_tick->m_buy_order_no,
-            sse_tick->m_sell_order_no,
-            sse_tick->m_order_price,
-            sse_tick->m_qty,
-            sse_tick->m_trade_money,
-            sse_tick->m_side_flag,
-            sse_tick->m_instrument_status,
-            /// Time.
-            utilities::Now<std::string>()()
-        );
-
-        break;
-    }
-    case sizeof(broker::SSEHpfL2Snap): {
-        const auto sse_l2_snap = reinterpret_cast<const broker::SSEHpfL2Snap*>(message.data());
-
-        new_sse_l2_snap_writer(sse_l2_snap->m_symbol_id);
-
-        m_sse_l2_snap_writers[sse_l2_snap->m_symbol_id] << fmt::format(
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
-            /// SSEHpfPackageHead.
-            sse_l2_snap->m_head.m_seq_num,
-            sse_l2_snap->m_head.m_msg_type,
-            sse_l2_snap->m_head.m_msg_len,
-            sse_l2_snap->m_head.m_exchange_id,
-            sse_l2_snap->m_head.m_data_year,
-            sse_l2_snap->m_head.m_data_month,
-            sse_l2_snap->m_head.m_data_day,
-            sse_l2_snap->m_head.m_send_time,
-            sse_l2_snap->m_head.m_category_id,
-            sse_l2_snap->m_head.m_msg_seq_id,
-            sse_l2_snap->m_head.m_seq_lost_flag,
-            /// SSEHpfL2Snap.
-            sse_l2_snap->m_symbol_id,
-            sse_l2_snap->m_update_time,
-            sse_l2_snap->m_update_type,
-            sse_l2_snap->m_prev_close,
-            sse_l2_snap->m_open_price,
-            sse_l2_snap->m_day_high,
-            sse_l2_snap->m_day_low,
-            sse_l2_snap->m_last_price,
-            sse_l2_snap->m_close_price,
-            sse_l2_snap->m_instrument_status,
-            sse_l2_snap->m_trading_status,
-            sse_l2_snap->m_trade_number,
-            sse_l2_snap->m_trade_volume,
-            sse_l2_snap->m_trade_value,
-            sse_l2_snap->m_total_qty_bid,
-            sse_l2_snap->m_weighted_avg_px_bid,
-            sse_l2_snap->m_total_qty_ask,
-            sse_l2_snap->m_weighted_avg_px_ask,
-            sse_l2_snap->m_yield_to_maturity,
-            sse_l2_snap->m_depth_bid,
-            sse_l2_snap->m_depth_ask,
-            sse_l2_snap->m_bid_px[0].m_px,
-            sse_l2_snap->m_bid_px[0].m_qty,
-            sse_l2_snap->m_bid_px[1].m_px,
-            sse_l2_snap->m_bid_px[1].m_qty,
-            sse_l2_snap->m_bid_px[2].m_px,
-            sse_l2_snap->m_bid_px[2].m_qty,
-            sse_l2_snap->m_bid_px[3].m_px,
-            sse_l2_snap->m_bid_px[3].m_qty,
-            sse_l2_snap->m_bid_px[4].m_px,
-            sse_l2_snap->m_bid_px[4].m_qty,
-            sse_l2_snap->m_bid_px[5].m_px,
-            sse_l2_snap->m_bid_px[5].m_qty,
-            sse_l2_snap->m_bid_px[6].m_px,
-            sse_l2_snap->m_bid_px[6].m_qty,
-            sse_l2_snap->m_bid_px[7].m_px,
-            sse_l2_snap->m_bid_px[7].m_qty,
-            sse_l2_snap->m_bid_px[8].m_px,
-            sse_l2_snap->m_bid_px[8].m_qty,
-            sse_l2_snap->m_bid_px[9].m_px,
-            sse_l2_snap->m_bid_px[9].m_qty,
-            sse_l2_snap->m_ask_px[0].m_px,
-            sse_l2_snap->m_ask_px[0].m_qty,
-            sse_l2_snap->m_ask_px[1].m_px,
-            sse_l2_snap->m_ask_px[1].m_qty,
-            sse_l2_snap->m_ask_px[2].m_px,
-            sse_l2_snap->m_ask_px[2].m_qty,
-            sse_l2_snap->m_ask_px[3].m_px,
-            sse_l2_snap->m_ask_px[3].m_qty,
-            sse_l2_snap->m_ask_px[4].m_px,
-            sse_l2_snap->m_ask_px[4].m_qty,
-            sse_l2_snap->m_ask_px[5].m_px,
-            sse_l2_snap->m_ask_px[5].m_qty,
-            sse_l2_snap->m_ask_px[6].m_px,
-            sse_l2_snap->m_ask_px[6].m_qty,
-            sse_l2_snap->m_ask_px[7].m_px,
-            sse_l2_snap->m_ask_px[7].m_qty,
-            sse_l2_snap->m_ask_px[8].m_px,
-            sse_l2_snap->m_ask_px[8].m_qty,
-            sse_l2_snap->m_ask_px[9].m_px,
-            sse_l2_snap->m_ask_px[9].m_qty
-        );
-
-        break;
-    }
+    case sizeof(broker::SSEHpfTick): write_sse_tick(message);
+    case sizeof(broker::SSEHpfL2Snap): write_sse_l2snap(message);
+    case sizeof(broker::SZSEHpfOrderTick): write_szse_order_tick(message);
+    case sizeof(broker::SZSEHpfTradeTick): write_szse_trade_tick(message);
+    case sizeof(broker::SZSEHpfL2Snap): write_szse_l2snap(message);
     default: break;
     }
 }
 
-void trade::RawMdRecorder::write_szse(const std::string& message)
+void trade::RawMdRecorder::write_sse_tick(const std::string& message)
 {
-    switch (message.size()) {
-    case sizeof(broker::SZSEHpfOrderTick): {
-        const auto szse_order_tick = reinterpret_cast<const broker::SZSEHpfOrderTick*>(message.data());
+    const auto sse_tick = reinterpret_cast<const broker::SSEHpfTick*>(message.data());
 
-        new_szse_order_writer(szse_order_tick->m_header.m_symbol);
+    new_sse_tick_writer(sse_tick->m_symbol_id);
 
-        m_szse_order_writers[szse_order_tick->m_header.m_symbol] << fmt::format(
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
-            /// SZSEHpfPackageHead.
-            szse_order_tick->m_header.m_sequence,
-            szse_order_tick->m_header.m_tick1,
-            szse_order_tick->m_header.m_tick2,
-            szse_order_tick->m_header.m_message_type,
-            szse_order_tick->m_header.m_security_type,
-            szse_order_tick->m_header.m_sub_security_type,
-            szse_order_tick->m_header.m_symbol,
-            szse_order_tick->m_header.m_exchange_id,
-            szse_order_tick->m_header.m_quote_update_time,
-            szse_order_tick->m_header.m_channel_num,
-            szse_order_tick->m_header.m_sequence_num,
-            szse_order_tick->m_header.m_md_stream_id,
-            /// SZSEHpfOrderTick.
-            szse_order_tick->m_px,
-            szse_order_tick->m_qty,
-            szse_order_tick->m_side,
-            szse_order_tick->m_order_type,
-            /// Time.
-            utilities::Now<std::string>()()
-        );
+    m_sse_tick_writers[sse_tick->m_symbol_id] << fmt::format(
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        /// SSEHpfPackageHead.
+        sse_tick->m_head.m_seq_num,
+        sse_tick->m_head.m_msg_type,
+        sse_tick->m_head.m_msg_len,
+        sse_tick->m_head.m_exchange_id,
+        sse_tick->m_head.m_data_year,
+        sse_tick->m_head.m_data_month,
+        sse_tick->m_head.m_data_day,
+        sse_tick->m_head.m_send_time,
+        sse_tick->m_head.m_category_id,
+        sse_tick->m_head.m_msg_seq_id,
+        sse_tick->m_head.m_seq_lost_flag,
+        /// SSEHpfTick.
+        sse_tick->m_tick_index,
+        sse_tick->m_channel_id,
+        sse_tick->m_symbol_id,
+        sse_tick->m_secu_type,
+        sse_tick->m_sub_secu_type,
+        sse_tick->m_tick_time,
+        sse_tick->m_tick_type,
+        sse_tick->m_buy_order_no,
+        sse_tick->m_sell_order_no,
+        sse_tick->m_order_price,
+        sse_tick->m_qty,
+        sse_tick->m_trade_money,
+        sse_tick->m_side_flag,
+        sse_tick->m_instrument_status,
+        /// Time.
+        utilities::Now<std::string>()()
+    );
+}
 
-        break;
-    }
-    case sizeof(broker::SZSEHpfTradeTick): {
-        const auto szse_trade_tick = reinterpret_cast<const broker::SZSEHpfTradeTick*>(message.data());
+void trade::RawMdRecorder::write_sse_l2snap(const std::string& message)
+{
+    const auto sse_l2_snap = reinterpret_cast<const broker::SSEHpfL2Snap*>(message.data());
 
-        new_szse_trade_writer(szse_trade_tick->m_header.m_symbol);
+    new_sse_l2_snap_writer(sse_l2_snap->m_symbol_id);
 
-        m_szse_trade_writers[szse_trade_tick->m_header.m_symbol] << fmt::format(
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
-            /// SZSEHpfPackageHead.
-            szse_trade_tick->m_header.m_sequence,
-            szse_trade_tick->m_header.m_tick1,
-            szse_trade_tick->m_header.m_tick2,
-            szse_trade_tick->m_header.m_message_type,
-            szse_trade_tick->m_header.m_security_type,
-            szse_trade_tick->m_header.m_sub_security_type,
-            szse_trade_tick->m_header.m_symbol,
-            szse_trade_tick->m_header.m_exchange_id,
-            szse_trade_tick->m_header.m_quote_update_time,
-            szse_trade_tick->m_header.m_channel_num,
-            szse_trade_tick->m_header.m_sequence_num,
-            szse_trade_tick->m_header.m_md_stream_id,
-            /// SZSEHpfTradeTick.
-            szse_trade_tick->m_bid_app_seq_num,
-            szse_trade_tick->m_ask_app_seq_num,
-            szse_trade_tick->m_exe_px,
-            szse_trade_tick->m_exe_qty,
-            szse_trade_tick->m_exe_type,
-            /// Time.
-            utilities::Now<std::string>()()
-        );
+    m_sse_l2_snap_writers[sse_l2_snap->m_symbol_id] << fmt::format(
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        /// SSEHpfPackageHead.
+        sse_l2_snap->m_head.m_seq_num,
+        sse_l2_snap->m_head.m_msg_type,
+        sse_l2_snap->m_head.m_msg_len,
+        sse_l2_snap->m_head.m_exchange_id,
+        sse_l2_snap->m_head.m_data_year,
+        sse_l2_snap->m_head.m_data_month,
+        sse_l2_snap->m_head.m_data_day,
+        sse_l2_snap->m_head.m_send_time,
+        sse_l2_snap->m_head.m_category_id,
+        sse_l2_snap->m_head.m_msg_seq_id,
+        sse_l2_snap->m_head.m_seq_lost_flag,
+        /// SSEHpfL2Snap.
+        sse_l2_snap->m_symbol_id,
+        sse_l2_snap->m_update_time,
+        sse_l2_snap->m_update_type,
+        sse_l2_snap->m_prev_close,
+        sse_l2_snap->m_open_price,
+        sse_l2_snap->m_day_high,
+        sse_l2_snap->m_day_low,
+        sse_l2_snap->m_last_price,
+        sse_l2_snap->m_close_price,
+        sse_l2_snap->m_instrument_status,
+        sse_l2_snap->m_trading_status,
+        sse_l2_snap->m_trade_number,
+        sse_l2_snap->m_trade_volume,
+        sse_l2_snap->m_trade_value,
+        sse_l2_snap->m_total_qty_bid,
+        sse_l2_snap->m_weighted_avg_px_bid,
+        sse_l2_snap->m_total_qty_ask,
+        sse_l2_snap->m_weighted_avg_px_ask,
+        sse_l2_snap->m_yield_to_maturity,
+        sse_l2_snap->m_depth_bid,
+        sse_l2_snap->m_depth_ask,
+        sse_l2_snap->m_bid_px[0].m_px,
+        sse_l2_snap->m_bid_px[0].m_qty,
+        sse_l2_snap->m_bid_px[1].m_px,
+        sse_l2_snap->m_bid_px[1].m_qty,
+        sse_l2_snap->m_bid_px[2].m_px,
+        sse_l2_snap->m_bid_px[2].m_qty,
+        sse_l2_snap->m_bid_px[3].m_px,
+        sse_l2_snap->m_bid_px[3].m_qty,
+        sse_l2_snap->m_bid_px[4].m_px,
+        sse_l2_snap->m_bid_px[4].m_qty,
+        sse_l2_snap->m_bid_px[5].m_px,
+        sse_l2_snap->m_bid_px[5].m_qty,
+        sse_l2_snap->m_bid_px[6].m_px,
+        sse_l2_snap->m_bid_px[6].m_qty,
+        sse_l2_snap->m_bid_px[7].m_px,
+        sse_l2_snap->m_bid_px[7].m_qty,
+        sse_l2_snap->m_bid_px[8].m_px,
+        sse_l2_snap->m_bid_px[8].m_qty,
+        sse_l2_snap->m_bid_px[9].m_px,
+        sse_l2_snap->m_bid_px[9].m_qty,
+        sse_l2_snap->m_ask_px[0].m_px,
+        sse_l2_snap->m_ask_px[0].m_qty,
+        sse_l2_snap->m_ask_px[1].m_px,
+        sse_l2_snap->m_ask_px[1].m_qty,
+        sse_l2_snap->m_ask_px[2].m_px,
+        sse_l2_snap->m_ask_px[2].m_qty,
+        sse_l2_snap->m_ask_px[3].m_px,
+        sse_l2_snap->m_ask_px[3].m_qty,
+        sse_l2_snap->m_ask_px[4].m_px,
+        sse_l2_snap->m_ask_px[4].m_qty,
+        sse_l2_snap->m_ask_px[5].m_px,
+        sse_l2_snap->m_ask_px[5].m_qty,
+        sse_l2_snap->m_ask_px[6].m_px,
+        sse_l2_snap->m_ask_px[6].m_qty,
+        sse_l2_snap->m_ask_px[7].m_px,
+        sse_l2_snap->m_ask_px[7].m_qty,
+        sse_l2_snap->m_ask_px[8].m_px,
+        sse_l2_snap->m_ask_px[8].m_qty,
+        sse_l2_snap->m_ask_px[9].m_px,
+        sse_l2_snap->m_ask_px[9].m_qty
+    );
+}
 
-        break;
-    }
-    case sizeof(broker::SZSEHpfL2Snap): {
-        const auto szse_l2_snap = reinterpret_cast<const broker::SZSEHpfL2Snap*>(message.data());
+void trade::RawMdRecorder::write_szse_order_tick(const std::string& message)
+{
+    const auto szse_order_tick = reinterpret_cast<const broker::SZSEHpfOrderTick*>(message.data());
 
-        new_szse_l2_snap_writer(szse_l2_snap->m_header.m_symbol);
+    new_szse_order_writer(szse_order_tick->m_header.m_symbol);
 
-        m_szse_l2_snap_writers[szse_l2_snap->m_header.m_symbol] << fmt::format(
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
-            /// SZSEHpfPackageHead.
-            szse_l2_snap->m_header.m_sequence,
-            szse_l2_snap->m_header.m_tick1,
-            szse_l2_snap->m_header.m_tick2,
-            szse_l2_snap->m_header.m_message_type,
-            szse_l2_snap->m_header.m_security_type,
-            szse_l2_snap->m_header.m_sub_security_type,
-            szse_l2_snap->m_header.m_symbol,
-            szse_l2_snap->m_header.m_exchange_id,
-            szse_l2_snap->m_header.m_quote_update_time,
-            szse_l2_snap->m_header.m_channel_num,
-            szse_l2_snap->m_header.m_sequence_num,
-            szse_l2_snap->m_header.m_md_stream_id,
-            /// SZSEHpfL2Snap.
-            szse_l2_snap->m_trading_phase_code,
-            szse_l2_snap->m_trades_num,
-            szse_l2_snap->m_total_quantity_trade,
-            szse_l2_snap->m_total_value_trade,
-            szse_l2_snap->m_previous_close_price,
-            szse_l2_snap->m_last_price,
-            szse_l2_snap->m_open_price,
-            szse_l2_snap->m_day_high,
-            szse_l2_snap->m_day_low,
-            szse_l2_snap->m_today_close_price,
-            szse_l2_snap->m_total_bid_weighted_avg_px,
-            szse_l2_snap->m_total_bid_qty,
-            szse_l2_snap->m_total_ask_weighted_avg_px,
-            szse_l2_snap->m_total_ask_qty,
-            szse_l2_snap->m_lpv,
-            szse_l2_snap->m_iopv,
-            szse_l2_snap->m_upper_limit_price,
-            szse_l2_snap->m_lower_limit_price,
-            szse_l2_snap->m_open_interest,
-            szse_l2_snap->m_bid_unit[0].m_price,
-            szse_l2_snap->m_bid_unit[0].m_qty,
-            szse_l2_snap->m_bid_unit[1].m_price,
-            szse_l2_snap->m_bid_unit[1].m_qty,
-            szse_l2_snap->m_bid_unit[2].m_price,
-            szse_l2_snap->m_bid_unit[2].m_qty,
-            szse_l2_snap->m_bid_unit[3].m_price,
-            szse_l2_snap->m_bid_unit[3].m_qty,
-            szse_l2_snap->m_bid_unit[4].m_price,
-            szse_l2_snap->m_bid_unit[4].m_qty,
-            szse_l2_snap->m_bid_unit[5].m_price,
-            szse_l2_snap->m_bid_unit[5].m_qty,
-            szse_l2_snap->m_bid_unit[6].m_price,
-            szse_l2_snap->m_bid_unit[6].m_qty,
-            szse_l2_snap->m_bid_unit[7].m_price,
-            szse_l2_snap->m_bid_unit[7].m_qty,
-            szse_l2_snap->m_bid_unit[8].m_price,
-            szse_l2_snap->m_bid_unit[8].m_qty,
-            szse_l2_snap->m_bid_unit[9].m_price,
-            szse_l2_snap->m_bid_unit[9].m_qty,
-            szse_l2_snap->m_ask_unit[0].m_price,
-            szse_l2_snap->m_ask_unit[0].m_qty,
-            szse_l2_snap->m_ask_unit[1].m_price,
-            szse_l2_snap->m_ask_unit[1].m_qty,
-            szse_l2_snap->m_ask_unit[2].m_price,
-            szse_l2_snap->m_ask_unit[2].m_qty,
-            szse_l2_snap->m_ask_unit[3].m_price,
-            szse_l2_snap->m_ask_unit[3].m_qty,
-            szse_l2_snap->m_ask_unit[4].m_price,
-            szse_l2_snap->m_ask_unit[4].m_qty,
-            szse_l2_snap->m_ask_unit[5].m_price,
-            szse_l2_snap->m_ask_unit[5].m_qty,
-            szse_l2_snap->m_ask_unit[6].m_price,
-            szse_l2_snap->m_ask_unit[6].m_qty,
-            szse_l2_snap->m_ask_unit[7].m_price,
-            szse_l2_snap->m_ask_unit[7].m_qty,
-            szse_l2_snap->m_ask_unit[8].m_price,
-            szse_l2_snap->m_ask_unit[8].m_qty,
-            szse_l2_snap->m_ask_unit[9].m_price,
-            szse_l2_snap->m_ask_unit[9].m_qty
-        );
+    m_szse_order_writers[szse_order_tick->m_header.m_symbol] << fmt::format(
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        /// SZSEHpfPackageHead.
+        szse_order_tick->m_header.m_sequence,
+        szse_order_tick->m_header.m_tick1,
+        szse_order_tick->m_header.m_tick2,
+        szse_order_tick->m_header.m_message_type,
+        szse_order_tick->m_header.m_security_type,
+        szse_order_tick->m_header.m_sub_security_type,
+        szse_order_tick->m_header.m_symbol,
+        szse_order_tick->m_header.m_exchange_id,
+        szse_order_tick->m_header.m_quote_update_time,
+        szse_order_tick->m_header.m_channel_num,
+        szse_order_tick->m_header.m_sequence_num,
+        szse_order_tick->m_header.m_md_stream_id,
+        /// SZSEHpfOrderTick.
+        szse_order_tick->m_px,
+        szse_order_tick->m_qty,
+        szse_order_tick->m_side,
+        szse_order_tick->m_order_type,
+        /// Time.
+        utilities::Now<std::string>()()
+    );
+}
 
-        break;
-    }
-    default: break;
-    }
+void trade::RawMdRecorder::write_szse_trade_tick(const std::string& message)
+{
+    const auto szse_trade_tick = reinterpret_cast<const broker::SZSEHpfTradeTick*>(message.data());
+
+    new_szse_trade_writer(szse_trade_tick->m_header.m_symbol);
+
+    m_szse_trade_writers[szse_trade_tick->m_header.m_symbol] << fmt::format(
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        /// SZSEHpfPackageHead.
+        szse_trade_tick->m_header.m_sequence,
+        szse_trade_tick->m_header.m_tick1,
+        szse_trade_tick->m_header.m_tick2,
+        szse_trade_tick->m_header.m_message_type,
+        szse_trade_tick->m_header.m_security_type,
+        szse_trade_tick->m_header.m_sub_security_type,
+        szse_trade_tick->m_header.m_symbol,
+        szse_trade_tick->m_header.m_exchange_id,
+        szse_trade_tick->m_header.m_quote_update_time,
+        szse_trade_tick->m_header.m_channel_num,
+        szse_trade_tick->m_header.m_sequence_num,
+        szse_trade_tick->m_header.m_md_stream_id,
+        /// SZSEHpfTradeTick.
+        szse_trade_tick->m_bid_app_seq_num,
+        szse_trade_tick->m_ask_app_seq_num,
+        szse_trade_tick->m_exe_px,
+        szse_trade_tick->m_exe_qty,
+        szse_trade_tick->m_exe_type,
+        /// Time.
+        utilities::Now<std::string>()()
+    );
+}
+
+void trade::RawMdRecorder::write_szse_l2snap(const std::string& message)
+{
+    const auto szse_l2_snap = reinterpret_cast<const broker::SZSEHpfL2Snap*>(message.data());
+
+    new_szse_l2_snap_writer(szse_l2_snap->m_header.m_symbol);
+
+    m_szse_l2_snap_writers[szse_l2_snap->m_header.m_symbol] << fmt::format(
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        /// SZSEHpfPackageHead.
+        szse_l2_snap->m_header.m_sequence,
+        szse_l2_snap->m_header.m_tick1,
+        szse_l2_snap->m_header.m_tick2,
+        szse_l2_snap->m_header.m_message_type,
+        szse_l2_snap->m_header.m_security_type,
+        szse_l2_snap->m_header.m_sub_security_type,
+        szse_l2_snap->m_header.m_symbol,
+        szse_l2_snap->m_header.m_exchange_id,
+        szse_l2_snap->m_header.m_quote_update_time,
+        szse_l2_snap->m_header.m_channel_num,
+        szse_l2_snap->m_header.m_sequence_num,
+        szse_l2_snap->m_header.m_md_stream_id,
+        /// SZSEHpfL2Snap.
+        szse_l2_snap->m_trading_phase_code,
+        szse_l2_snap->m_trades_num,
+        szse_l2_snap->m_total_quantity_trade,
+        szse_l2_snap->m_total_value_trade,
+        szse_l2_snap->m_previous_close_price,
+        szse_l2_snap->m_last_price,
+        szse_l2_snap->m_open_price,
+        szse_l2_snap->m_day_high,
+        szse_l2_snap->m_day_low,
+        szse_l2_snap->m_today_close_price,
+        szse_l2_snap->m_total_bid_weighted_avg_px,
+        szse_l2_snap->m_total_bid_qty,
+        szse_l2_snap->m_total_ask_weighted_avg_px,
+        szse_l2_snap->m_total_ask_qty,
+        szse_l2_snap->m_lpv,
+        szse_l2_snap->m_iopv,
+        szse_l2_snap->m_upper_limit_price,
+        szse_l2_snap->m_lower_limit_price,
+        szse_l2_snap->m_open_interest,
+        szse_l2_snap->m_bid_unit[0].m_price,
+        szse_l2_snap->m_bid_unit[0].m_qty,
+        szse_l2_snap->m_bid_unit[1].m_price,
+        szse_l2_snap->m_bid_unit[1].m_qty,
+        szse_l2_snap->m_bid_unit[2].m_price,
+        szse_l2_snap->m_bid_unit[2].m_qty,
+        szse_l2_snap->m_bid_unit[3].m_price,
+        szse_l2_snap->m_bid_unit[3].m_qty,
+        szse_l2_snap->m_bid_unit[4].m_price,
+        szse_l2_snap->m_bid_unit[4].m_qty,
+        szse_l2_snap->m_bid_unit[5].m_price,
+        szse_l2_snap->m_bid_unit[5].m_qty,
+        szse_l2_snap->m_bid_unit[6].m_price,
+        szse_l2_snap->m_bid_unit[6].m_qty,
+        szse_l2_snap->m_bid_unit[7].m_price,
+        szse_l2_snap->m_bid_unit[7].m_qty,
+        szse_l2_snap->m_bid_unit[8].m_price,
+        szse_l2_snap->m_bid_unit[8].m_qty,
+        szse_l2_snap->m_bid_unit[9].m_price,
+        szse_l2_snap->m_bid_unit[9].m_qty,
+        szse_l2_snap->m_ask_unit[0].m_price,
+        szse_l2_snap->m_ask_unit[0].m_qty,
+        szse_l2_snap->m_ask_unit[1].m_price,
+        szse_l2_snap->m_ask_unit[1].m_qty,
+        szse_l2_snap->m_ask_unit[2].m_price,
+        szse_l2_snap->m_ask_unit[2].m_qty,
+        szse_l2_snap->m_ask_unit[3].m_price,
+        szse_l2_snap->m_ask_unit[3].m_qty,
+        szse_l2_snap->m_ask_unit[4].m_price,
+        szse_l2_snap->m_ask_unit[4].m_qty,
+        szse_l2_snap->m_ask_unit[5].m_price,
+        szse_l2_snap->m_ask_unit[5].m_qty,
+        szse_l2_snap->m_ask_unit[6].m_price,
+        szse_l2_snap->m_ask_unit[6].m_qty,
+        szse_l2_snap->m_ask_unit[7].m_price,
+        szse_l2_snap->m_ask_unit[7].m_qty,
+        szse_l2_snap->m_ask_unit[8].m_price,
+        szse_l2_snap->m_ask_unit[8].m_qty,
+        szse_l2_snap->m_ask_unit[9].m_price,
+        szse_l2_snap->m_ask_unit[9].m_qty
+    );
 }
 
 void trade::RawMdRecorder::new_sse_tick_writer(const std::string& symbol)

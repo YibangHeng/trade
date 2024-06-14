@@ -1,11 +1,18 @@
 #pragma once
 
+#include "RawStructure.h"
 #include "libbooker/BookerCommonData.h"
 #include "networks.pb.h"
 #include "third/cut/UTApiStruct.h"
 
 namespace trade::broker
 {
+
+template<typename T>
+concept IsOrderTick = std::is_same_v<T, SSEHpfTick> || std::is_same_v<T, SZSEHpfOrderTick>;
+
+template<typename T>
+concept IsTradeTick = std::is_same_v<T, SZSEHpfTradeTick>;
 
 class CUTCommonData
 {
@@ -49,14 +56,10 @@ public:
     /// @return std::tuple<exchange, order_sys_id>. Empty string if exchange_id
     /// is not in format.
     [[nodiscard]] static std::tuple<std::string, std::string> from_exchange_id(const std::string& exchange_id);
-    [[nodiscard]] static types::ExchangeType get_exchange_type(const std::string& message);
-    [[nodiscard]] static types::X_OST_TickType get_tick_type(const std::string& message, types::ExchangeType exchange_type);
-    [[nodiscard]] static char to_sse_tick_type(types::X_OST_TickType message_type);
-    [[nodiscard]] static types::X_OST_TickType to_sse_tick_type(char message_type);
-    [[nodiscard]] static uint8_t to_szse_tick_type(types::X_OST_TickType message_type);
-    [[nodiscard]] static types::X_OST_TickType to_szse_tick_type(uint8_t message_type);
-    [[nodiscard]] static booker::OrderTickPtr to_order_tick(const std::string& message, types::ExchangeType exchange_type);
-    [[nodiscard]] static booker::TradeTickPtr to_trade_tick(const std::string& message, types::ExchangeType exchange_type);
+    template<IsOrderTick MessageType>
+    [[nodiscard]] static booker::OrderTickPtr to_order_tick(const std::string& message);
+    template<IsTradeTick Mess7ageType>
+    [[nodiscard]] static booker::TradeTickPtr to_trade_tick(const std::string& message);
     [[nodiscard]] static double to_sse_price(uint32_t order_price);
     [[nodiscard]] static double to_szse_price(uint32_t exe_px);
     [[nodiscard]] static int64_t to_sse_quantity(uint32_t qty);
@@ -71,5 +74,62 @@ public:
     TUTFrontIDType m_front_id;
     TUTSessionIDType m_session_id;
 };
+
+template<>
+inline booker::OrderTickPtr CUTCommonData::to_order_tick<SSEHpfTick>(const std::string& message)
+{
+    auto order_tick = std::make_shared<types::OrderTick>();
+
+    assert(message.size() == sizeof(SSEHpfTick));
+    const auto raw_order = reinterpret_cast<const SSEHpfTick*>(message.data());
+
+    order_tick->set_unique_id(static_cast<int64_t>(raw_order->m_buy_order_no + raw_order->m_sell_order_no));
+    order_tick->set_order_type(to_order_type_from_sse(raw_order->m_tick_type));
+    order_tick->set_symbol(raw_order->m_symbol_id);
+    order_tick->set_side(to_md_side_from_sse(raw_order->m_side_flag));
+    order_tick->set_price(to_sse_price(raw_order->m_order_price));
+    order_tick->set_quantity(to_sse_quantity(raw_order->m_qty));
+    order_tick->set_exchange_time(to_sse_time(raw_order->m_tick_time));
+
+    return order_tick;
+}
+
+template<>
+inline booker::OrderTickPtr CUTCommonData::to_order_tick<SZSEHpfOrderTick>(const std::string& message)
+{
+    auto order_tick = std::make_shared<types::OrderTick>();
+
+    assert(message.size() == sizeof(SZSEHpfOrderTick));
+    const auto raw_order = reinterpret_cast<const SZSEHpfOrderTick*>(message.data());
+
+    order_tick->set_unique_id(raw_order->m_header.m_sequence_num);
+    order_tick->set_order_type(to_order_type_from_szse(raw_order->m_order_type));
+    order_tick->set_symbol(raw_order->m_header.m_symbol);
+    order_tick->set_side(to_md_side_from_szse(raw_order->m_side));
+    order_tick->set_price(to_szse_price(raw_order->m_px));
+    order_tick->set_quantity(to_szse_quantity(raw_order->m_qty));
+    order_tick->set_exchange_time(to_szse_time(raw_order->m_header.m_quote_update_time));
+
+    return order_tick;
+}
+
+template<>
+inline booker::TradeTickPtr CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(const std::string& message)
+{
+    auto trade_tick = std::make_shared<types::TradeTick>();
+
+    assert(message.size() == sizeof(SZSEHpfTradeTick));
+    const auto raw_trade = reinterpret_cast<const SZSEHpfTradeTick*>(message.data());
+
+    trade_tick->set_ask_unique_id(raw_trade->m_ask_app_seq_num);
+    trade_tick->set_bid_unique_id(raw_trade->m_bid_app_seq_num);
+    trade_tick->set_symbol(raw_trade->m_header.m_symbol);
+    trade_tick->set_exec_price(to_szse_price(raw_trade->m_exe_px));
+    trade_tick->set_exec_quantity(to_szse_quantity(raw_trade->m_exe_qty));
+    trade_tick->set_exchange_time(to_szse_time(raw_trade->m_header.m_quote_update_time));
+    trade_tick->set_x_ost_szse_exe_type(to_order_type_from_szse(raw_trade->m_exe_type));
+
+    return trade_tick;
+}
 
 } // namespace trade::broker

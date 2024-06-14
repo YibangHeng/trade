@@ -63,28 +63,37 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
     while (is_running) {
         const auto message = client.receive();
 
-        /// Check where the message comes from first.
-        const auto exchange_type = CUTCommonData::get_exchange_type(message);
+        booker::OrderTickPtr order_tick;
+        booker::TradeTickPtr trade_tick;
 
-        switch (CUTCommonData::get_tick_type(message, exchange_type)) {
-        case types::X_OST_TickType::order: {
-            const auto order_tick = CUTCommonData::to_order_tick(message, exchange_type);
+        /// TODO: Is it OK to check message type by message size?
+        switch (message.size()) {
+        case sizeof(SSEHpfTick): {
+            order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(message);
+            break;
+        }
+        // case sizeof(SSEHpfL2Snap): break;
+        case sizeof(SZSEHpfOrderTick): {
+            order_tick = CUTCommonData::to_order_tick<SZSEHpfOrderTick>(message);
+            break;
+        }
+        case sizeof(SZSEHpfTradeTick): {
+            trade_tick = CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(message);
+            break;
+        }
+        // case sizeof(SZSEHpfL2Snap): break;
+        default: break;
+        }
 
+        if (order_tick != nullptr) {
             if (order_tick->exchange_time() >= 93000) [[likely]]
                 booker.switch_to_continuous_stage();
 
             booker.add(order_tick);
-
-            break;
         }
-        case types::X_OST_TickType::trade: {
-            const auto trade_tick = CUTCommonData::to_trade_tick(message, exchange_type);
 
+        if (trade_tick != nullptr) {
             booker.trade(trade_tick);
-
-            break;
-        }
-        default: break;
         }
     }
 }
