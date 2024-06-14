@@ -2,18 +2,23 @@
 #include "utilities/MakeAssignable.hpp"
 #include "utilities/TimeHelper.hpp"
 
-trade::reporter::ShmReporter::ShmReporter(std::shared_ptr<IReporter> outside)
+trade::reporter::ShmReporter::ShmReporter(
+    const std::string& shm_name,
+    const std::string& shm_mutex_name,
+    const int shm_size,
+    std::shared_ptr<IReporter> outside
+)
     : AppBase("ShmReporter"), /// TODO: Make it configurable.
-      m_md_shm(boost::interprocess::open_or_create, "trade_data", boost::interprocess::read_write),
-      m_named_mutex(boost::interprocess::open_or_create, "trade_data_mutex"),
+      m_md_shm(boost::interprocess::open_or_create, shm_name.c_str(), boost::interprocess::read_write),
+      m_named_mutex(boost::interprocess::open_or_create, shm_mutex_name.c_str()),
       m_outside(std::move(outside))
 {
-    m_md_shm.truncate(1 * GB);
+    m_md_shm.truncate(shm_size * GB);
 
-    boost::interprocess::offset_t shm_size;
-    m_md_shm.get_size(shm_size);
+    boost::interprocess::offset_t allocated_shm_size;
+    m_md_shm.get_size(allocated_shm_size);
 
-    logger->info("Created/Opened shared memory {} with size {}GB({} bytes)", m_md_shm.get_name(), shm_size / GB, shm_size);
+    logger->info("Created/Opened shared memory {} with size {}GB({} bytes)", m_md_shm.get_name(), allocated_shm_size / GB, allocated_shm_size);
 
     /// Map areas of shared memory with same size.
     m_md_region     = std::make_shared<boost::interprocess::mapped_region>(m_md_shm, boost::interprocess::read_write);
@@ -25,7 +30,7 @@ trade::reporter::ShmReporter::ShmReporter(std::shared_ptr<IReporter> outside)
     m_md_current = m_md_start;
 
     /// Set memory areas.
-    memset(m_md_region->get_address(), 0, shm_size);
+    memset(m_md_region->get_address(), 0, allocated_shm_size);
 
     logger->info("Divided shared memory areas to trade({})", m_md_region->get_address());
 }
@@ -35,6 +40,7 @@ void trade::reporter::ShmReporter::md_trade_generated(const std::shared_ptr<type
     /// Check if shared memory is full.
     if (m_md_current - m_md_start > m_md_region->get_size() / sizeof(SMMarketData)) {
         logger->error("Shared memory of trade is full");
+        m_outside->md_trade_generated(md_trade);
         return;
     }
 

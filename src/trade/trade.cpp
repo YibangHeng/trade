@@ -36,9 +36,14 @@ int trade::Trade::run()
         return 1;
     }
 
-    const auto log_reporter   = std::make_shared<reporter::LogReporter>();
-    const auto csv_reporter   = std::make_shared<reporter::CSVReporter>(config->get<std::string>("Output.CSVOutputFolder"), log_reporter);
-    const auto shm_reporter   = std::make_shared<reporter::ShmReporter>(csv_reporter);
+    const auto log_reporter = std::make_shared<reporter::LogReporter>();
+    const auto csv_reporter = std::make_shared<reporter::CSVReporter>(config->get<std::string>("Output.CSVOutputFolder"), log_reporter);
+    const auto shm_reporter = std::make_shared<reporter::ShmReporter>(
+        config->get<std::string>("Output.ShmName"),
+        config->get<std::string>("Output.ShmMutexName"),
+        config->get<size_t>("Output.ShmSize"),
+        csv_reporter
+    );
     const auto async_reporter = std::make_shared<reporter::AsyncReporter>(shm_reporter);
 
     /// Reporter.
