@@ -24,13 +24,14 @@ int trade::OSTMdServer::run()
 
     utilities::MCServer server("239.255.255.255", 5555);
 
-    const auto buf = std::unique_ptr<char>(new char[sizeof(broker::SSEHpfTick)]);
+    std::vector<u_char> message_buffer;
+    message_buffer.resize(sizeof(broker::SSEHpfTick));
 
     while (m_is_running) {
         const auto tick = emit_sse_tick(m_arguments["sse-tick-file"].as<std::string>());
 
-        memcpy(buf.get(), &tick, sizeof(broker::SSEHpfTick));
-        server.send(std::string(buf.get(), sizeof(broker::SSEHpfTick)));
+        memcpy(message_buffer.data(), &tick, sizeof(broker::SSEHpfTick));
+        server.send(message_buffer);
 
         logger->info("Emitted order tick: {:>6} {:>6} {:>6.2f} {:>6} {:>1} {:>1} {:>6}", tick.m_buy_order_no + tick.m_sell_order_no, tick.m_symbol_id, tick.m_order_price / 1000., tick.m_qty / 1000, tick.m_side_flag, tick.m_tick_type, tick.m_tick_time / 100);
 

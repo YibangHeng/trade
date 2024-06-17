@@ -57,9 +57,9 @@ public:
     /// is not in format.
     [[nodiscard]] static std::tuple<std::string, std::string> from_exchange_id(const std::string& exchange_id);
     template<IsOrderTick MessageType>
-    [[nodiscard]] static booker::OrderTickPtr to_order_tick(const std::string& message);
+    [[nodiscard]] static booker::OrderTickPtr to_order_tick(const std::vector<u_char>& message);
     template<IsTradeTick Mess7ageType>
-    [[nodiscard]] static booker::TradeTickPtr to_trade_tick(const std::string& message);
+    [[nodiscard]] static booker::TradeTickPtr to_trade_tick(const std::vector<u_char>& message);
     [[nodiscard]] static double to_sse_price(uint32_t order_price);
     [[nodiscard]] static double to_szse_price(uint32_t exe_px);
     [[nodiscard]] static int64_t to_sse_quantity(uint32_t qty);
@@ -76,7 +76,7 @@ public:
 };
 
 template<>
-inline booker::OrderTickPtr CUTCommonData::to_order_tick<SSEHpfTick>(const std::string& message)
+inline booker::OrderTickPtr CUTCommonData::to_order_tick<SSEHpfTick>(const std::vector<u_char>& message)
 {
     auto order_tick = std::make_shared<types::OrderTick>();
 
@@ -95,7 +95,7 @@ inline booker::OrderTickPtr CUTCommonData::to_order_tick<SSEHpfTick>(const std::
 }
 
 template<>
-inline booker::OrderTickPtr CUTCommonData::to_order_tick<SZSEHpfOrderTick>(const std::string& message)
+inline booker::OrderTickPtr CUTCommonData::to_order_tick<SZSEHpfOrderTick>(const std::vector<u_char>& message)
 {
     auto order_tick = std::make_shared<types::OrderTick>();
 
@@ -114,7 +114,7 @@ inline booker::OrderTickPtr CUTCommonData::to_order_tick<SZSEHpfOrderTick>(const
 }
 
 template<>
-inline booker::TradeTickPtr CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(const std::string& message)
+inline booker::TradeTickPtr CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(const std::vector<u_char>& message)
 {
     auto trade_tick = std::make_shared<types::TradeTick>();
 

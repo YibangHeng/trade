@@ -25,22 +25,22 @@ public:
     ///
     /// @param message_id The Message ID.
     /// @param message The message.
-    /// @return The serialized message.
-    static std::string serialize(
+    /// @param serialized The serialized message.
+    static void serialize(
         const types::MessageID message_id,
-        const google::protobuf::Message& message
+        const google::protobuf::Message& message,
+        std::vector<u_char>& serialized
     )
     {
         /// Serialize message_id.
         unsigned char message_id_buf[4];
         serialize_int32(message_id_buf, message_id);
 
-        std::string serialized;
+        const auto message_body = message.SerializeAsString();
 
-        serialized.append(reinterpret_cast<const char*>(message_id_buf), 4);
-        serialized.append(message.SerializeAsString());
-
-        return serialized;
+        serialized.clear();
+        serialized.insert(serialized.end(), message_id_buf, message_id_buf + 4);
+        serialized.insert(serialized.end(), message_body.begin(), message_body.end());
     }
 
     /// Unserialize a message.
@@ -48,10 +48,10 @@ public:
     /// @return The message ID and the raw message body. If the serialized
     /// message is invalid, the message ID will be 0 and the message body will
     /// be empty.
-    static auto deserialize(const std::string& serialized)
+    static auto deserialize(const std::vector<u_char>& serialized)
     {
         if (serialized.size() < 4)
-            return std::make_tuple(types::MessageID::invalid_message_id, std::string {});
+            return std::make_tuple(types::MessageID::invalid_message_id, serialized.end());
 
         unsigned char message_id_buf[4];
         memcpy(message_id_buf, serialized.data(), 4);
@@ -60,9 +60,9 @@ public:
 
         /// Check if the message is in range.
         if (message_id < types::MessageID_MIN || message_id > types::MessageID_MAX)
-            return std::make_tuple(types::MessageID::invalid_message_id, serialized.substr(4, serialized.size() - 4));
+            return std::make_tuple(types::MessageID::invalid_message_id, serialized.begin() + 4);
 
-        return std::make_tuple(message_id, serialized.substr(4, serialized.size() - 4));
+        return std::make_tuple(message_id, serialized.begin() + 4);
     }
 
 private:
@@ -134,7 +134,7 @@ public:
     }
 
 public:
-    [[nodiscard]] auto receive()
+    [[nodiscard]] auto receive(std::vector<u_char>& message_buffer)
     {
         int code;
 
@@ -143,19 +143,27 @@ public:
             code = zmq_msg_recv(&zmq_request, zmq_socket.get(), 0);
         } while (code < 0);
 
-        return Serializer::deserialize(std::string(static_cast<char*>(zmq_msg_data(&zmq_request)), zmq_msg_size(&zmq_request)));
+        /// Copy message to the caller's buffer.
+        message_buffer.clear();
+        message_buffer.resize(zmq_msg_size(&zmq_request) + 1);
+        memcpy(message_buffer.data(), zmq_msg_data(&zmq_request), zmq_msg_size(&zmq_request));
+
+        return Serializer::deserialize(message_buffer);
     }
 
-    void send(const types::MessageID message_id, const google::protobuf::Message& message_body) const
+    void send(const types::MessageID message_id, const google::protobuf::Message& message_body)
     {
-        const auto message = Serializer::serialize(message_id, message_body);
-        zmq_send(zmq_socket.get(), message.c_str(), message.size(), ZMQ_DONTWAIT);
+        Serializer::serialize(message_id, message_body, message_buffer);
+        zmq_send(zmq_socket.get(), message_buffer.data(), message_buffer.size(), ZMQ_DONTWAIT);
     }
 
 private:
     ZMQContextPtr zmq_context;
     ZMQSocketPtr zmq_socket;
     zmq_msg_t zmq_request;
+
+private:
+    std::vector<u_char> message_buffer;
 };
 
 /// Encapsulate a ZeroMQ REQ (request) socket for creating a request-reply
@@ -196,23 +204,28 @@ public:
     )
     {
         /// Send request.
-        const auto message_body = Serializer::serialize(message_id, message);
+        Serializer::serialize(message_id, message, message_buffer);
 
-        zmq_send(zmq_socket.get(), message_body.c_str(), message_body.size(), 0);
+        zmq_send(zmq_socket.get(), message_buffer.data(), message_buffer.size(), 0);
 
         /// Receive response.
         zmq_msg_init(&zmq_response);
 
         zmq_msg_recv(&zmq_response, zmq_socket.get(), 0);
 
-        const auto [response_id, response_body] = Serializer::deserialize({static_cast<char*>(zmq_msg_data(&zmq_response)), zmq_msg_size(&zmq_response)});
+        /// Copy message to the buffer.
+        message_buffer.clear();
+        message_buffer.resize(zmq_msg_size(&zmq_response) + 1);
+        memcpy(message_buffer.data(), zmq_msg_data(&zmq_response), zmq_msg_size(&zmq_response));
+
+        const auto [response_id, response_body] = Serializer::deserialize(message_buffer);
 
         /// Return an empty message if the response is invalid.
         if (response_id == types::MessageID::invalid_message_id)
             return ReturnedMessageType {};
 
         ReturnedMessageType returned_message;
-        returned_message.ParseFromString(response_body);
+        returned_message.ParseFromArray(response_body.base(), message_buffer.size());
 
         return returned_message;
     }
@@ -221,6 +234,9 @@ private:
     ZMQContextPtr zmq_context;
     ZMQSocketPtr zmq_socket;
     zmq_msg_t zmq_response;
+
+private:
+    std::vector<u_char> message_buffer;
 };
 
 /// Encapsulate raw UDP multicast socket.
@@ -253,9 +269,9 @@ public:
     }
 
 public:
-    void send(const std::string& message)
+    void send(const std::vector<u_char>& message)
     {
-        std::ignore = sendto(m_sender_fd, message.c_str(), message.size(), 0, reinterpret_cast<sockaddr*>(&m_send_addr), sizeof(m_send_addr));
+        std::ignore = sendto(m_sender_fd, message.data(), message.size(), 0, reinterpret_cast<sockaddr*>(&m_send_addr), sizeof(m_send_addr));
     }
 
 private:
@@ -333,9 +349,6 @@ public:
             close(m_receiver_fd);
             throw std::runtime_error(fmt::format("Failed to join multicast group {}:{}: {}", address, port, strerror(errno)));
         }
-
-        /// Allocate buffer.
-        buffer.reset(new char[sizeof(T)]);
     }
     ~MCClient()
     {
@@ -343,18 +356,10 @@ public:
     }
 
 public:
-    std::string receive()
+    size_t receive(std::vector<u_char>& message_buffer)
     {
-        const auto received_bytes = recvfrom(m_receiver_fd, buffer.get(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &addr_len);
-
-        if (received_bytes < 0)
-            /// TODO: Compared to returning the original raw pointer, returning
-            /// an empty string over 100,000,000 loops will result in ~5s of
-            /// performance degradation, while returning std:nullopt will result
-            /// in ~3s performance degradation.
-            return "";
-
-        return {buffer.get(), static_cast<std::string::size_type>(received_bytes)};
+        message_buffer.resize(sizeof(T));
+        return recvfrom(m_receiver_fd, message_buffer.data(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &addr_len);
     }
 
 private:
@@ -363,7 +368,6 @@ private:
     int m_receiver_fd;
 
 private:
-    std::unique_ptr<char> buffer;
     socklen_t addr_len;
 };
 

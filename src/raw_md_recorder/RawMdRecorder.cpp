@@ -125,23 +125,25 @@ void trade::RawMdRecorder::odtd_receiver(const std::string& address, const std::
 
     logger->info("Joined multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
 
+    std::vector<u_char> message_buffer;
+
     while (m_is_running) {
-        const auto message = client.receive();
+        const auto bytes_received = client.receive(message_buffer);
 
         /// Non-blocking receiver may return empty string.
-        if (message.empty())
+        if (bytes_received <= 0)
             continue;
 
-        write(message);
+        write(message_buffer, bytes_received);
     }
 
     logger->info("Left multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
 }
 
-void trade::RawMdRecorder::write(const std::string& message)
+void trade::RawMdRecorder::write(const std::vector<u_char>& message, const size_t bytes_received)
 {
     /// TODO: Is it OK to check message type by message size?
-    switch (message.size()) {
+    switch (bytes_received) {
     case sizeof(broker::SSEHpfTick): write_sse_tick(message); break;
     case sizeof(broker::SSEHpfL2Snap): write_sse_l2snap(message); break;
     case sizeof(broker::SZSEHpfOrderTick): write_szse_order_tick(message); break;
@@ -151,7 +153,7 @@ void trade::RawMdRecorder::write(const std::string& message)
     }
 }
 
-void trade::RawMdRecorder::write_sse_tick(const std::string& message)
+void trade::RawMdRecorder::write_sse_tick(const std::vector<u_char>& message)
 {
     const auto sse_tick = reinterpret_cast<const broker::SSEHpfTick*>(message.data());
 
@@ -191,7 +193,7 @@ void trade::RawMdRecorder::write_sse_tick(const std::string& message)
     );
 }
 
-void trade::RawMdRecorder::write_sse_l2snap(const std::string& message)
+void trade::RawMdRecorder::write_sse_l2snap(const std::vector<u_char>& message)
 {
     const auto sse_l2_snap = reinterpret_cast<const broker::SSEHpfL2Snap*>(message.data());
 
@@ -276,7 +278,7 @@ void trade::RawMdRecorder::write_sse_l2snap(const std::string& message)
     );
 }
 
-void trade::RawMdRecorder::write_szse_order_tick(const std::string& message)
+void trade::RawMdRecorder::write_szse_order_tick(const std::vector<u_char>& message)
 {
     const auto szse_order_tick = reinterpret_cast<const broker::SZSEHpfOrderTick*>(message.data());
 
@@ -307,7 +309,7 @@ void trade::RawMdRecorder::write_szse_order_tick(const std::string& message)
     );
 }
 
-void trade::RawMdRecorder::write_szse_trade_tick(const std::string& message)
+void trade::RawMdRecorder::write_szse_trade_tick(const std::vector<u_char>& message)
 {
     const auto szse_trade_tick = reinterpret_cast<const broker::SZSEHpfTradeTick*>(message.data());
 
@@ -339,7 +341,7 @@ void trade::RawMdRecorder::write_szse_trade_tick(const std::string& message)
     );
 }
 
-void trade::RawMdRecorder::write_szse_l2snap(const std::string& message)
+void trade::RawMdRecorder::write_szse_l2snap(const std::vector<u_char>& message)
 {
     const auto szse_l2_snap = reinterpret_cast<const broker::SZSEHpfL2Snap*>(message.data());
 

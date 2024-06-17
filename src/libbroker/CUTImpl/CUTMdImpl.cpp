@@ -53,34 +53,27 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
     }
 }
 
-void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const std::string& interface_addres) const
+void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const std::string& interface_address) const
 {
     booker::Booker booker({}, m_reporter); /// TODO: Initialize tradable symbols here.
 
     const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
-    utilities::MCClient<char[1024]> client(multicast_ip, multicast_port, interface_addres, true);
+    utilities::MCClient<char[1024]> client(multicast_ip, multicast_port, interface_address, true);
+
+    std::vector<u_char> buffer(1024);
+
+    booker::OrderTickPtr order_tick;
+    booker::TradeTickPtr trade_tick;
 
     while (is_running) {
-        const auto message = client.receive();
-
-        booker::OrderTickPtr order_tick;
-        booker::TradeTickPtr trade_tick;
+        const auto bytes_received = client.receive(buffer);
 
         /// TODO: Is it OK to check message type by message size?
-        switch (message.size()) {
-        case sizeof(SSEHpfTick): {
-            order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(message);
-            break;
-        }
+        switch (bytes_received) {
+        case sizeof(SSEHpfTick): order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(buffer); break;
         // case sizeof(SSEHpfL2Snap): break;
-        case sizeof(SZSEHpfOrderTick): {
-            order_tick = CUTCommonData::to_order_tick<SZSEHpfOrderTick>(message);
-            break;
-        }
-        case sizeof(SZSEHpfTradeTick): {
-            trade_tick = CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(message);
-            break;
-        }
+        case sizeof(SZSEHpfOrderTick): order_tick = CUTCommonData::to_order_tick<SZSEHpfOrderTick>(buffer); break;
+        case sizeof(SZSEHpfTradeTick): trade_tick = CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(buffer); break;
         // case sizeof(SZSEHpfL2Snap): break;
         default: break;
         }

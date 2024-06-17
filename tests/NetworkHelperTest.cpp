@@ -6,16 +6,19 @@
 constexpr size_t insertion_times = 16;
 constexpr size_t insertion_batch = 1024;
 
+std::vector<u_char> message_buffer;
+
 TEST_CASE("Message with message_id == 0 and empty message", "[Serializer]")
 {
     const trade::types::EmptyMessage empty_message;
 
-    const auto serialized = trade::utilities::Serializer::serialize(
+    trade::utilities::Serializer::serialize(
         trade::types::MessageID::invalid_message_id,
-        empty_message
+        empty_message,
+        message_buffer
     );
 
-    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(serialized);
+    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(message_buffer);
 
     CHECK(message_id == trade::types::MessageID::invalid_message_id);
 }
@@ -24,12 +27,13 @@ TEST_CASE("Message with message_id != 0 and empty message", "[Serializer]")
 {
     const trade::types::EmptyMessage empty_message;
 
-    const auto serialized = trade::utilities::Serializer::serialize(
+    trade::utilities::Serializer::serialize(
         trade::types::MessageID::unix_sig,
-        empty_message
+        empty_message,
+        message_buffer
     );
 
-    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(serialized);
+    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(message_buffer);
 
     CHECK(message_id == trade::types::MessageID::unix_sig);
 }
@@ -39,15 +43,16 @@ TEST_CASE("Message with message_id == 0 and non-empty message", "[Serializer]")
     trade::types::UnixSig unix_sig;
     unix_sig.set_sig(2);
 
-    const auto serialized = trade::utilities::Serializer::serialize(
+    trade::utilities::Serializer::serialize(
         trade::types::MessageID::invalid_message_id,
-        unix_sig
+        unix_sig,
+        message_buffer
     );
 
-    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(serialized);
+    const auto [message_id, message_body_it] = trade::utilities::Serializer::deserialize(message_buffer);
 
     unix_sig.Clear();
-    unix_sig.ParseFromString(message_body);
+    unix_sig.ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
 
     CHECK(message_id == trade::types::MessageID::invalid_message_id);
     CHECK(unix_sig.sig() == 2);
@@ -58,15 +63,16 @@ TEST_CASE("Message with message_id != 0 and non-empty message", "[Serializer]")
     trade::types::UnixSig unix_sig;
     unix_sig.set_sig(2);
 
-    const auto serialized = trade::utilities::Serializer::serialize(
+    trade::utilities::Serializer::serialize(
         trade::types::MessageID::unix_sig,
-        unix_sig
+        unix_sig,
+        message_buffer
     );
 
-    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(serialized);
+    const auto [message_id, message_body_it] = trade::utilities::Serializer::deserialize(message_buffer);
 
     unix_sig.Clear();
-    unix_sig.ParseFromString(message_body);
+    unix_sig.ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
 
     CHECK(message_id == trade::types::MessageID::unix_sig);
     CHECK(unix_sig.sig() == 2);
@@ -77,15 +83,16 @@ TEST_CASE("Message with an out-of-range message_id", "[Serializer]")
     trade::types::UnixSig unix_sig;
     unix_sig.set_sig(2);
 
-    const auto serialized = trade::utilities::Serializer::serialize(
+    trade::utilities::Serializer::serialize(
         static_cast<trade::types::MessageID>(trade::types::MessageID_MAX + 1),
-        unix_sig
+        unix_sig,
+        message_buffer
     );
 
-    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(serialized);
+    const auto [message_id, message_body_it] = trade::utilities::Serializer::deserialize(message_buffer);
 
     unix_sig.Clear();
-    unix_sig.ParseFromString(message_body);
+    unix_sig.ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
 
     CHECK(message_id == trade::types::MessageID::invalid_message_id);
     CHECK(unix_sig.sig() == 2); /// The returned message still contains the original value.
@@ -102,11 +109,13 @@ TEST_CASE("Sending and receiving messages with M:1 connections", "[RRServer/RRCl
     auto server_worker = [&zmq_context, &check_mutex] {
         trade::utilities::RRServer server("inproc://server", zmq_context);
 
+        std::vector<u_char> buffer(1024);
+
         for (int i = 0; i < insertion_times * insertion_batch; i++) {
-            const auto [message_id, message_body] = server.receive();
+            const auto [message_id, message_body_it] = server.receive(buffer);
 
             trade::types::UnixSig unix_sig;
-            unix_sig.ParseFromString(message_body);
+            unix_sig.ParseFromArray(message_body_it.base(), buffer.size());
 
             {
                 std::lock_guard lock(check_mutex);
@@ -164,11 +173,14 @@ TEST_CASE("Sending and receiving messages via IP multicast", "[MCServer/MCClient
         /// Wait for all clients to connect.
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
+        std::vector<u_char> buffer(1024);
+
         for (int i = 0; i < insertion_times * insertion_batch; i++) {
             trade::types::UnixSig unix_sig;
             unix_sig.set_sig(i);
 
-            server.send(trade::utilities::Serializer::serialize(trade::types::MessageID::unix_sig, unix_sig));
+            trade::utilities::Serializer::serialize(trade::types::MessageID::unix_sig, unix_sig, buffer);
+            server.send(buffer);
         }
     };
 
@@ -178,13 +190,15 @@ TEST_CASE("Sending and receiving messages via IP multicast", "[MCServer/MCClient
     auto client_worker = [multicast_address, &touched_times] {
         trade::utilities::MCClient<char[1024]> client(multicast_address, multicast_port);
 
-        for (int i = 0; i < insertion_times * insertion_batch; i++) {
-            const auto received_unix_sig          = client.receive();
+        std::vector<u_char> buffer(1024);
 
-            const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(received_unix_sig);
+        for (int i = 0; i < insertion_times * insertion_batch; i++) {
+            client.receive(buffer);
+
+            const auto [message_id, message_body_it] = trade::utilities::Serializer::deserialize(buffer);
 
             trade::types::UnixSig unix_sig;
-            unix_sig.ParseFromString(message_body);
+            unix_sig.ParseFromArray(message_body_it.base(), static_cast<int>(buffer.size()));
 
             /// Record the number of received signals.
             ++touched_times[static_cast<size_t>(i)];

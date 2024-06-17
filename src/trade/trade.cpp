@@ -1,4 +1,5 @@
 #include <csignal>
+#include <fmt/ranges.h>
 #include <iostream>
 
 #include "info.h"
@@ -210,13 +211,15 @@ int trade::Trade::network_events() const
 
     logger->info("Bound ZMQ socket at {}", config->get<std::string>("Server.APIAddress"));
 
+    std::vector<u_char> message_buffer;
+
     while (true) {
-        const auto [message_id, message_body] = server.receive();
+        const auto [message_id, message_body_it] = server.receive(message_buffer);
 
         switch (message_id) {
         case types::MessageID::unix_sig: {
             types::UnixSig unix_sig;
-            unix_sig.ParseFromString(message_body);
+            unix_sig.ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
 
             if (m_is_running) {
                 /// Make sure the unix_sig message is send by itself in @signal.
@@ -235,7 +238,7 @@ int trade::Trade::network_events() const
         }
         case types::MessageID::new_order_req: {
             const auto new_order_req = std::make_shared<types::NewOrderReq>();
-            new_order_req->ParseFromString(message_body);
+            new_order_req->ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
 
             const auto new_order_rsp = m_broker->new_order(new_order_req);
 
@@ -245,7 +248,7 @@ int trade::Trade::network_events() const
         }
         case types::MessageID::new_cancel_req: {
             const auto new_cancel_req = std::make_shared<types::NewCancelReq>();
-            new_cancel_req->ParseFromString(message_body);
+            new_cancel_req->ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
 
             const auto new_cancel_rsp = m_broker->cancel_order(new_cancel_req);
 
@@ -255,7 +258,7 @@ int trade::Trade::network_events() const
         }
         case types::MessageID::new_cancel_all_req: {
             const auto new_cancel_all_req = std::make_shared<types::NewCancelAllReq>();
-            new_cancel_all_req->ParseFromString(message_body);
+            new_cancel_all_req->ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
 
             const auto new_cancel_all_rsp = m_broker->cancel_all(new_cancel_all_req);
 
@@ -265,7 +268,7 @@ int trade::Trade::network_events() const
         }
         default: {
             /// TODO: Use base64 for message data here.
-            logger->warn("Unknown Message ID {}({}) received with Message Body \"{}\"({} bytes)", MessageID_Name(message_id), static_cast<int>(message_id), message_body.data(), message_body.size());
+            logger->warn("Unknown Message ID {}({}) received with Message Body \"{}\"({} bytes)", MessageID_Name(message_id), static_cast<int>(message_id), message_buffer, static_cast<int>(message_buffer.size()));
         }
         }
     }
