@@ -219,7 +219,7 @@ int trade::Trade::network_events() const
         switch (message_id) {
         case types::MessageID::unix_sig: {
             types::UnixSig unix_sig;
-            unix_sig.ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
+            unix_sig.ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size() - utilities::Serializer::HEAD_SIZE<>));
 
             if (m_is_running) {
                 /// Make sure the unix_sig message is send by itself in @signal.

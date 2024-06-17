@@ -18,9 +18,10 @@ TEST_CASE("Message with message_id == 0 and empty message", "[Serializer]")
         message_buffer
     );
 
-    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(message_buffer);
+    const auto [message_id, message_body_it] = trade::utilities::Serializer::deserialize(message_buffer);
 
     CHECK(message_id == trade::types::MessageID::invalid_message_id);
+    CHECK(message_body_it == message_buffer.end());
 }
 
 TEST_CASE("Message with message_id != 0 and empty message", "[Serializer]")
@@ -33,9 +34,10 @@ TEST_CASE("Message with message_id != 0 and empty message", "[Serializer]")
         message_buffer
     );
 
-    const auto [message_id, message_body] = trade::utilities::Serializer::deserialize(message_buffer);
+    const auto [message_id, message_body_it] = trade::utilities::Serializer::deserialize(message_buffer);
 
     CHECK(message_id == trade::types::MessageID::unix_sig);
+    CHECK(message_body_it == message_buffer.end());
 }
 
 TEST_CASE("Message with message_id == 0 and non-empty message", "[Serializer]")
@@ -109,19 +111,20 @@ TEST_CASE("Sending and receiving messages with M:1 connections", "[RRServer/RRCl
     auto server_worker = [&zmq_context, &check_mutex] {
         trade::utilities::RRServer server("inproc://server", zmq_context);
 
-        std::vector<u_char> buffer(1024);
+        std::vector<u_char> message_buffer;
 
         for (int i = 0; i < insertion_times * insertion_batch; i++) {
-            const auto [message_id, message_body_it] = server.receive(buffer);
+            const auto [message_id, message_body_it] = server.receive(message_buffer);
 
             trade::types::UnixSig unix_sig;
-            unix_sig.ParseFromArray(message_body_it.base(), buffer.size());
+            unix_sig.ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size() - trade::utilities::Serializer::HEAD_SIZE<>));
 
             {
                 std::lock_guard lock(check_mutex);
                 CHECK(message_id == trade::types::MessageID::unix_sig);
             }
 
+            unix_sig.set_sig(unix_sig.sig());
             server.send(trade::types::MessageID::unix_sig, unix_sig);
         }
     };
@@ -173,14 +176,14 @@ TEST_CASE("Sending and receiving messages via IP multicast", "[MCServer/MCClient
         /// Wait for all clients to connect.
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-        std::vector<u_char> buffer(1024);
+        std::vector<u_char> message_buffer;
 
         for (int i = 0; i < insertion_times * insertion_batch; i++) {
             trade::types::UnixSig unix_sig;
             unix_sig.set_sig(i);
 
-            trade::utilities::Serializer::serialize(trade::types::MessageID::unix_sig, unix_sig, buffer);
-            server.send(buffer);
+            trade::utilities::Serializer::serialize(trade::types::MessageID::unix_sig, unix_sig, message_buffer);
+            server.send(message_buffer);
         }
     };
 
@@ -190,15 +193,15 @@ TEST_CASE("Sending and receiving messages via IP multicast", "[MCServer/MCClient
     auto client_worker = [multicast_address, &touched_times] {
         trade::utilities::MCClient<char[1024]> client(multicast_address, multicast_port);
 
-        std::vector<u_char> buffer(1024);
+        std::vector<u_char> message_buffer;
 
         for (int i = 0; i < insertion_times * insertion_batch; i++) {
-            client.receive(buffer);
+            client.receive(message_buffer);
 
-            const auto [message_id, message_body_it] = trade::utilities::Serializer::deserialize(buffer);
+            const auto [message_id, message_body_it] = trade::utilities::Serializer::deserialize(message_buffer);
 
             trade::types::UnixSig unix_sig;
-            unix_sig.ParseFromArray(message_body_it.base(), static_cast<int>(buffer.size()));
+            unix_sig.ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
 
             /// Record the number of received signals.
             ++touched_times[static_cast<size_t>(i)];

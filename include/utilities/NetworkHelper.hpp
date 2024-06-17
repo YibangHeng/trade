@@ -25,45 +25,51 @@ public:
     ///
     /// @param message_id The Message ID.
     /// @param message The message.
-    /// @param serialized The serialized message.
+    /// @param message_buffer The serialized message.
     static void serialize(
         const types::MessageID message_id,
         const google::protobuf::Message& message,
-        std::vector<u_char>& serialized
+        std::vector<u_char>& message_buffer
     )
     {
         /// Serialize message_id.
-        unsigned char message_id_buf[4];
+        u_char message_id_buf[4];
         serialize_int32(message_id_buf, message_id);
 
         const auto message_body = message.SerializeAsString();
 
-        serialized.clear();
-        serialized.insert(serialized.end(), message_id_buf, message_id_buf + 4);
-        serialized.insert(serialized.end(), message_body.begin(), message_body.end());
+        if (message_body.empty()) {
+            message_buffer.clear();
+            message_buffer.insert(message_buffer.end(), message_id_buf, message_id_buf + 4);
+        }
+
+        message_buffer.clear();
+        message_buffer.insert(message_buffer.end(), message_id_buf, message_id_buf + 4);
+        message_buffer.insert(message_buffer.end(), message_body.begin(), message_body.end());
     }
 
     /// Unserialize a message.
-    /// @param serialized The serialized message.
+    /// @param message_buffer The serialized message.
     /// @return The message ID and the raw message body. If the serialized
     /// message is invalid, the message ID will be 0 and the message body will
     /// be empty.
-    static auto deserialize(const std::vector<u_char>& serialized)
+    static auto deserialize(const std::vector<u_char>& message_buffer)
     {
-        if (serialized.size() < 4)
-            return std::make_tuple(types::MessageID::invalid_message_id, serialized.end());
+        if (message_buffer.size() < 4)
+            return std::make_tuple(types::MessageID::invalid_message_id, message_buffer.end());
 
-        unsigned char message_id_buf[4];
-        memcpy(message_id_buf, serialized.data(), 4);
-
-        const auto message_id = static_cast<types::MessageID>(parse_int32(message_id_buf));
+        const auto message_id = static_cast<types::MessageID>(parse_int32(message_buffer.data()));
 
         /// Check if the message is in range.
-        if (message_id < types::MessageID_MIN || message_id > types::MessageID_MAX)
-            return std::make_tuple(types::MessageID::invalid_message_id, serialized.begin() + 4);
+        if (message_id < types::MessageID_MIN || message_id > types::MessageID_MAX) [[unlikely]]
+            return std::make_tuple(types::MessageID::invalid_message_id, message_buffer.begin() + 4);
 
-        return std::make_tuple(message_id, serialized.begin() + 4);
+        return std::make_tuple(message_id, message_buffer.begin() + HEAD_SIZE<>);
     }
+
+public:
+    template<typename T = int>
+    constexpr static T HEAD_SIZE = T(4);
 
 private:
     static void serialize_int32(unsigned char (&buf)[4], const int32_t val)
@@ -75,7 +81,7 @@ private:
         buf[3]              = uval >> 24;
     }
 
-    static int32_t parse_int32(const unsigned char (&buf)[4])
+    static int32_t parse_int32(const u_char buf[4])
     {
         // This prevents buf[i] from being promoted to a signed int.
         const uint32_t u0 = buf[0], u1 = buf[1], u2 = buf[2], u3 = buf[3];
@@ -113,16 +119,17 @@ using ZMQSocketPtr = std::unique_ptr<void, ZMQSocketPtrDeleter>;
 class RRServer
 {
 public:
-    explicit RRServer(const std::string& address, const ZMQContextPtr& context = nullptr) : zmq_request()
+    explicit RRServer(const std::string& address, const ZMQContextPtr& context = nullptr)
+        : m_zmq_request()
     {
         if (context != nullptr)
-            zmq_context = context;
+            m_zmq_context = context;
         else
-            zmq_context.reset(zmq_ctx_new(), ZMQContextPtrDeleter());
+            m_zmq_context.reset(zmq_ctx_new(), ZMQContextPtrDeleter());
 
-        zmq_socket.reset(::zmq_socket(zmq_context.get(), ZMQ_REP));
+        m_zmq_socket.reset(zmq_socket(m_zmq_context.get(), ZMQ_REP));
 
-        const auto code = zmq_bind(zmq_socket.get(), address.c_str());
+        const auto code = zmq_bind(m_zmq_socket.get(), address.c_str());
 
         if (code != 0) {
             throw std::runtime_error(fmt::format("Failed to bind ZMQ socket at {}: {}", address, std::string(zmq_strerror(errno))));
@@ -130,7 +137,7 @@ public:
     }
     ~RRServer()
     {
-        zmq_msg_close(&zmq_request);
+        zmq_msg_close(&m_zmq_request);
     }
 
 public:
@@ -139,31 +146,34 @@ public:
         int code;
 
         do {
-            zmq_msg_init(&zmq_request);
-            code = zmq_msg_recv(&zmq_request, zmq_socket.get(), 0);
+            zmq_msg_init(&m_zmq_request);
+            code = zmq_msg_recv(&m_zmq_request, m_zmq_socket.get(), 0);
         } while (code < 0);
 
         /// Copy message to the caller's buffer.
         message_buffer.clear();
-        message_buffer.resize(zmq_msg_size(&zmq_request) + 1);
-        memcpy(message_buffer.data(), zmq_msg_data(&zmq_request), zmq_msg_size(&zmq_request));
+        message_buffer.insert(
+            message_buffer.begin(),
+            static_cast<u_char*>(zmq_msg_data(&m_zmq_request)),
+            static_cast<u_char*>(zmq_msg_data(&m_zmq_request)) + zmq_msg_size(&m_zmq_request)
+        );
 
         return Serializer::deserialize(message_buffer);
     }
 
     void send(const types::MessageID message_id, const google::protobuf::Message& message_body)
     {
-        Serializer::serialize(message_id, message_body, message_buffer);
-        zmq_send(zmq_socket.get(), message_buffer.data(), message_buffer.size(), ZMQ_DONTWAIT);
+        Serializer::serialize(message_id, message_body, m_message_buffer);
+        zmq_send(m_zmq_socket.get(), m_message_buffer.data(), m_message_buffer.size(), ZMQ_DONTWAIT);
     }
 
 private:
-    ZMQContextPtr zmq_context;
-    ZMQSocketPtr zmq_socket;
-    zmq_msg_t zmq_request;
+    ZMQContextPtr m_zmq_context;
+    ZMQSocketPtr m_zmq_socket;
+    zmq_msg_t m_zmq_request;
 
 private:
-    std::vector<u_char> message_buffer;
+    std::vector<u_char> m_message_buffer;
 };
 
 /// Encapsulate a ZeroMQ REQ (request) socket for creating a request-reply
@@ -176,16 +186,16 @@ private:
 class RRClient
 {
 public:
-    explicit RRClient(const std::string& address, const ZMQContextPtr& context = nullptr) : zmq_response()
+    explicit RRClient(const std::string& address, const ZMQContextPtr& context = nullptr) : m_zmq_response()
     {
         if (context != nullptr)
-            zmq_context = context;
+            m_zmq_context = context;
         else
-            zmq_context.reset(zmq_ctx_new(), ZMQContextPtrDeleter());
+            m_zmq_context.reset(zmq_ctx_new(), ZMQContextPtrDeleter());
 
-        zmq_socket.reset(::zmq_socket(zmq_context.get(), ZMQ_REQ));
+        m_zmq_socket.reset(zmq_socket(m_zmq_context.get(), ZMQ_REQ));
 
-        const auto code = zmq_connect(zmq_socket.get(), address.c_str());
+        const auto code = zmq_connect(m_zmq_socket.get(), address.c_str());
 
         if (code != 0) {
             throw std::runtime_error(fmt::format("Failed to connect ZMQ socket to {}: {}", address, std::string(zmq_strerror(errno))));
@@ -193,7 +203,7 @@ public:
     }
     ~RRClient()
     {
-        zmq_msg_close(&zmq_response);
+        zmq_msg_close(&m_zmq_response);
     }
 
 public:
@@ -204,39 +214,41 @@ public:
     )
     {
         /// Send request.
-        Serializer::serialize(message_id, message, message_buffer);
+        Serializer::serialize(message_id, message, m_message_buffer);
 
-        zmq_send(zmq_socket.get(), message_buffer.data(), message_buffer.size(), 0);
+        zmq_send(m_zmq_socket.get(), m_message_buffer.data(), m_message_buffer.size(), 0);
 
         /// Receive response.
-        zmq_msg_init(&zmq_response);
-
-        zmq_msg_recv(&zmq_response, zmq_socket.get(), 0);
+        zmq_msg_init(&m_zmq_response);
+        zmq_msg_recv(&m_zmq_response, m_zmq_socket.get(), 0);
 
         /// Copy message to the buffer.
-        message_buffer.clear();
-        message_buffer.resize(zmq_msg_size(&zmq_response) + 1);
-        memcpy(message_buffer.data(), zmq_msg_data(&zmq_response), zmq_msg_size(&zmq_response));
+        m_message_buffer.clear();
+        m_message_buffer.insert(
+            m_message_buffer.begin(),
+            static_cast<u_char*>(zmq_msg_data(&m_zmq_response)),
+            static_cast<u_char*>(zmq_msg_data(&m_zmq_response)) + zmq_msg_size(&m_zmq_response)
+        );
 
-        const auto [response_id, response_body] = Serializer::deserialize(message_buffer);
+        const auto [response_id, response_body_it] = Serializer::deserialize(m_message_buffer);
 
         /// Return an empty message if the response is invalid.
         if (response_id == types::MessageID::invalid_message_id)
             return ReturnedMessageType {};
 
         ReturnedMessageType returned_message;
-        returned_message.ParseFromArray(response_body.base(), message_buffer.size());
+        returned_message.ParseFromArray(response_body_it.base(), m_message_buffer.size() - Serializer::HEAD_SIZE<>);
 
         return returned_message;
     }
 
 private:
-    ZMQContextPtr zmq_context;
-    ZMQSocketPtr zmq_socket;
-    zmq_msg_t zmq_response;
+    ZMQContextPtr m_zmq_context;
+    ZMQSocketPtr m_zmq_socket;
+    zmq_msg_t m_zmq_response;
 
 private:
-    std::vector<u_char> message_buffer;
+    std::vector<u_char> m_message_buffer;
 };
 
 /// Encapsulate raw UDP multicast socket.
@@ -296,7 +308,7 @@ public:
     )
         : m_receive_addr(),
           m_mreq(),
-          addr_len(sizeof(m_receive_addr))
+          m_addr_len(sizeof(m_receive_addr))
     {
         /// Create what looks like an ordinary UDP socket.
         auto code = m_receiver_fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -359,7 +371,7 @@ public:
     size_t receive(std::vector<u_char>& message_buffer)
     {
         message_buffer.resize(sizeof(T));
-        return recvfrom(m_receiver_fd, message_buffer.data(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &addr_len);
+        return recvfrom(m_receiver_fd, message_buffer.data(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &m_addr_len);
     }
 
 private:
@@ -368,7 +380,7 @@ private:
     int m_receiver_fd;
 
 private:
-    socklen_t addr_len;
+    socklen_t m_addr_len;
 };
 
 } // namespace trade::utilities
