@@ -31,11 +31,11 @@ private:
     void write(const std::vector<u_char>& message, size_t bytes_received);
 
     void write_sse_tick(const std::vector<u_char>& message);
-    void write_sse_l2snap(const std::vector<u_char>& message);
+    void write_sse_l2_snap(const std::vector<u_char>& message);
 
     void write_szse_order_tick(const std::vector<u_char>& message);
     void write_szse_trade_tick(const std::vector<u_char>& message);
-    void write_szse_l2snap(const std::vector<u_char>& message);
+    void write_szse_l2_snap(const std::vector<u_char>& message);
 
     void new_sse_tick_writer(const std::string& symbol);
     void new_sse_l2_snap_writer(const std::string& symbol);

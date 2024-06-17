@@ -145,10 +145,10 @@ void trade::RawMdRecorder::write(const std::vector<u_char>& message, const size_
     /// TODO: Is it OK to check message type by message size?
     switch (bytes_received) {
     case sizeof(broker::SSEHpfTick): write_sse_tick(message); break;
-    case sizeof(broker::SSEHpfL2Snap): write_sse_l2snap(message); break;
+    case sizeof(broker::SSEHpfL2Snap): write_sse_l2_snap(message); break;
     case sizeof(broker::SZSEHpfOrderTick): write_szse_order_tick(message); break;
     case sizeof(broker::SZSEHpfTradeTick): write_szse_trade_tick(message); break;
-    case sizeof(broker::SZSEHpfL2Snap): write_szse_l2snap(message); break;
+    case sizeof(broker::SZSEHpfL2Snap): write_szse_l2_snap(message); break;
     default: break;
     }
 }
@@ -193,14 +193,14 @@ void trade::RawMdRecorder::write_sse_tick(const std::vector<u_char>& message)
     );
 }
 
-void trade::RawMdRecorder::write_sse_l2snap(const std::vector<u_char>& message)
+void trade::RawMdRecorder::write_sse_l2_snap(const std::vector<u_char>& message)
 {
     const auto sse_l2_snap = reinterpret_cast<const broker::SSEHpfL2Snap*>(message.data());
 
     new_sse_l2_snap_writer(sse_l2_snap->m_symbol_id);
 
     m_sse_l2_snap_writers[sse_l2_snap->m_symbol_id] << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         /// SSEHpfPackageHead.
         sse_l2_snap->m_head.m_seq_num,
         sse_l2_snap->m_head.m_msg_type,
@@ -214,9 +214,10 @@ void trade::RawMdRecorder::write_sse_l2snap(const std::vector<u_char>& message)
         sse_l2_snap->m_head.m_msg_seq_id,
         sse_l2_snap->m_head.m_seq_lost_flag,
         /// SSEHpfL2Snap.
-        sse_l2_snap->m_symbol_id,
         sse_l2_snap->m_update_time,
+        sse_l2_snap->m_symbol_id,
         sse_l2_snap->m_update_type,
+        sse_l2_snap->m_secu_type,
         sse_l2_snap->m_prev_close,
         sse_l2_snap->m_open_price,
         sse_l2_snap->m_day_high,
@@ -274,7 +275,9 @@ void trade::RawMdRecorder::write_sse_l2snap(const std::vector<u_char>& message)
         sse_l2_snap->m_ask_px[8].m_px,
         sse_l2_snap->m_ask_px[8].m_qty,
         sse_l2_snap->m_ask_px[9].m_px,
-        sse_l2_snap->m_ask_px[9].m_qty
+        sse_l2_snap->m_ask_px[9].m_qty,
+        /// Time.
+        utilities::Now<std::string>()()
     );
 }
 
@@ -341,14 +344,14 @@ void trade::RawMdRecorder::write_szse_trade_tick(const std::vector<u_char>& mess
     );
 }
 
-void trade::RawMdRecorder::write_szse_l2snap(const std::vector<u_char>& message)
+void trade::RawMdRecorder::write_szse_l2_snap(const std::vector<u_char>& message)
 {
     const auto szse_l2_snap = reinterpret_cast<const broker::SZSEHpfL2Snap*>(message.data());
 
     new_szse_l2_snap_writer(szse_l2_snap->m_header.m_symbol);
 
     m_szse_l2_snap_writers[szse_l2_snap->m_header.m_symbol] << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         /// SZSEHpfPackageHead.
         szse_l2_snap->m_header.m_sequence,
         szse_l2_snap->m_header.m_tick1,
@@ -421,7 +424,9 @@ void trade::RawMdRecorder::write_szse_l2snap(const std::vector<u_char>& message)
         szse_l2_snap->m_ask_unit[8].m_price,
         szse_l2_snap->m_ask_unit[8].m_qty,
         szse_l2_snap->m_ask_unit[9].m_price,
-        szse_l2_snap->m_ask_unit[9].m_qty
+        szse_l2_snap->m_ask_unit[9].m_qty,
+        /// Time.
+        utilities::Now<std::string>()()
     );
 }
 
@@ -554,7 +559,9 @@ void trade::RawMdRecorder::new_sse_l2_snap_writer(const std::string& symbol)
             << "ask_px_9,"
             << "ask_volume_9,"
             << "ask_px_10,"
-            << "ask_volume_10"
+            << "ask_volume_10,"
+            /// Time.
+            << "time"
             << std::endl;
     }
 }
@@ -713,7 +720,9 @@ void trade::RawMdRecorder::new_szse_l2_snap_writer(const std::string& symbol)
             << "ask_9_px,"
             << "ask_9_qty,"
             << "ask_10_px,"
-            << "ask_10_qty"
+            << "ask_10_qty,"
+            /// Time.
+            << "time"
             << std::endl;
     }
 }
