@@ -2,18 +2,18 @@
 
 trade::reporter::AsyncReporter::AsyncReporter(std::shared_ptr<IReporter> outside)
     : /// Order.
-      m_broker_acceptance_buffer(buffer_size),
-      m_exchange_acceptance_buffer(buffer_size),
-      m_order_rejection_buffer(buffer_size),
+      m_broker_acceptance_buffer(m_buffer_size),
+      m_exchange_acceptance_buffer(m_buffer_size),
+      m_order_rejection_buffer(m_buffer_size),
       /// Cancel.
-      m_cancel_broker_acceptance_buffer(buffer_size),
-      m_cancel_exchange_acceptance_buffer(buffer_size),
-      m_cancel_success_buffer(buffer_size),
-      m_cancel_order_rejection_buffer(buffer_size),
+      m_cancel_broker_acceptance_buffer(m_buffer_size),
+      m_cancel_exchange_acceptance_buffer(m_buffer_size),
+      m_cancel_success_buffer(m_buffer_size),
+      m_cancel_order_rejection_buffer(m_buffer_size),
       /// Trade.
-      m_trade_buffer(buffer_size),
+      m_trade_buffer(m_buffer_size),
       /// Market data.
-      m_md_trade_buffer(buffer_size),
+      m_md_trade_buffer(m_buffer_size),
       m_outside(std::move(outside))
 {
     is_running = true;

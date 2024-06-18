@@ -100,7 +100,7 @@ private:
     std::atomic<bool> is_running;
 
 private:
-    static constexpr size_t buffer_size = 1024 * 1024 * 1024; /// Make a big buffer.
+    static constexpr size_t m_buffer_size = 1024 * 1024 * 1024; /// Make a big buffer.
 
 private:
     std::shared_ptr<IReporter> m_outside;

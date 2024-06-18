@@ -32,37 +32,42 @@ private:
 
 static_assert(sizeof(SMMateInfo) == 256, "MateInfo should be 256 bytes");
 
+struct PriceQuantityPair {
+    double price     = 0;
+    int64_t quantity = 0;
+};
+
 struct PUBLIC_API SMMarketData {
     char symbol[16]  = {};
     double price     = 0;
     int32_t quantity = 0;
 
-    double sell_10   = 0;
-    double sell_9    = 0;
-    double sell_8    = 0;
-    double sell_7    = 0;
-    double sell_6    = 0;
-    double sell_5    = 0;
-    double sell_4    = 0;
-    double sell_3    = 0;
-    double sell_2    = 0;
-    double sell_1    = 0;
-    double buy_1     = 0;
-    double buy_2     = 0;
-    double buy_3     = 0;
-    double buy_4     = 0;
-    double buy_5     = 0;
-    double buy_6     = 0;
-    double buy_7     = 0;
-    double buy_8     = 0;
-    double buy_9     = 0;
-    double buy_10    = 0;
+    PriceQuantityPair sell_10;
+    PriceQuantityPair sell_9;
+    PriceQuantityPair sell_8;
+    PriceQuantityPair sell_7;
+    PriceQuantityPair sell_6;
+    PriceQuantityPair sell_5;
+    PriceQuantityPair sell_4;
+    PriceQuantityPair sell_3;
+    PriceQuantityPair sell_2;
+    PriceQuantityPair sell_1;
+    PriceQuantityPair buy_1;
+    PriceQuantityPair buy_2;
+    PriceQuantityPair buy_3;
+    PriceQuantityPair buy_4;
+    PriceQuantityPair buy_5;
+    PriceQuantityPair buy_6;
+    PriceQuantityPair buy_7;
+    PriceQuantityPair buy_8;
+    PriceQuantityPair buy_9;
+    PriceQuantityPair buy_10;
 
 private:
-    u_char m_reserved[68] = {}; /// For aligning of cache line.
+    u_char m_reserved[164] = {}; /// For aligning of cache line.
 };
 
-static_assert(sizeof(SMMarketData) == 256, "SMTrade should be 256 bytes");
+static_assert(sizeof(SMMarketData) == 512, "SMTrade should be 512 bytes");
 
 #pragma pack(pop)
 

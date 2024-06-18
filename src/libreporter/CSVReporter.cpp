@@ -8,30 +8,50 @@ void trade::reporter::CSVReporter::md_trade_generated(const std::shared_ptr<type
     new_md_trade_writer(md_trade->symbol());
 
     m_md_trade_writers[md_trade->symbol()] << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         md_trade->symbol(),
         md_trade->price(),
         md_trade->quantity(),
-        md_trade->sell_10(),
-        md_trade->sell_9(),
-        md_trade->sell_8(),
-        md_trade->sell_7(),
-        md_trade->sell_6(),
-        md_trade->sell_5(),
-        md_trade->sell_4(),
-        md_trade->sell_3(),
-        md_trade->sell_2(),
-        md_trade->sell_1(),
-        md_trade->buy_1(),
-        md_trade->buy_2(),
-        md_trade->buy_3(),
-        md_trade->buy_4(),
-        md_trade->buy_5(),
-        md_trade->buy_6(),
-        md_trade->buy_7(),
-        md_trade->buy_8(),
-        md_trade->buy_9(),
-        md_trade->buy_10(),
+        md_trade->sell_price_10(),
+        md_trade->sell_quantity_10(),
+        md_trade->sell_price_9(),
+        md_trade->sell_quantity_9(),
+        md_trade->sell_price_8(),
+        md_trade->sell_quantity_8(),
+        md_trade->sell_price_7(),
+        md_trade->sell_quantity_7(),
+        md_trade->sell_price_6(),
+        md_trade->sell_quantity_6(),
+        md_trade->sell_price_5(),
+        md_trade->sell_quantity_5(),
+        md_trade->sell_price_4(),
+        md_trade->sell_quantity_4(),
+        md_trade->sell_price_3(),
+        md_trade->sell_quantity_3(),
+        md_trade->sell_price_2(),
+        md_trade->sell_quantity_2(),
+        md_trade->sell_price_1(),
+        md_trade->sell_quantity_1(),
+        md_trade->buy_price_1(),
+        md_trade->buy_quantity_1(),
+        md_trade->buy_price_2(),
+        md_trade->buy_quantity_2(),
+        md_trade->buy_price_3(),
+        md_trade->buy_quantity_3(),
+        md_trade->buy_price_4(),
+        md_trade->buy_quantity_4(),
+        md_trade->buy_price_5(),
+        md_trade->buy_quantity_5(),
+        md_trade->buy_price_6(),
+        md_trade->buy_quantity_6(),
+        md_trade->buy_price_7(),
+        md_trade->buy_quantity_7(),
+        md_trade->buy_price_8(),
+        md_trade->buy_quantity_8(),
+        md_trade->buy_price_9(),
+        md_trade->buy_quantity_9(),
+        md_trade->buy_price_10(),
+        md_trade->buy_quantity_10(),
         /// Time.
         utilities::Now<std::string>()()
     );
@@ -53,26 +73,46 @@ void trade::reporter::CSVReporter::new_md_trade_writer(const std::string& symbol
             << "symbol,"
             << "price,"
             << "quantity,"
-            << "sell_10,"
-            << "sell_9,"
-            << "sell_8,"
-            << "sell_7,"
-            << "sell_6,"
-            << "sell_5,"
-            << "sell_4,"
-            << "sell_3,"
-            << "sell_2,"
-            << "sell_1,"
-            << "buy_1,"
-            << "buy_2,"
-            << "buy_3,"
-            << "buy_4,"
-            << "buy_5,"
-            << "buy_6,"
-            << "buy_7,"
-            << "buy_8,"
-            << "buy_9,"
-            << "buy_10,"
+            << "sell_price_10,"
+            << "sell_quantity_10,"
+            << "sell_price_9,"
+            << "sell_quantity_9,"
+            << "sell_price_8,"
+            << "sell_quantity_8,"
+            << "sell_price_7,"
+            << "sell_quantity_7,"
+            << "sell_price_6,"
+            << "sell_quantity_6,"
+            << "sell_price_5,"
+            << "sell_quantity_5,"
+            << "sell_price_4,"
+            << "sell_quantity_4,"
+            << "sell_price_3,"
+            << "sell_quantity_3,"
+            << "sell_price_2,"
+            << "sell_quantity_2,"
+            << "sell_price_1,"
+            << "sell_quantity_1,"
+            << "buy_price_1,"
+            << "buy_quantity_1,"
+            << "buy_price_2,"
+            << "buy_quantity_2,"
+            << "buy_price_3,"
+            << "buy_quantity_3,"
+            << "buy_price_4,"
+            << "buy_quantity_4,"
+            << "buy_price_5,"
+            << "buy_quantity_5,"
+            << "buy_price_6,"
+            << "buy_quantity_6,"
+            << "buy_price_7,"
+            << "buy_quantity_7,"
+            << "buy_price_8,"
+            << "buy_quantity_8,"
+            << "buy_price_9,"
+            << "buy_quantity_9,"
+            << "buy_price_10,"
+            << "buy_pquantity10,"
             /// Time.
             << "time"
             << std::endl;

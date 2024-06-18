@@ -25,11 +25,12 @@ public:
 public:
     void md_trade_generated(const std::shared_ptr<trade::types::MdTrade> md_trade) override
     {
+        /// TODO: Add l2 quantity check.
         m_trade_result << fmt::format(
             "{}:{:05.2f}:{:04} S{:05.2f}:S{:05.2f}:S{:05.2f} B{:05.2f}:B{:05.2f}:B{:05.2f}\n",
-            md_trade->symbol(), md_trade->price(), md_trade->quantity(), /// Symbol, price and quantity of last trade.
-            md_trade->sell_3(), md_trade->sell_2(), md_trade->sell_1(),  /// Sell level prices.
-            md_trade->buy_1(), md_trade->buy_2(), md_trade->buy_3()      /// Buy level prices.
+            md_trade->symbol(), md_trade->price(), md_trade->quantity(),                  /// Symbol, price and quantity of last trade.
+            md_trade->sell_price_3(), md_trade->sell_price_2(), md_trade->sell_price_1(), /// Sell level prices.
+            md_trade->buy_price_1(), md_trade->buy_price_2(), md_trade->buy_price_3()     /// Buy level prices.
         );
     }
 
