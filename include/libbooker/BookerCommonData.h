@@ -3,6 +3,7 @@
 #include <third/liquibook/src/book/order_book.h>
 
 #include "enums.pb.h"
+#include "networks.pb.h"
 #include "orms.pb.h"
 
 namespace trade::booker
@@ -24,5 +25,6 @@ private:
 
 using OrderTickPtr = std::shared_ptr<types::OrderTick>;
 using TradeTickPtr = std::shared_ptr<types::TradeTick>;
+using MdTradePtr   = std::shared_ptr<types::MdTrade>;
 
 } // namespace trade::booker

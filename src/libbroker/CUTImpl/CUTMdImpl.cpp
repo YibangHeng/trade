@@ -64,6 +64,7 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
 
     booker::OrderTickPtr order_tick;
     booker::TradeTickPtr trade_tick;
+    booker::MdTradePtr md_trade;
 
     while (is_running) {
         const auto bytes_received = client.receive(buffer);
@@ -71,10 +72,10 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
         /// TODO: Is it OK to check message type by message size?
         switch (bytes_received) {
         case sizeof(SSEHpfTick): order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(buffer); break;
-        // case sizeof(SSEHpfL2Snap): break;
+        case sizeof(SSEHpfL2Snap): md_trade = CUTCommonData::to_md_trade<SSEHpfL2Snap>(buffer); break;
         case sizeof(SZSEHpfOrderTick): order_tick = CUTCommonData::to_order_tick<SZSEHpfOrderTick>(buffer); break;
         case sizeof(SZSEHpfTradeTick): trade_tick = CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(buffer); break;
-        // case sizeof(SZSEHpfL2Snap): break;
+        case sizeof(SZSEHpfL2Snap): md_trade = CUTCommonData::to_md_trade<SZSEHpfL2Snap>(buffer); break;
         default: break;
         }
 
@@ -87,6 +88,11 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
 
         if (trade_tick != nullptr) {
             booker.trade(trade_tick);
+        }
+
+        if (md_trade != nullptr) {
+            if (booker.l2(md_trade))
+                logger->error("Verification failed for {}'s L2 snapshot", md_trade->symbol());
         }
     }
 }

@@ -14,6 +14,9 @@ concept IsOrderTick = std::is_same_v<T, SSEHpfTick> || std::is_same_v<T, SZSEHpf
 template<typename T>
 concept IsTradeTick = std::is_same_v<T, SZSEHpfTradeTick>;
 
+template<typename T>
+concept IsMdTrade = std::is_same_v<T, SSEHpfL2Snap> || std::is_same_v<T, SZSEHpfL2Snap>;
+
 class CUTCommonData
 {
 public:
@@ -60,6 +63,8 @@ public:
     [[nodiscard]] static booker::OrderTickPtr to_order_tick(const std::vector<u_char>& message);
     template<IsTradeTick Mess7ageType>
     [[nodiscard]] static booker::TradeTickPtr to_trade_tick(const std::vector<u_char>& message);
+    template<IsMdTrade MessageType>
+    [[nodiscard]] static booker::MdTradePtr to_md_trade(const std::vector<u_char>& message);
     [[nodiscard]] static double to_sse_price(uint32_t order_price);
     [[nodiscard]] static double to_szse_price(uint32_t exe_px);
     [[nodiscard]] static int64_t to_sse_quantity(uint32_t qty);
@@ -130,6 +135,121 @@ inline booker::TradeTickPtr CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(const
     trade_tick->set_x_ost_szse_exe_type(to_order_type_from_szse(raw_trade->m_exe_type));
 
     return trade_tick;
+}
+
+template<>
+inline booker::MdTradePtr CUTCommonData::to_md_trade<SSEHpfL2Snap>(const std::vector<u_char>& message)
+{
+    auto md_trade = std::make_shared<types::MdTrade>();
+
+    assert(message.size() == sizeof(SSEHpfL2Snap));
+    const auto raw_md_trade = reinterpret_cast<const SSEHpfL2Snap*>(message.data());
+
+    md_trade->set_symbol(raw_md_trade->m_symbol_id);
+    md_trade->set_price(to_sse_price(raw_md_trade->m_last_price));
+    md_trade->set_quantity(to_sse_quantity(raw_md_trade->m_trade_volume));
+    md_trade->set_sell_price_10(to_sse_price(raw_md_trade->m_ask_px[0].m_px));
+
+    md_trade->set_sell_price_1(to_sse_price(raw_md_trade->m_ask_px[0].m_px));
+    md_trade->set_sell_quantity_1(to_sse_quantity(raw_md_trade->m_ask_px[0].m_qty));
+    md_trade->set_sell_price_2(to_sse_price(raw_md_trade->m_ask_px[1].m_px));
+    md_trade->set_sell_quantity_2(to_sse_quantity(raw_md_trade->m_ask_px[1].m_qty));
+    md_trade->set_sell_price_3(to_sse_price(raw_md_trade->m_ask_px[2].m_px));
+    md_trade->set_sell_quantity_3(to_sse_quantity(raw_md_trade->m_ask_px[2].m_qty));
+    md_trade->set_sell_price_4(to_sse_price(raw_md_trade->m_ask_px[3].m_px));
+    md_trade->set_sell_quantity_4(to_sse_quantity(raw_md_trade->m_ask_px[3].m_qty));
+    md_trade->set_sell_price_5(to_sse_price(raw_md_trade->m_ask_px[4].m_px));
+    md_trade->set_sell_quantity_5(to_sse_quantity(raw_md_trade->m_ask_px[4].m_qty));
+    md_trade->set_sell_price_6(to_sse_price(raw_md_trade->m_ask_px[5].m_px));
+    md_trade->set_sell_quantity_6(to_sse_quantity(raw_md_trade->m_ask_px[5].m_qty));
+    md_trade->set_sell_price_7(to_sse_price(raw_md_trade->m_ask_px[6].m_px));
+    md_trade->set_sell_quantity_7(to_sse_quantity(raw_md_trade->m_ask_px[6].m_qty));
+    md_trade->set_sell_price_8(to_sse_price(raw_md_trade->m_ask_px[7].m_px));
+    md_trade->set_sell_quantity_8(to_sse_quantity(raw_md_trade->m_ask_px[7].m_qty));
+    md_trade->set_sell_price_9(to_sse_price(raw_md_trade->m_ask_px[8].m_px));
+    md_trade->set_sell_quantity_9(to_sse_quantity(raw_md_trade->m_ask_px[8].m_qty));
+    md_trade->set_sell_price_10(to_sse_price(raw_md_trade->m_ask_px[9].m_px));
+    md_trade->set_sell_quantity_10(to_sse_quantity(raw_md_trade->m_ask_px[9].m_qty));
+
+    md_trade->set_buy_price_1(to_sse_price(raw_md_trade->m_bid_px[0].m_px));
+    md_trade->set_buy_quantity_1(to_sse_quantity(raw_md_trade->m_bid_px[0].m_qty));
+    md_trade->set_buy_price_2(to_sse_price(raw_md_trade->m_bid_px[1].m_px));
+    md_trade->set_buy_quantity_2(to_sse_quantity(raw_md_trade->m_bid_px[1].m_qty));
+    md_trade->set_buy_price_3(to_sse_price(raw_md_trade->m_bid_px[2].m_px));
+    md_trade->set_buy_quantity_3(to_sse_quantity(raw_md_trade->m_bid_px[2].m_qty));
+    md_trade->set_buy_price_4(to_sse_price(raw_md_trade->m_bid_px[3].m_px));
+    md_trade->set_buy_quantity_4(to_sse_quantity(raw_md_trade->m_bid_px[3].m_qty));
+    md_trade->set_buy_price_5(to_sse_price(raw_md_trade->m_bid_px[4].m_px));
+    md_trade->set_buy_quantity_5(to_sse_quantity(raw_md_trade->m_bid_px[4].m_qty));
+    md_trade->set_buy_price_6(to_sse_price(raw_md_trade->m_bid_px[5].m_px));
+    md_trade->set_buy_quantity_6(to_sse_quantity(raw_md_trade->m_bid_px[5].m_qty));
+    md_trade->set_buy_price_7(to_sse_price(raw_md_trade->m_bid_px[6].m_px));
+    md_trade->set_buy_quantity_7(to_sse_quantity(raw_md_trade->m_bid_px[6].m_qty));
+    md_trade->set_buy_price_8(to_sse_price(raw_md_trade->m_bid_px[7].m_px));
+    md_trade->set_buy_quantity_8(to_sse_quantity(raw_md_trade->m_bid_px[7].m_qty));
+    md_trade->set_buy_price_9(to_sse_price(raw_md_trade->m_bid_px[8].m_px));
+    md_trade->set_buy_quantity_9(to_sse_quantity(raw_md_trade->m_bid_px[8].m_qty));
+    md_trade->set_buy_price_10(to_sse_price(raw_md_trade->m_bid_px[9].m_px));
+    md_trade->set_buy_quantity_10(to_sse_quantity(raw_md_trade->m_bid_px[9].m_qty));
+
+    return md_trade;
+}
+
+template<>
+inline booker::MdTradePtr CUTCommonData::to_md_trade<SZSEHpfL2Snap>(const std::vector<u_char>& message)
+{
+    auto md_trade = std::make_shared<types::MdTrade>();
+
+    assert(message.size() == sizeof(SZSEHpfL2Snap));
+    const auto raw_md_trade = reinterpret_cast<const SZSEHpfL2Snap*>(message.data());
+
+    md_trade->set_symbol(raw_md_trade->m_header.m_symbol);
+    md_trade->set_price(to_szse_price(raw_md_trade->m_last_price));
+    md_trade->set_quantity(to_szse_quantity(raw_md_trade->m_total_quantity_trade));
+
+    md_trade->set_sell_price_1(to_szse_price(raw_md_trade->m_ask_unit[0].m_price));
+    md_trade->set_sell_quantity_1(to_szse_quantity(raw_md_trade->m_ask_unit[0].m_qty));
+    md_trade->set_sell_price_2(to_szse_price(raw_md_trade->m_ask_unit[1].m_price));
+    md_trade->set_sell_quantity_2(to_szse_quantity(raw_md_trade->m_ask_unit[1].m_qty));
+    md_trade->set_sell_price_3(to_szse_price(raw_md_trade->m_ask_unit[2].m_price));
+    md_trade->set_sell_quantity_3(to_szse_quantity(raw_md_trade->m_ask_unit[2].m_qty));
+    md_trade->set_sell_price_4(to_szse_price(raw_md_trade->m_ask_unit[3].m_price));
+    md_trade->set_sell_quantity_4(to_szse_quantity(raw_md_trade->m_ask_unit[3].m_qty));
+    md_trade->set_sell_price_5(to_szse_price(raw_md_trade->m_ask_unit[4].m_price));
+    md_trade->set_sell_quantity_5(to_szse_quantity(raw_md_trade->m_ask_unit[4].m_qty));
+    md_trade->set_sell_price_6(to_szse_price(raw_md_trade->m_ask_unit[5].m_price));
+    md_trade->set_sell_quantity_6(to_szse_quantity(raw_md_trade->m_ask_unit[5].m_qty));
+    md_trade->set_sell_price_7(to_szse_price(raw_md_trade->m_ask_unit[6].m_price));
+    md_trade->set_sell_quantity_7(to_szse_quantity(raw_md_trade->m_ask_unit[6].m_qty));
+    md_trade->set_sell_price_8(to_szse_price(raw_md_trade->m_ask_unit[7].m_price));
+    md_trade->set_sell_quantity_8(to_szse_quantity(raw_md_trade->m_ask_unit[7].m_qty));
+    md_trade->set_sell_price_9(to_szse_price(raw_md_trade->m_ask_unit[8].m_price));
+    md_trade->set_sell_quantity_9(to_szse_quantity(raw_md_trade->m_ask_unit[8].m_qty));
+    md_trade->set_sell_price_10(to_szse_price(raw_md_trade->m_ask_unit[9].m_price));
+    md_trade->set_sell_quantity_10(to_szse_quantity(raw_md_trade->m_ask_unit[9].m_qty));
+
+    md_trade->set_buy_price_1(to_szse_price(raw_md_trade->m_bid_unit[0].m_price));
+    md_trade->set_buy_quantity_1(to_szse_quantity(raw_md_trade->m_bid_unit[0].m_qty));
+    md_trade->set_buy_price_2(to_szse_price(raw_md_trade->m_bid_unit[1].m_price));
+    md_trade->set_buy_quantity_2(to_szse_quantity(raw_md_trade->m_bid_unit[1].m_qty));
+    md_trade->set_buy_price_3(to_szse_price(raw_md_trade->m_bid_unit[2].m_price));
+    md_trade->set_buy_quantity_3(to_szse_quantity(raw_md_trade->m_bid_unit[2].m_qty));
+    md_trade->set_buy_price_4(to_szse_price(raw_md_trade->m_bid_unit[3].m_price));
+    md_trade->set_buy_quantity_4(to_szse_quantity(raw_md_trade->m_bid_unit[3].m_qty));
+    md_trade->set_buy_price_5(to_szse_price(raw_md_trade->m_bid_unit[4].m_price));
+    md_trade->set_buy_quantity_5(to_szse_quantity(raw_md_trade->m_bid_unit[4].m_qty));
+    md_trade->set_buy_price_6(to_szse_price(raw_md_trade->m_bid_unit[5].m_price));
+    md_trade->set_buy_quantity_6(to_szse_quantity(raw_md_trade->m_bid_unit[5].m_qty));
+    md_trade->set_buy_price_7(to_szse_price(raw_md_trade->m_bid_unit[6].m_price));
+    md_trade->set_buy_quantity_7(to_szse_quantity(raw_md_trade->m_bid_unit[6].m_qty));
+    md_trade->set_buy_price_8(to_szse_price(raw_md_trade->m_bid_unit[7].m_price));
+    md_trade->set_buy_quantity_8(to_szse_quantity(raw_md_trade->m_bid_unit[7].m_qty));
+    md_trade->set_buy_price_9(to_szse_price(raw_md_trade->m_bid_unit[8].m_price));
+    md_trade->set_buy_quantity_9(to_szse_quantity(raw_md_trade->m_bid_unit[8].m_qty));
+    md_trade->set_buy_price_10(to_szse_price(raw_md_trade->m_bid_unit[9].m_price));
+    md_trade->set_buy_quantity_10(to_szse_quantity(raw_md_trade->m_bid_unit[9].m_qty));
+
+    return md_trade;
 }
 
 } // namespace trade::broker

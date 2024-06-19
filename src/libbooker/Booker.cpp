@@ -62,7 +62,7 @@ void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
 
         add(order_tick);
     }
-    /// Otherwise, only accepts trade made in auction stage.
+    /// Otherwise, only accepts trade made in call auction stage.
     else if (trade_tick->exchange_time() == 92500) [[unlikely]] {
         m_call_auction_holders[trade_tick->symbol()].trade(*trade_tick);
 
@@ -75,6 +75,11 @@ void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
 
         m_reporter->md_trade_generated(md_trade);
     }
+}
+
+bool trade::booker::Booker::l2(const MdTradePtr& md_trade) const
+{
+    return m_md_validator.check(md_trade);
 }
 
 void trade::booker::Booker::switch_to_continuous_stage()
@@ -162,6 +167,7 @@ void trade::booker::Booker::on_trade(
 
     generate_level_price(book->symbol(), md_trade);
 
+    m_md_validator.md_trade_generated(md_trade); /// Feed to validator first.
     m_reporter->md_trade_generated(md_trade);
 }
 

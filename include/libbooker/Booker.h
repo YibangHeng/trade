@@ -5,6 +5,7 @@
 
 #include "AppBase.hpp"
 #include "CallAuctionHolder.h"
+#include "MdValidator.h"
 #include "OrderWrapper.h"
 #include "libreporter/IReporter.hpp"
 #include "visibility.h"
@@ -36,6 +37,9 @@ public:
     /// SZSE reports cancel orders as trade ticks. In this case, let
     /// Booker::add() handle it.
     void trade(const TradeTickPtr& trade_tick);
+    /// Accept l2 md info, whilch will be used for checking the self-generated
+    /// md info.
+    bool l2(const MdTradePtr& md_trade) const;
     void switch_to_continuous_stage();
 
 private:
@@ -71,6 +75,7 @@ private:
     std::unordered_map<int64_t, OrderWrapperPtr> m_orders;
     /// Indicates if the book is in call auction stage or in continuous trade stage.
     bool m_in_continuous_stage;
+    MdValidator m_md_validator;
 
 private:
     std::shared_ptr<reporter::IReporter> m_reporter;
