@@ -57,9 +57,9 @@ public:
 
     /// Market data.
 public:
-    void md_trade_generated(const std::shared_ptr<types::MdTrade> md_trade) override
+    void l2_tick_generated(const std::shared_ptr<types::L2Tick> l2_tick) override
     {
-        if (m_outside != nullptr) m_outside->md_trade_generated(md_trade);
+        if (m_outside != nullptr) m_outside->l2_tick_generated(l2_tick);
     }
 
 private:

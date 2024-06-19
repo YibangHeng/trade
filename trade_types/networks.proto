@@ -198,8 +198,8 @@ message Trade
 /// 行情信息
 ///
 
-/// 撮合的成交信息
-message MdTrade
+/// L2 行情信息
+message L2Tick
 {
     string symbol                   = 1;    /// 合约代码
     double price                    = 2;    /// 价格

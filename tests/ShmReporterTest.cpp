@@ -23,86 +23,86 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
     const auto reporter = std::make_shared<trade::reporter::ShmReporter>(shm_name, shm_mutex_name, shm_size / GB);
 
     /// Mock trade data.
-    const auto trade_0 = std::make_shared<trade::types::MdTrade>();
-    trade_0->set_symbol("600875.SH");
-    trade_0->set_price(22.22);
-    trade_0->set_quantity(100);
-    trade_0->set_sell_price_3(33.33);
-    trade_0->set_sell_quantity_3(3000);
-    trade_0->set_sell_price_2(22.22);
-    trade_0->set_sell_quantity_2(2000);
-    trade_0->set_sell_price_1(11.11);
-    trade_0->set_sell_quantity_1(1000);
-    trade_0->set_buy_price_1(11.11);
-    trade_0->set_buy_quantity_1(1000);
-    trade_0->set_buy_price_2(22.22);
-    trade_0->set_buy_quantity_2(2000);
-    trade_0->set_buy_price_3(33.33);
-    trade_0->set_buy_quantity_3(3000);
+    const auto l2_tick_0 = std::make_shared<trade::types::L2Tick>();
+    l2_tick_0->set_symbol("600875.SH");
+    l2_tick_0->set_price(22.22);
+    l2_tick_0->set_quantity(100);
+    l2_tick_0->set_sell_price_3(33.33);
+    l2_tick_0->set_sell_quantity_3(3000);
+    l2_tick_0->set_sell_price_2(22.22);
+    l2_tick_0->set_sell_quantity_2(2000);
+    l2_tick_0->set_sell_price_1(11.11);
+    l2_tick_0->set_sell_quantity_1(1000);
+    l2_tick_0->set_buy_price_1(11.11);
+    l2_tick_0->set_buy_quantity_1(1000);
+    l2_tick_0->set_buy_price_2(22.22);
+    l2_tick_0->set_buy_quantity_2(2000);
+    l2_tick_0->set_buy_price_3(33.33);
+    l2_tick_0->set_buy_quantity_3(3000);
 
-    const auto trade_1 = std::make_shared<trade::types::MdTrade>();
-    trade_1->set_symbol("600875.SH");
-    trade_1->set_price(22.33);
-    trade_1->set_quantity(200);
-    trade_1->set_sell_price_3(33.33);
-    trade_1->set_sell_quantity_3(3000);
-    trade_1->set_sell_price_2(22.22);
-    trade_1->set_sell_quantity_2(2000);
-    trade_1->set_sell_price_1(11.11);
-    trade_1->set_sell_quantity_1(1000);
-    trade_1->set_buy_price_1(11.11);
-    trade_1->set_buy_quantity_1(1000);
-    trade_1->set_buy_price_2(22.22);
-    trade_1->set_buy_quantity_2(2000);
-    trade_1->set_buy_price_3(33.33);
-    trade_1->set_buy_quantity_3(3000);
+    const auto l2_tick_1 = std::make_shared<trade::types::L2Tick>();
+    l2_tick_1->set_symbol("600875.SH");
+    l2_tick_1->set_price(22.33);
+    l2_tick_1->set_quantity(200);
+    l2_tick_1->set_sell_price_3(33.33);
+    l2_tick_1->set_sell_quantity_3(3000);
+    l2_tick_1->set_sell_price_2(22.22);
+    l2_tick_1->set_sell_quantity_2(2000);
+    l2_tick_1->set_sell_price_1(11.11);
+    l2_tick_1->set_sell_quantity_1(1000);
+    l2_tick_1->set_buy_price_1(11.11);
+    l2_tick_1->set_buy_quantity_1(1000);
+    l2_tick_1->set_buy_price_2(22.22);
+    l2_tick_1->set_buy_quantity_2(2000);
+    l2_tick_1->set_buy_price_3(33.33);
+    l2_tick_1->set_buy_quantity_3(3000);
 
-    const auto trade_2 = std::make_shared<trade::types::MdTrade>();
-    trade_2->set_symbol("600875.SH");
-    trade_2->set_price(33.22);
-    trade_2->set_quantity(300);
-    trade_2->set_sell_price_3(33.33);
-    trade_2->set_sell_quantity_3(3000);
-    trade_2->set_sell_price_2(22.22);
-    trade_2->set_sell_quantity_2(2000);
-    trade_2->set_sell_price_1(11.11);
-    trade_2->set_sell_quantity_1(1000);
-    trade_2->set_buy_price_1(11.11);
-    trade_2->set_buy_quantity_1(1000);
-    trade_2->set_buy_price_2(22.22);
-    trade_2->set_buy_quantity_2(2000);
-    trade_2->set_buy_price_3(33.33);
-    trade_2->set_buy_quantity_3(3000);
+    const auto l2_tick_2 = std::make_shared<trade::types::L2Tick>();
+    l2_tick_2->set_symbol("600875.SH");
+    l2_tick_2->set_price(33.22);
+    l2_tick_2->set_quantity(300);
+    l2_tick_2->set_sell_price_3(33.33);
+    l2_tick_2->set_sell_quantity_3(3000);
+    l2_tick_2->set_sell_price_2(22.22);
+    l2_tick_2->set_sell_quantity_2(2000);
+    l2_tick_2->set_sell_price_1(11.11);
+    l2_tick_2->set_sell_quantity_1(1000);
+    l2_tick_2->set_buy_price_1(11.11);
+    l2_tick_2->set_buy_quantity_1(1000);
+    l2_tick_2->set_buy_price_2(22.22);
+    l2_tick_2->set_buy_quantity_2(2000);
+    l2_tick_2->set_buy_price_3(33.33);
+    l2_tick_2->set_buy_quantity_3(3000);
 
-    const auto trade_3 = std::make_shared<trade::types::MdTrade>();
-    trade_3->set_symbol("600875.SH");
-    trade_3->set_price(33.33);
-    trade_3->set_quantity(400);
-    trade_3->set_sell_price_3(33.33);
-    trade_3->set_sell_quantity_3(3000);
-    trade_3->set_sell_price_2(22.22);
-    trade_3->set_sell_quantity_2(2000);
-    trade_3->set_sell_price_1(11.11);
-    trade_3->set_sell_quantity_1(1000);
-    trade_3->set_buy_price_1(11.11);
-    trade_3->set_buy_quantity_1(1000);
-    trade_3->set_buy_price_2(22.22);
-    trade_3->set_buy_quantity_2(2000);
-    trade_3->set_buy_price_3(33.33);
-    trade_3->set_buy_quantity_3(3000);
+    const auto l2_tick_3 = std::make_shared<trade::types::L2Tick>();
+    l2_tick_3->set_symbol("600875.SH");
+    l2_tick_3->set_price(33.33);
+    l2_tick_3->set_quantity(400);
+    l2_tick_3->set_sell_price_3(33.33);
+    l2_tick_3->set_sell_quantity_3(3000);
+    l2_tick_3->set_sell_price_2(22.22);
+    l2_tick_3->set_sell_quantity_2(2000);
+    l2_tick_3->set_sell_price_1(11.11);
+    l2_tick_3->set_sell_quantity_1(1000);
+    l2_tick_3->set_buy_price_1(11.11);
+    l2_tick_3->set_buy_quantity_1(1000);
+    l2_tick_3->set_buy_price_2(22.22);
+    l2_tick_3->set_buy_quantity_2(2000);
+    l2_tick_3->set_buy_price_3(33.33);
+    l2_tick_3->set_buy_quantity_3(3000);
 
     SECTION("Write and read in one thread")
     {
-        reporter->md_trade_generated(trade_0);
-        reporter->md_trade_generated(trade_1);
-        reporter->md_trade_generated(trade_2);
-        reporter->md_trade_generated(trade_3);
+        reporter->l2_tick_generated(l2_tick_0);
+        reporter->l2_tick_generated(l2_tick_1);
+        reporter->l2_tick_generated(l2_tick_2);
+        reporter->l2_tick_generated(l2_tick_3);
 
         auto shm_mate_info = static_cast<trade::reporter::SMMarketDataMateInfo*>(m_market_data_region->get_address());
 
         CHECK(shm_mate_info->market_data_count == 4);
 
-        auto md_current = reinterpret_cast<trade::reporter::SMMarketData*>(shm_mate_info + 1);
+        auto md_current = reinterpret_cast<trade::reporter::L2Tick*>(shm_mate_info + 1);
         CHECK(md_current[0].shm_union_type == trade::reporter::ShmUnionType::self_generated_market_data);
         CHECK(std::string(md_current[0].symbol) == "600875.SH");
         CHECK(md_current[0].price == 22.22);
@@ -174,10 +174,10 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
 
     SECTION("Write and read in multiple thread")
     {
-        reporter->md_trade_generated(trade_0);
-        reporter->md_trade_generated(trade_1);
-        reporter->md_trade_generated(trade_2);
-        reporter->md_trade_generated(trade_3);
+        reporter->l2_tick_generated(l2_tick_0);
+        reporter->l2_tick_generated(l2_tick_1);
+        reporter->l2_tick_generated(l2_tick_2);
+        reporter->l2_tick_generated(l2_tick_3);
 
         std::thread reader([] {
             boost::interprocess::named_upgradable_mutex read_mutex(boost::interprocess::open_or_create, "trade_data_mutex");
@@ -187,7 +187,7 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
 
             CHECK(shm_mate_info->market_data_count == 4);
 
-            auto md_current = reinterpret_cast<trade::reporter::SMMarketData*>(shm_mate_info + 1);
+            auto md_current = reinterpret_cast<trade::reporter::L2Tick*>(shm_mate_info + 1);
             CHECK(std::string(md_current[0].symbol) == "600875.SH");
             CHECK(md_current[0].price == 22.22);
             CHECK(md_current[0].quantity == 100);

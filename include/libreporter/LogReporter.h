@@ -39,7 +39,7 @@ public:
 
     /// Market data.
 public:
-    void md_trade_generated(std::shared_ptr<types::MdTrade> md_trade) override;
+    void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick) override;
 
 private:
     std::shared_ptr<spdlog::logger> trade_logger;

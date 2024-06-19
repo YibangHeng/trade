@@ -39,7 +39,7 @@ public:
     void trade(const TradeTickPtr& trade_tick);
     /// Accept l2 md info, whilch will be used for checking the self-generated
     /// md info.
-    bool l2(const MdTradePtr& md_trade) const;
+    bool l2(const L2TickPtr& l2_tick) const;
     void switch_to_continuous_stage();
 
 private:
@@ -51,7 +51,7 @@ private:
         liquibook::book::Quantity qty,
         liquibook::book::Price price
     ) override;
-    void generate_level_price(const std::string& symbol, const std::shared_ptr<types::MdTrade>& md_trade);
+    void generate_level_price(const std::string& symbol, const std::shared_ptr<types::L2Tick>& l2_tick);
 
 private:
     void on_accept(const OrderWrapperPtr& order) override {}

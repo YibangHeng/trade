@@ -36,7 +36,7 @@ public:
 
     /// Market data.
 public:
-    void md_trade_generated(std::shared_ptr<types::MdTrade> md_trade) override;
+    void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick) override;
 
 private:
     /// Order.
@@ -58,7 +58,7 @@ public:
 
     /// Market data.
 public:
-    void do_md_trade_generated();
+    void do_l2_tick_generated();
 
 private:
     /// Order.
@@ -92,9 +92,9 @@ private:
     std::thread m_trade_thread;
 
     /// Market data.
-    boost::circular_buffer<std::shared_ptr<types::MdTrade>> m_md_trade_buffer;
-    std::mutex m_md_trade_mutex;
-    std::thread m_md_trade_thread;
+    boost::circular_buffer<std::shared_ptr<types::L2Tick>> m_l2_tick_buffer;
+    std::mutex m_l2_tick_mutex;
+    std::thread m_l2_tick_thread;
 
 private:
     std::atomic<bool> is_running;

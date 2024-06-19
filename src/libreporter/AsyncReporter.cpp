@@ -13,7 +13,7 @@ trade::reporter::AsyncReporter::AsyncReporter(std::shared_ptr<IReporter> outside
       /// Trade.
       m_trade_buffer(m_buffer_size),
       /// Market data.
-      m_md_trade_buffer(m_buffer_size),
+      m_l2_tick_buffer(m_buffer_size),
       m_outside(std::move(outside))
 {
     is_running = true;
@@ -33,7 +33,7 @@ trade::reporter::AsyncReporter::AsyncReporter(std::shared_ptr<IReporter> outside
     m_trade_thread = std::thread(&AsyncReporter::do_trade_accepted, this);
 
     /// Market data.
-    m_md_trade_thread = std::thread(&AsyncReporter::do_md_trade_generated, this);
+    m_l2_tick_thread = std::thread(&AsyncReporter::do_l2_tick_generated, this);
 }
 
 trade::reporter::AsyncReporter::~AsyncReporter()
@@ -55,7 +55,7 @@ trade::reporter::AsyncReporter::~AsyncReporter()
     m_trade_thread.join();
 
     /// Market data.
-    m_md_trade_thread.join();
+    m_l2_tick_thread.join();
 }
 
 void trade::reporter::AsyncReporter::broker_accepted(const std::shared_ptr<types::BrokerAcceptance> broker_acceptance)
@@ -106,10 +106,10 @@ void trade::reporter::AsyncReporter::trade_accepted(const std::shared_ptr<types:
     m_trade_buffer.push_back(trade);
 }
 
-void trade::reporter::AsyncReporter::md_trade_generated(const std::shared_ptr<types::MdTrade> md_trade)
+void trade::reporter::AsyncReporter::l2_tick_generated(const std::shared_ptr<types::L2Tick> l2_tick)
 {
-    std::lock_guard lock(m_md_trade_mutex);
-    m_md_trade_buffer.push_back(md_trade);
+    std::lock_guard lock(m_l2_tick_mutex);
+    m_l2_tick_buffer.push_back(l2_tick);
 }
 
 #define IS_RUNNING(buffer, mutex)               \
@@ -254,19 +254,19 @@ void trade::reporter::AsyncReporter::do_trade_accepted()
     }
 }
 
-void trade::reporter::AsyncReporter::do_md_trade_generated()
+void trade::reporter::AsyncReporter::do_l2_tick_generated()
 {
-    while (IS_RUNNING(m_md_trade_buffer, m_md_trade_mutex)) {
-        std::shared_ptr<types::MdTrade> md_trade;
+    while (IS_RUNNING(m_l2_tick_buffer, m_l2_tick_mutex)) {
+        std::shared_ptr<types::L2Tick> l2_tick;
         {
-            std::lock_guard lock(m_md_trade_mutex);
+            std::lock_guard lock(m_l2_tick_mutex);
 
-            if (m_md_trade_buffer.empty())
+            if (m_l2_tick_buffer.empty())
                 continue;
 
-            md_trade = m_md_trade_buffer[0];
-            m_md_trade_buffer.pop_front();
+            l2_tick = m_l2_tick_buffer[0];
+            m_l2_tick_buffer.pop_front();
         }
-        m_outside->md_trade_generated(md_trade);
+        m_outside->l2_tick_generated(l2_tick);
     }
 }

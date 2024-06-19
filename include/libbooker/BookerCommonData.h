@@ -25,6 +25,6 @@ private:
 
 using OrderTickPtr = std::shared_ptr<types::OrderTick>;
 using TradeTickPtr = std::shared_ptr<types::TradeTick>;
-using MdTradePtr   = std::shared_ptr<types::MdTrade>;
+using L2TickPtr    = std::shared_ptr<types::L2Tick>;
 
 } // namespace trade::booker

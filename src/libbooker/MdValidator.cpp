@@ -1,26 +1,26 @@
 #include "libbooker/MdValidator.h"
 
-void trade::booker::MdValidator::md_trade_generated(const std::shared_ptr<types::MdTrade>& md_trade)
+void trade::booker::MdValidator::l2_tick_generated(const std::shared_ptr<types::L2Tick>& l2_tick)
 {
-    new_md_trade_buffer(md_trade->symbol());
+    new_l2_tick_buffer(l2_tick->symbol());
 
-    m_md_trade_buffers[md_trade->symbol()].push_back(MdTradeHash()(*md_trade));
+    m_l2_tick_buffers[l2_tick->symbol()].push_back(MdTradeHash()(*l2_tick));
 }
 
-bool trade::booker::MdValidator::check(const MdTradePtr& md_trade) const
+bool trade::booker::MdValidator::check(const L2TickPtr& l2_tick) const
 {
-    if (!m_md_trade_buffers.contains(md_trade->symbol()))
+    if (!m_l2_tick_buffers.contains(l2_tick->symbol()))
         return false;
 
-    const auto& buffer = m_md_trade_buffers.at(md_trade->symbol());
+    const auto& buffer = m_l2_tick_buffers.at(l2_tick->symbol());
 
-    return std::ranges::find(std::rbegin(buffer), std::rend(buffer), MdTradeHash()(*md_trade)) != buffer.rend();
+    return std::ranges::find(std::rbegin(buffer), std::rend(buffer), MdTradeHash()(*l2_tick)) != buffer.rend();
 }
 
-void trade::booker::MdValidator::new_md_trade_buffer(const std::string& symbol)
+void trade::booker::MdValidator::new_l2_tick_buffer(const std::string& symbol)
 {
-    if (m_md_trade_buffers.contains(symbol))
+    if (m_l2_tick_buffers.contains(symbol))
         return;
 
-    m_md_trade_buffers[symbol] = boost::circular_buffer<MdTradeHash::HashType>(m_buffer_size);
+    m_l2_tick_buffers[symbol] = boost::circular_buffer<MdTradeHash::HashType>(m_buffer_size);
 }

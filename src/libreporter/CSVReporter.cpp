@@ -3,73 +3,73 @@
 #include "libreporter/CSVReporter.h"
 #include "utilities/TimeHelper.hpp"
 
-void trade::reporter::CSVReporter::md_trade_generated(const std::shared_ptr<types::MdTrade> md_trade)
+void trade::reporter::CSVReporter::l2_tick_generated(const std::shared_ptr<types::L2Tick> l2_tick)
 {
-    new_md_trade_writer(md_trade->symbol());
+    new_l2_tick_writer(l2_tick->symbol());
 
-    m_md_trade_writers[md_trade->symbol()] << fmt::format(
+    m_l2_tick_writers[l2_tick->symbol()] << fmt::format(
         "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
-        md_trade->symbol(),
-        md_trade->price(),
-        md_trade->quantity(),
-        md_trade->sell_price_10(),
-        md_trade->sell_quantity_10(),
-        md_trade->sell_price_9(),
-        md_trade->sell_quantity_9(),
-        md_trade->sell_price_8(),
-        md_trade->sell_quantity_8(),
-        md_trade->sell_price_7(),
-        md_trade->sell_quantity_7(),
-        md_trade->sell_price_6(),
-        md_trade->sell_quantity_6(),
-        md_trade->sell_price_5(),
-        md_trade->sell_quantity_5(),
-        md_trade->sell_price_4(),
-        md_trade->sell_quantity_4(),
-        md_trade->sell_price_3(),
-        md_trade->sell_quantity_3(),
-        md_trade->sell_price_2(),
-        md_trade->sell_quantity_2(),
-        md_trade->sell_price_1(),
-        md_trade->sell_quantity_1(),
-        md_trade->buy_price_1(),
-        md_trade->buy_quantity_1(),
-        md_trade->buy_price_2(),
-        md_trade->buy_quantity_2(),
-        md_trade->buy_price_3(),
-        md_trade->buy_quantity_3(),
-        md_trade->buy_price_4(),
-        md_trade->buy_quantity_4(),
-        md_trade->buy_price_5(),
-        md_trade->buy_quantity_5(),
-        md_trade->buy_price_6(),
-        md_trade->buy_quantity_6(),
-        md_trade->buy_price_7(),
-        md_trade->buy_quantity_7(),
-        md_trade->buy_price_8(),
-        md_trade->buy_quantity_8(),
-        md_trade->buy_price_9(),
-        md_trade->buy_quantity_9(),
-        md_trade->buy_price_10(),
-        md_trade->buy_quantity_10(),
+        l2_tick->symbol(),
+        l2_tick->price(),
+        l2_tick->quantity(),
+        l2_tick->sell_price_10(),
+        l2_tick->sell_quantity_10(),
+        l2_tick->sell_price_9(),
+        l2_tick->sell_quantity_9(),
+        l2_tick->sell_price_8(),
+        l2_tick->sell_quantity_8(),
+        l2_tick->sell_price_7(),
+        l2_tick->sell_quantity_7(),
+        l2_tick->sell_price_6(),
+        l2_tick->sell_quantity_6(),
+        l2_tick->sell_price_5(),
+        l2_tick->sell_quantity_5(),
+        l2_tick->sell_price_4(),
+        l2_tick->sell_quantity_4(),
+        l2_tick->sell_price_3(),
+        l2_tick->sell_quantity_3(),
+        l2_tick->sell_price_2(),
+        l2_tick->sell_quantity_2(),
+        l2_tick->sell_price_1(),
+        l2_tick->sell_quantity_1(),
+        l2_tick->buy_price_1(),
+        l2_tick->buy_quantity_1(),
+        l2_tick->buy_price_2(),
+        l2_tick->buy_quantity_2(),
+        l2_tick->buy_price_3(),
+        l2_tick->buy_quantity_3(),
+        l2_tick->buy_price_4(),
+        l2_tick->buy_quantity_4(),
+        l2_tick->buy_price_5(),
+        l2_tick->buy_quantity_5(),
+        l2_tick->buy_price_6(),
+        l2_tick->buy_quantity_6(),
+        l2_tick->buy_price_7(),
+        l2_tick->buy_quantity_7(),
+        l2_tick->buy_price_8(),
+        l2_tick->buy_quantity_8(),
+        l2_tick->buy_price_9(),
+        l2_tick->buy_quantity_9(),
+        l2_tick->buy_price_10(),
+        l2_tick->buy_quantity_10(),
         /// Time.
         utilities::Now<std::string>()()
     );
 
-    m_outside->md_trade_generated(md_trade);
+    m_outside->l2_tick_generated(l2_tick);
 }
 
-void trade::reporter::CSVReporter::new_md_trade_writer(const std::string& symbol)
+void trade::reporter::CSVReporter::new_l2_tick_writer(const std::string& symbol)
 {
-    if (!m_md_trade_writers.contains(symbol)) [[unlikely]] {
-        const std::filesystem::path file_path = fmt::format("{}/{}/{}-md-trade.csv", m_output_folder, utilities::Date<std::string>()(), symbol);
+    if (!m_l2_tick_writers.contains(symbol)) [[unlikely]] {
+        const std::filesystem::path file_path = fmt::format("{}/{}/{}-l2-tick.csv", m_output_folder, utilities::Date<std::string>()(), symbol);
 
         create_directories(std::filesystem::path(file_path).parent_path());
-        m_md_trade_writers.emplace(symbol, std::ofstream(file_path));
+        m_l2_tick_writers.emplace(symbol, std::ofstream(file_path));
 
         logger->info("Opened new md trade writer at {}", file_path.string());
 
-        m_md_trade_writers[symbol]
+        m_l2_tick_writers[symbol]
             << "symbol,"
             << "price,"
             << "quantity,"

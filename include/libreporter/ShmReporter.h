@@ -48,13 +48,7 @@ enum class ShmUnionType
 
 static_assert(sizeof(ShmUnionType) == 4, "ShmUnionType should be 4 bytes");
 
-struct PUBLIC_API Tick {
-    ShmUnionType shm_union_type = ShmUnionType::self_generated_market_data;
-
-    /// TODO: See types::OrderTick and types::TradeTick.
-};
-
-struct PUBLIC_API SMMarketData {
+struct PUBLIC_API L2TickData {
     ShmUnionType shm_union_type = ShmUnionType::self_generated_market_data;
 
     char symbol[16]             = {};
@@ -86,12 +80,12 @@ private:
     u_char m_reserved[160] = {}; /// For aligning of cache line.
 };
 
+static_assert(sizeof(L2Tick) == 512, "L2Tick should be 512 bytes");
+
 union PUBLIC_API ShmUnion
 {
-    SMMarketData market_data;
+    L2Tick market_data;
 };
-
-static_assert(sizeof(SMMarketData) == 512, "SMTrade should be 512 bytes");
 
 #pragma pack(pop)
 
@@ -109,7 +103,7 @@ public:
 
     /// Market data.
 public:
-    void md_trade_generated(std::shared_ptr<types::MdTrade> md_trade) override;
+    void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick) override;
 
 private:
     /// Return the start memory address of trade area.
@@ -122,9 +116,9 @@ private:
     boost::interprocess::named_upgradable_mutex m_named_mutex;
     SMMarketDataMateInfo* m_market_data_mate_info;
     /// Store the start memory address of market data area.
-    SMMarketData* m_market_data_start;
+    L2Tick* m_market_data_start;
     /// Store the current memory address of market data area, which is used for next writing.
-    SMMarketData* m_market_data_current;
+    L2Tick* m_market_data_current;
 
 private:
     static constexpr boost::interprocess::offset_t GB = 1024 * 1024 * 1024;
