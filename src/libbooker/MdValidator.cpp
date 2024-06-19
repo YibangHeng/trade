@@ -22,5 +22,5 @@ void trade::booker::MdValidator::new_md_trade_buffer(const std::string& symbol)
     if (m_md_trade_buffers.contains(symbol))
         return;
 
-    m_md_trade_buffers[symbol] = boost::circular_buffer<int64_t>(m_buffer_size);
+    m_md_trade_buffers[symbol] = boost::circular_buffer<MdTradeHash::HashType>(m_buffer_size);
 }

@@ -11,20 +11,23 @@ namespace trade::booker
 class MdTradeHash
 {
 public:
-    int64_t operator()(const types::MdTrade& md_trade) const
+    using HashType = decltype(std::hash<double>()(0.));
+
+    HashType operator()(const types::MdTrade& md_trade) const
     {
-        return std::llround(
-            md_trade.sell_price_5() * 10000000000000
-            + md_trade.sell_price_4() * 1000000000000
-            + md_trade.sell_price_3() * 100000000000
-            + md_trade.sell_price_2() * 10000000000
-            + md_trade.sell_price_1() * 1000000000
-            + md_trade.buy_price_5() * 100000000
-            + md_trade.buy_price_4() * 10000000
-            + md_trade.buy_price_3() * 1000000
-            + md_trade.buy_price_2() * 100000
-            + md_trade.buy_price_1() * 10000
-        );
+        const std::size_t sp1 = std::hash<double>()(md_trade.sell_price_1());
+        const std::size_t sp2 = std::hash<double>()(md_trade.sell_price_2());
+        const std::size_t sp3 = std::hash<double>()(md_trade.sell_price_3());
+        const std::size_t sp4 = std::hash<double>()(md_trade.sell_price_4());
+        const std::size_t sp5 = std::hash<double>()(md_trade.sell_price_5());
+
+        const std::size_t bp1 = std::hash<double>()(md_trade.buy_price_1());
+        const std::size_t bp2 = std::hash<double>()(md_trade.buy_price_2());
+        const std::size_t bp3 = std::hash<double>()(md_trade.buy_price_3());
+        const std::size_t bp4 = std::hash<double>()(md_trade.buy_price_4());
+        const std::size_t bp5 = std::hash<double>()(md_trade.buy_price_5());
+
+        return sp1 ^ sp2 << 1 ^ sp3 << 2 ^ sp4 << 3 ^ sp5 << 4 ^ bp1 << 5 ^ bp2 << 6 ^ bp3 << 7 ^ bp4 << 8 ^ bp5 << 9;
     }
 };
 
@@ -46,7 +49,7 @@ private:
 
 private:
     /// Symbol -> trades.
-    std::unordered_map<std::string, boost::circular_buffer<int64_t>> m_md_trade_buffers;
+    std::unordered_map<std::string, boost::circular_buffer<MdTradeHash::HashType>> m_md_trade_buffers;
     constexpr static int m_buffer_size = 1000; /// Last 1000 trades.
 };
 
