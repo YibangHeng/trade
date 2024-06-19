@@ -5,19 +5,22 @@
 
 static constexpr boost::interprocess::offset_t GB = 1024 * 1024 * 1024;
 
-const std::string shm_name                        = "trade_data";
-constexpr boost::interprocess::offset_t shm_size  = 3 * GB;
+/// Shared memory/named mutex name.
+const std::string shm_name       = "trade_data_for_unit_test";
+const std::string shm_mutex_name = "trade_data_mutex_for_unit_test";
 
-boost::interprocess::shared_memory_object shm_reader(boost::interprocess::open_or_create, "trade_data", boost::interprocess::read_only);
+/// Shared memory size.
+constexpr boost::interprocess::offset_t shm_size = 2 * GB;
+
+boost::interprocess::shared_memory_object shm_reader(boost::interprocess::open_or_create, shm_name.c_str(), boost::interprocess::read_only);
 
 /// Map areas of shared memory with same size.
-auto m_trade_region        = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 0 * shm_size / 3, shm_size / 3);
-auto m_market_price_region = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 1 * shm_size / 3, shm_size / 3);
-auto m_level_price_region  = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 2 * shm_size / 3, shm_size / 3);
+auto m_tick_region        = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 0 * shm_size / 2, shm_size / 2);
+auto m_market_data_region = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 1 * shm_size / 2, shm_size / 2);
 
 TEST_CASE("Normal writing and reading", "[ShmReporter]")
 {
-    const auto reporter = std::make_shared<trade::reporter::ShmReporter>();
+    const auto reporter = std::make_shared<trade::reporter::ShmReporter>(shm_name, shm_mutex_name, shm_size / GB);
 
     /// Mock trade data.
     const auto trade_0 = std::make_shared<trade::types::MdTrade>();
@@ -95,11 +98,12 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
         reporter->md_trade_generated(trade_2);
         reporter->md_trade_generated(trade_3);
 
-        auto shm_mate_info = static_cast<trade::reporter::SMMateInfo*>(m_trade_region->get_address());
+        auto shm_mate_info = static_cast<trade::reporter::SMMarketDataMateInfo*>(m_market_data_region->get_address());
 
         CHECK(shm_mate_info->market_data_count == 4);
 
         auto md_current = reinterpret_cast<trade::reporter::SMMarketData*>(shm_mate_info + 1);
+        CHECK(md_current[0].shm_union_type == trade::reporter::ShmUnionType::self_generated_market_data);
         CHECK(std::string(md_current[0].symbol) == "600875.SH");
         CHECK(md_current[0].price == 22.22);
         CHECK(md_current[0].quantity == 100);
@@ -116,6 +120,7 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
         CHECK(md_current[0].buy_3.price == 33.33);
         CHECK(md_current[0].buy_3.quantity == 3000);
 
+        CHECK(md_current[1].shm_union_type == trade::reporter::ShmUnionType::self_generated_market_data);
         CHECK(std::string(md_current[1].symbol) == "600875.SH");
         CHECK(md_current[1].price == 22.33);
         CHECK(md_current[1].quantity == 200);
@@ -132,6 +137,7 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
         CHECK(md_current[1].buy_3.price == 33.33);
         CHECK(md_current[1].buy_3.quantity == 3000);
 
+        CHECK(md_current[2].shm_union_type == trade::reporter::ShmUnionType::self_generated_market_data);
         CHECK(std::string(md_current[2].symbol) == "600875.SH");
         CHECK(md_current[2].price == 33.22);
         CHECK(md_current[2].quantity == 300);
@@ -148,6 +154,7 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
         CHECK(md_current[2].buy_3.price == 33.33);
         CHECK(md_current[2].buy_3.quantity == 3000);
 
+        CHECK(md_current[3].shm_union_type == trade::reporter::ShmUnionType::self_generated_market_data);
         CHECK(std::string(md_current[3].symbol) == "600875.SH");
         CHECK(md_current[3].price == 33.33);
         CHECK(md_current[3].quantity == 400);
@@ -165,7 +172,7 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
         CHECK(md_current[3].buy_3.quantity == 3000);
     }
 
-    SECTION("Write and read in one thread")
+    SECTION("Write and read in multiple thread")
     {
         reporter->md_trade_generated(trade_0);
         reporter->md_trade_generated(trade_1);
@@ -176,7 +183,7 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
             boost::interprocess::named_upgradable_mutex read_mutex(boost::interprocess::open_or_create, "trade_data_mutex");
             boost::interprocess::scoped_lock lock(read_mutex);
 
-            auto shm_mate_info = static_cast<trade::reporter::SMMateInfo*>(m_trade_region->get_address());
+            auto shm_mate_info = static_cast<trade::reporter::SMMarketDataMateInfo*>(m_market_data_region->get_address());
 
             CHECK(shm_mate_info->market_data_count == 4);
 
@@ -248,4 +255,8 @@ TEST_CASE("Normal writing and reading", "[ShmReporter]")
 
         reader.join();
     }
+
+    /// Remove shared memory and named mutex.
+    boost::interprocess::shared_memory_object::remove(shm_name.c_str());
+    boost::interprocess::named_upgradable_mutex::remove(shm_mutex_name.c_str());
 }
