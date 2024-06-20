@@ -174,7 +174,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         CHECK(shm_mate_info->l2_tick_count == 4);
 
         auto md_current = reinterpret_cast<trade::reporter::L2Tick*>(shm_mate_info + 1);
-        CHECK(md_current[0].shm_union_type == trade::reporter::ShmUnionType::self_generated_market_data);
+        CHECK(md_current[0].shm_union_type == trade::reporter::ShmUnionType::self_generated_l2_tick);
         CHECK(std::string(md_current[0].symbol) == "600875.SH");
         CHECK(md_current[0].price == 22.22);
         CHECK(md_current[0].quantity == 100);
@@ -191,7 +191,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         CHECK(md_current[0].buy_3.price == 33.33);
         CHECK(md_current[0].buy_3.quantity == 3000);
 
-        CHECK(md_current[1].shm_union_type == trade::reporter::ShmUnionType::self_generated_market_data);
+        CHECK(md_current[1].shm_union_type == trade::reporter::ShmUnionType::self_generated_l2_tick);
         CHECK(std::string(md_current[1].symbol) == "600875.SH");
         CHECK(md_current[1].price == 22.33);
         CHECK(md_current[1].quantity == 200);
@@ -208,7 +208,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         CHECK(md_current[1].buy_3.price == 33.33);
         CHECK(md_current[1].buy_3.quantity == 3000);
 
-        CHECK(md_current[2].shm_union_type == trade::reporter::ShmUnionType::self_generated_market_data);
+        CHECK(md_current[2].shm_union_type == trade::reporter::ShmUnionType::self_generated_l2_tick);
         CHECK(std::string(md_current[2].symbol) == "600875.SH");
         CHECK(md_current[2].price == 33.22);
         CHECK(md_current[2].quantity == 300);
@@ -225,7 +225,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         CHECK(md_current[2].buy_3.price == 33.33);
         CHECK(md_current[2].buy_3.quantity == 3000);
 
-        CHECK(md_current[3].shm_union_type == trade::reporter::ShmUnionType::self_generated_market_data);
+        CHECK(md_current[3].shm_union_type == trade::reporter::ShmUnionType::self_generated_l2_tick);
         CHECK(std::string(md_current[3].symbol) == "600875.SH");
         CHECK(md_current[3].price == 33.33);
         CHECK(md_current[3].quantity == 400);

@@ -10,6 +10,23 @@ SECTION("TimeHelper support warning")
 #else
 TEST_CASE("Time conversion correctness verification", "[TimeHelper]")
 {
+    SECTION("ProtobufTime to int64")
+    {
+        google::protobuf::Timestamp timestamp;
+
+        timestamp.set_seconds(946684800); // 2000-01-01 00:00:00.
+        timestamp.set_nanos(0);           // 000 milliseconds.
+
+        CHECK(trade::utilities::ToTime<int64_t>()(timestamp, "Asia/Shanghai") == 20000101080000000);
+        CHECK(trade::utilities::ToTime<int64_t>()(timestamp, "Asia/Tokyo") == 20000101090000000);
+
+        timestamp.set_seconds(946753445); // 2000-01-02 03:04:05.
+        timestamp.set_nanos(678000000);   // 678 milliseconds.
+
+        CHECK(trade::utilities::ToTime<int64_t>()(timestamp, "Asia/Shanghai") == 20000102030405678);
+        CHECK(trade::utilities::ToTime<int64_t>()(timestamp, "Asia/Tokyo") == 20000102040405678);
+    }
+
     SECTION("ProtobufTime to SQLiteDatetime")
     {
         google::protobuf::Timestamp timestamp;

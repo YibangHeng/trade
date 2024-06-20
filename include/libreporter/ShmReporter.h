@@ -22,22 +22,24 @@ static_assert(std::numeric_limits<double>::is_iec559);
 /// TODO: Use high precision library such as Boost.Multiprecision or GMP to deal
 /// with double precision.
 
-struct PUBLIC_API SMTickMateInfo {
-    size_t tick_count         = 0;
-    char last_update_time[32] = {}; /// Time in ISO 8601 format.
+#define RESERVED(bytes) \
+private:                \
+    u_char m_reserved[bytes] = {};
 
-private:
-    u_char m_reserved[472] = {}; /// For aligning of cache line.
+using SymbolType = char[16];
+
+struct PUBLIC_API SMTickMateInfo {
+    size_t tick_count        = 0;
+    int64_t last_update_time = {}; /// Time in ISO 8601 format.
+    RESERVED(496)
 };
 
 static_assert(sizeof(SMTickMateInfo) == 512, "MateInfo for tick should be 512 bytes");
 
 struct PUBLIC_API SML2TickMateInfo {
-    size_t l2_tick_count      = 0;
-    char last_update_time[32] = {}; /// Time in ISO 8601 format.
-
-private:
-    u_char m_reserved[472] = {}; /// For aligning of cache line.
+    size_t l2_tick_count     = 0;
+    int64_t last_update_time = {}; /// Time in ISO 8601 format.
+    RESERVED(496)
 };
 
 static_assert(sizeof(SML2TickMateInfo) == 512, "MateInfo for l2 tick should be 512 bytes");
@@ -47,38 +49,42 @@ struct PriceQuantityPair {
     int64_t quantity = 0;
 };
 
+static_assert(sizeof(PriceQuantityPair) == 16, "PriceQuantityPair should be 16 bytes");
+
 enum class ShmUnionType
 {
-    invalid_shm_union          = 0,
+    invalid_shm_union      = 0,
 
-    tick_from_exchange         = 1, /// 交易所逐笔委托
-    market_data_from_exchange  = 2, /// 交易所行情切片
-    self_generated_market_data = 3, /// 撮合行情
+    tick_from_exchange     = 1, /// 交易所逐笔委托
+    l2_tick_from_exchange  = 2, /// 交易所行情切片
+    self_generated_l2_tick = 3, /// 撮合行情
 };
 
 static_assert(sizeof(ShmUnionType) == 4, "ShmUnionType should be 4 bytes");
 
 struct PUBLIC_API Tick {
-    ShmUnionType shm_union_type = ShmUnionType::self_generated_market_data;
+    ShmUnionType shm_union_type;
 
-    char symbol[16]             = {};
-    double exec_price           = 0;
-    int64_t exec_quantity       = 0;
-    int64_t ask_unique_id       = 0;
-    int64_t bid_unique_id       = 0;
+    SymbolType symbol     = {};
+    double exec_price     = 0;
+    int64_t exec_quantity = 0;
+    int64_t ask_unique_id = 0;
+    int64_t bid_unique_id = 0;
 
-private:
-    u_char m_reserved[460] = {}; /// For aligning of cache line.
+    int64_t exhange_time;
+    int64_t local_system_time;
+
+    RESERVED(444)
 };
 
 static_assert(sizeof(Tick) == 512, "Tick should be 512 bytes");
 
 struct PUBLIC_API L2Tick {
-    ShmUnionType shm_union_type = ShmUnionType::self_generated_market_data;
+    ShmUnionType shm_union_type;
 
-    char symbol[16]             = {};
-    double price                = 0;
-    int32_t quantity            = 0;
+    SymbolType symbol = {};
+    double price      = 0;
+    int64_t quantity  = 0;
 
     PriceQuantityPair sell_10;
     PriceQuantityPair sell_9;
@@ -101,16 +107,21 @@ struct PUBLIC_API L2Tick {
     PriceQuantityPair buy_9;
     PriceQuantityPair buy_10;
 
-private:
-    u_char m_reserved[160] = {}; /// For aligning of cache line.
+    int64_t exhange_time;
+    int64_t local_system_time;
+
+    RESERVED(140)
 };
 
 static_assert(sizeof(L2Tick) == 512, "L2Tick should be 512 bytes");
 
 union PUBLIC_API ShmUnion
 {
+    Tick tick;
     L2Tick market_data;
 };
+
+static_assert(sizeof(ShmUnion) == 512, "ShmUnion should be 512 bytes");
 
 #pragma pack(pop)
 
