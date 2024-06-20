@@ -35,8 +35,9 @@ public:
 
     /// Market data.
 public:
-    virtual void exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick) = 0;
-    virtual void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick)        = 0;
+    virtual void exchange_tick_arrived(std::shared_ptr<types::ExchangeTick> exchange_tick) = 0;
+    virtual void exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick)          = 0;
+    virtual void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick)                 = 0;
 };
 
 } // namespace trade::reporter

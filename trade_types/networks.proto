@@ -204,10 +204,8 @@ message ExchangeTick
     int64 ask_unique_id = 1; /// 卖方委托 UniqueID
     int64 bid_unique_id = 2; /// 买方委托 UniqueID
     string symbol       = 3; /// 合约代码
-    SideType side       = 4; /// 买卖方向
     double exec_price   = 5; /// 执行价格
     int64 exec_quantity = 6; /// 执行数量
-    int64 exchange_time = 7; /// 交易所时间
 }
 
 /// L2 行情信息

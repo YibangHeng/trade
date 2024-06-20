@@ -22,15 +22,25 @@ static_assert(std::numeric_limits<double>::is_iec559);
 /// TODO: Use high precision library such as Boost.Multiprecision or GMP to deal
 /// with double precision.
 
-struct PUBLIC_API SMMarketDataMateInfo {
-    size_t market_data_count  = 0;
+struct PUBLIC_API SMTickMateInfo {
+    size_t tick_count         = 0;
     char last_update_time[32] = {}; /// Time in ISO 8601 format.
 
 private:
-    u_char m_reserved[216] = {}; /// For aligning of cache line.
+    u_char m_reserved[472] = {}; /// For aligning of cache line.
 };
 
-static_assert(sizeof(SMMarketDataMateInfo) == 256, "MateInfo should be 256 bytes");
+static_assert(sizeof(SMTickMateInfo) == 512, "MateInfo for tick should be 512 bytes");
+
+struct PUBLIC_API SML2TickMateInfo {
+    size_t l2_tick_count      = 0;
+    char last_update_time[32] = {}; /// Time in ISO 8601 format.
+
+private:
+    u_char m_reserved[472] = {}; /// For aligning of cache line.
+};
+
+static_assert(sizeof(SML2TickMateInfo) == 512, "MateInfo for l2 tick should be 512 bytes");
 
 struct PriceQuantityPair {
     double price     = 0;
@@ -118,10 +128,12 @@ public:
 
     /// Market data.
 public:
+    void exchange_tick_arrived(std::shared_ptr<types::ExchangeTick> exchange_tick) override;
     void exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick) override;
     void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick) override;
 
 private:
+    void do_exchange_tick_report(const std::shared_ptr<types::ExchangeTick>& exchange_tick);
     void do_l2_tick_report(const std::shared_ptr<types::L2Tick>& l2_tick, ShmUnionType shm_union_type);
 
 private:
@@ -131,13 +143,15 @@ private:
 private:
     boost::interprocess::shared_memory_object m_shm;
     std::shared_ptr<boost::interprocess::mapped_region> m_tick_region;
-    std::shared_ptr<boost::interprocess::mapped_region> m_market_data_region;
+    std::shared_ptr<boost::interprocess::mapped_region> m_l2_tick_region;
     boost::interprocess::named_upgradable_mutex m_named_mutex;
-    SMMarketDataMateInfo* m_market_data_mate_info;
-    /// Store the start memory address of market data area.
-    L2Tick* m_market_data_start;
-    /// Store the current memory address of market data area, which is used for next writing.
-    L2Tick* m_market_data_current;
+    SMTickMateInfo* m_tick_mate_info;
+    SML2TickMateInfo* m_l2_tick_mate_info;
+    /// Store the start/current memory address of tick area.
+    Tick* m_tick_start;
+    Tick* m_tick_current;
+    L2Tick* m_l2_tick_start;
+    L2Tick* m_l2_tick_current;
 
 private:
     static constexpr boost::interprocess::offset_t GB = 1024 * 1024 * 1024;
