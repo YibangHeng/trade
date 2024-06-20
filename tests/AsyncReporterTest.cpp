@@ -34,38 +34,41 @@ private:
     const size_t m_sleep_time;
 };
 
-TEST_CASE("Huge reporting", "[AsyncReporter]")
+TEST_CASE("AsyncReporter reporting", "[AsyncReporter]")
 {
-    constexpr int iteration_times = 100000;
+    SECTION("Huge reporting")
+    {
+        constexpr int iteration_times = 100000;
 
-    /// Report and count.
-    const auto counter_checker = std::make_shared<CounterChecker>();
-    auto reporter              = std::make_shared<trade::reporter::AsyncReporter>(counter_checker);
+        /// Report and count.
+        const auto counter_checker = std::make_shared<CounterChecker>();
+        auto reporter              = std::make_shared<trade::reporter::AsyncReporter>(counter_checker);
 
-    for (int i = 0; i < iteration_times; i++) {
-        reporter->l2_tick_generated(std::make_shared<trade::types::L2Tick>());
+        for (int i = 0; i < iteration_times; i++) {
+            reporter->l2_tick_generated(std::make_shared<trade::types::L2Tick>());
+        }
+
+        /// Wait for reporter to finish jobs.
+        reporter.reset();
+
+        CHECK(counter_checker->get_trade_counter() == iteration_times);
     }
 
-    /// Wait for reporter to finish jobs.
-    reporter.reset();
+    SECTION("Time consuming reporting")
+    {
+        constexpr int iteration_times = 10;
 
-    CHECK(counter_checker->get_trade_counter() == iteration_times);
-}
+        /// Report and count.
+        const auto counter_checker = std::make_shared<CounterChecker>(100); /// 10 milliseconds per job.
+        auto reporter              = std::make_shared<trade::reporter::AsyncReporter>(counter_checker);
 
-TEST_CASE("Time consuming reporting", "[AsyncReporter]")
-{
-    constexpr int iteration_times = 10;
+        for (int i = 0; i < iteration_times; i++) {
+            reporter->l2_tick_generated(std::make_shared<trade::types::L2Tick>());
+        }
 
-    /// Report and count.
-    const auto counter_checker = std::make_shared<CounterChecker>(100); /// 10 milliseconds per job.
-    auto reporter              = std::make_shared<trade::reporter::AsyncReporter>(counter_checker);
+        /// Wait for reporter to finish jobs.
+        reporter.reset();
 
-    for (int i = 0; i < iteration_times; i++) {
-        reporter->l2_tick_generated(std::make_shared<trade::types::L2Tick>());
+        CHECK(counter_checker->get_trade_counter() == iteration_times);
     }
-
-    /// Wait for reporter to finish jobs.
-    reporter.reset();
-
-    CHECK(counter_checker->get_trade_counter() == iteration_times);
 }
