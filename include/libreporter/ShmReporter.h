@@ -48,7 +48,22 @@ enum class ShmUnionType
 
 static_assert(sizeof(ShmUnionType) == 4, "ShmUnionType should be 4 bytes");
 
-struct PUBLIC_API L2TickData {
+struct PUBLIC_API Tick {
+    ShmUnionType shm_union_type = ShmUnionType::self_generated_market_data;
+
+    char symbol[16]             = {};
+    double exec_price           = 0;
+    int64_t exec_quantity       = 0;
+    int64_t ask_unique_id       = 0;
+    int64_t bid_unique_id       = 0;
+
+private:
+    u_char m_reserved[460] = {}; /// For aligning of cache line.
+};
+
+static_assert(sizeof(Tick) == 512, "Tick should be 512 bytes");
+
+struct PUBLIC_API L2Tick {
     ShmUnionType shm_union_type = ShmUnionType::self_generated_market_data;
 
     char symbol[16]             = {};
@@ -103,7 +118,11 @@ public:
 
     /// Market data.
 public:
+    void exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick) override;
     void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick) override;
+
+private:
+    void do_l2_tick_report(const std::shared_ptr<types::L2Tick>& l2_tick, ShmUnionType shm_union_type);
 
 private:
     /// Return the start memory address of trade area.

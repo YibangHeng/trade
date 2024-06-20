@@ -93,6 +93,8 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
         if (l2_tick != nullptr) {
             if (booker.l2(l2_tick))
                 logger->error("Verification failed for {}'s L2 snapshot", l2_tick->symbol());
+
+            m_reporter->exchange_l2_tick_arrived(l2_tick);
         }
     }
 }

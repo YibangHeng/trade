@@ -36,6 +36,7 @@ public:
 
     /// Market data.
 public:
+    void exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick) override;
     void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick) override;
 
 private:
@@ -58,6 +59,7 @@ public:
 
     /// Market data.
 public:
+    void do_exchange_l2_tick_arrived();
     void do_l2_tick_generated();
 
 private:
@@ -92,6 +94,9 @@ private:
     std::thread m_trade_thread;
 
     /// Market data.
+    boost::circular_buffer<std::shared_ptr<types::L2Tick>> m_exchange_l2_tick_buffer;
+    std::mutex m_exchange_l2_tick_mutex;
+    std::thread m_exchange_l2_tick_thread;
     boost::circular_buffer<std::shared_ptr<types::L2Tick>> m_l2_tick_buffer;
     std::mutex m_l2_tick_mutex;
     std::thread m_l2_tick_thread;

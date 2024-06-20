@@ -37,7 +37,19 @@ trade::reporter::ShmReporter::ShmReporter(
     logger->info("Divided shared memory areas to trade({})", m_market_data_region->get_address());
 }
 
+void trade::reporter::ShmReporter::exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick)
+{
+    do_l2_tick_report(l2_tick, ShmUnionType::tick_from_exchange);
+    m_outside->exchange_l2_tick_arrived(l2_tick);
+}
+
 void trade::reporter::ShmReporter::l2_tick_generated(const std::shared_ptr<types::L2Tick> l2_tick)
+{
+    do_l2_tick_report(l2_tick, ShmUnionType::self_generated_market_data);
+    m_outside->l2_tick_generated(l2_tick);
+}
+
+void trade::reporter::ShmReporter::do_l2_tick_report(const std::shared_ptr<types::L2Tick>& l2_tick, const ShmUnionType shm_union_type)
 {
     /// Check if shared memory is full.
     if (m_market_data_current - m_market_data_start > m_market_data_region->get_size() / sizeof(L2Tick)) {
@@ -50,7 +62,7 @@ void trade::reporter::ShmReporter::l2_tick_generated(const std::shared_ptr<types
     {
         boost::interprocess::scoped_lock lock(m_named_mutex);
 
-        m_market_data_current->shm_union_type   = ShmUnionType::self_generated_market_data;
+        m_market_data_current->shm_union_type   = shm_union_type;
 
         M_A {m_market_data_current->symbol}     = l2_tick->symbol();
         m_market_data_current->price            = l2_tick->price();
@@ -101,6 +113,4 @@ void trade::reporter::ShmReporter::l2_tick_generated(const std::shared_ptr<types
         m_market_data_mate_info->market_data_count++;
         M_A {m_market_data_mate_info->last_update_time} = utilities::Now<std::string>()();
     }
-
-    m_outside->l2_tick_generated(l2_tick);
 }
