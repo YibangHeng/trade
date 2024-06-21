@@ -16,18 +16,18 @@ trade::booker::Booker::Booker(
 
 void trade::booker::Booker::add(const OrderTickPtr& order_tick)
 {
+    logger->debug("Fed order: {}", utilities::ToJSON()(*order_tick));
+
     new_booker(order_tick->symbol());
 
     OrderWrapperPtr order_wrapper;
-
-    logger->debug("Received order {} with order type {}", order_tick->unique_id(), OrderType_Name(order_tick->order_type()));
 
     /// Check if order already exists.
     if (m_orders.contains(order_tick->unique_id())) {
         order_wrapper = m_orders[order_tick->unique_id()];
 
         if (order_tick->order_type() != types::OrderType::cancel) {
-            logger->error("Received duplicated order {} with order type {}", order_tick->unique_id(), OrderType_Name(order_tick->order_type()));
+            logger->error("Received duplicated order with unexpected order_type: {}", utilities::ToJSON()(*order_tick));
             return;
         }
 
@@ -52,13 +52,19 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
 void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
 {
     /// SZSE reports cancel orders as trade ticks.
-    /// In this case, let Booker::add() handle it.
+    /// In this case, forward it to Booker::add().
     if (trade_tick->x_ost_szse_exe_type() == types::OrderType::cancel) [[likely]] {
         const auto order_tick = std::make_shared<types::OrderTick>();
 
-        /// Canceling only requires unique_id.
+        /// Canceling only requires unique_id, order_type and symbol.
         /// See Booker's unit tests.
         order_tick->set_unique_id(trade_tick->ask_unique_id() + trade_tick->bid_unique_id());
+        order_tick->set_order_type(types::OrderType::cancel);
+        order_tick->set_symbol(trade_tick->symbol());
+        order_tick->set_side(types::SideType::invalid_side);
+        order_tick->set_price(trade_tick->exec_price());
+        order_tick->set_quantity(trade_tick->exec_quantity());
+        order_tick->set_exchange_time(trade_tick->exchange_time());
 
         add(order_tick);
     }

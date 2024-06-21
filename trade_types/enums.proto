@@ -32,6 +32,8 @@ enum OrderType
     best_price         = 1002; /// 本方最优价
 
     cancel             = 2000; /// 撤单
+
+    fill               = 3000; /// 成交
 }
 
 /// 交易方向

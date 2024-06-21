@@ -96,6 +96,11 @@ inline booker::OrderTickPtr CUTCommonData::to_order_tick<SSEHpfTick>(const std::
     order_tick->set_quantity(to_sse_quantity(raw_order->m_qty));
     order_tick->set_exchange_time(to_sse_time(raw_order->m_tick_time));
 
+    /// Just ignore fill tick.
+    if (order_tick->order_type() == types::OrderType::invalid_order_type
+        || order_tick->order_type() == types::OrderType::fill)
+        return nullptr;
+
     return order_tick;
 }
 
@@ -115,6 +120,11 @@ inline booker::OrderTickPtr CUTCommonData::to_order_tick<SZSEHpfOrderTick>(const
     order_tick->set_quantity(to_szse_quantity(raw_order->m_qty));
     order_tick->set_exchange_time(to_szse_time(raw_order->m_header.m_quote_update_time));
 
+    /// Just ignore fill tick.
+    if (order_tick->order_type() == types::OrderType::invalid_order_type
+        || order_tick->order_type() == types::OrderType::fill)
+        return nullptr;
+
     return order_tick;
 }
 
@@ -133,6 +143,11 @@ inline booker::TradeTickPtr CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(const
     trade_tick->set_exec_quantity(to_szse_quantity(raw_trade->m_exe_qty));
     trade_tick->set_exchange_time(to_szse_time(raw_trade->m_header.m_quote_update_time));
     trade_tick->set_x_ost_szse_exe_type(to_order_type_from_szse(raw_trade->m_exe_type));
+
+    if (trade_tick.unique() == 0
+        || trade_tick->x_ost_szse_exe_type() == types::OrderType::invalid_order_type) {
+        return nullptr;
+    }
 
     return trade_tick;
 }

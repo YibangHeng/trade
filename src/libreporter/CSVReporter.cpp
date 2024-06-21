@@ -67,7 +67,7 @@ void trade::reporter::CSVReporter::new_l2_tick_writer(const std::string& symbol)
         create_directories(std::filesystem::path(file_path).parent_path());
         m_l2_tick_writers.emplace(symbol, std::ofstream(file_path));
 
-        logger->info("Opened new md trade writer at {}", file_path.string());
+        logger->info("Opened new l2 tick writer at {}", file_path.string());
 
         m_l2_tick_writers[symbol]
             << "symbol,"

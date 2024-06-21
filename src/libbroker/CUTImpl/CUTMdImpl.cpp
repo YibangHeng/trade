@@ -80,6 +80,8 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
         }
 
         if (order_tick != nullptr) {
+            logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
+
             if (order_tick->exchange_time() >= 93000) [[likely]]
                 booker.switch_to_continuous_stage();
 
@@ -87,12 +89,16 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
         }
 
         if (trade_tick != nullptr) {
+            logger->debug("Received trade tick: {}", utilities::ToJSON()(*trade_tick));
+
             booker.trade(trade_tick);
         }
 
         if (l2_tick != nullptr) {
+            logger->debug("Received l2 tick: {}", utilities::ToJSON()(*l2_tick));
+
             if (booker.l2(l2_tick))
-                logger->error("Verification failed for {}'s L2 snapshot", l2_tick->symbol());
+                logger->error("Verification failed for {}'s l2 snapshot", l2_tick->symbol());
 
             m_reporter->exchange_l2_tick_arrived(l2_tick);
         }

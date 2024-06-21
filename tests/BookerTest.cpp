@@ -215,7 +215,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             trade::booker::Booker booker({}, reporter());
 
             booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", BUY, 22.33, 50));
-            booker.add(OrderCreator::ororder_tick(0, CANCEL, "", INV_SIDE, 0, 0));
+            booker.add(OrderCreator::ororder_tick(0, CANCEL, "600875.SH", INV_SIDE, 0, 0));
             booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 22.33, 100));
 
             CHECK(g_reporter->get_trade_result().empty());
@@ -227,7 +227,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
 
             booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", BUY, 22.33, 100));
             booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 22.33, 50));
-            booker.add(OrderCreator::ororder_tick(0, CANCEL, "", INV_SIDE, 0, 0));
+            booker.add(OrderCreator::ororder_tick(0, CANCEL, "600875.SH", INV_SIDE, 0, 0));
             booker.add(OrderCreator::ororder_tick(2, LIMIT, "600875.SH", SELL, 22.33, 50));
 
             CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0050 S00.00:S00.00:S00.00 B22.33:B00.00:B00.00\n");
@@ -239,7 +239,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
 
             booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", BUY, 22.33, 100));
             booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 22.33, 100));
-            booker.add(OrderCreator::ororder_tick(0, CANCEL, "", INV_SIDE, 0, 0));
+            booker.add(OrderCreator::ororder_tick(0, CANCEL, "600875.SH", INV_SIDE, 0, 0));
 
             CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
         }

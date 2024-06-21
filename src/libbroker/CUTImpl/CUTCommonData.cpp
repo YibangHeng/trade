@@ -49,6 +49,7 @@ trade::types::OrderType trade::broker::CUTCommonData::to_order_type_from_sse(con
     switch (tick_type) {
     case 'A': return types::OrderType::limit;
     case 'D': return types::OrderType::cancel;
+    case 'T': return types::OrderType::fill;
     default: return types::OrderType::invalid_order_type;
     }
 }
@@ -60,6 +61,7 @@ trade::types::OrderType trade::broker::CUTCommonData::to_order_type_from_szse(co
     case '1': return types::OrderType::market;
     case 'U': return types::OrderType::best_price;
     case '4': return types::OrderType::cancel;
+    case 'F': return types::OrderType::fill;
     default: return types::OrderType::invalid_order_type;
     }
 }
