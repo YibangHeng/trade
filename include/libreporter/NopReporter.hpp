@@ -57,9 +57,13 @@ public:
 
     /// Market data.
 public:
-    void exchange_tick_arrived(const std::shared_ptr<types::ExchangeTick> exchange_tick) override
+    void exchange_order_tick_arrived(std::shared_ptr<types::OrderTick> order_tick) override
     {
-        if (m_outside != nullptr) m_outside->exchange_tick_arrived(exchange_tick);
+        if (m_outside != nullptr) m_outside->exchange_order_tick_arrived(order_tick);
+    }
+    void exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick) override
+    {
+        if (m_outside != nullptr) m_outside->exchange_trade_tick_arrived(trade_tick);
     }
     void exchange_l2_tick_arrived(const std::shared_ptr<types::L2Tick> l2_tick) override
     {

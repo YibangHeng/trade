@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "networks.pb.h"
+#include "orms.pb.h"
 #include "visibility.h"
 
 namespace trade::reporter
@@ -35,7 +36,8 @@ public:
 
     /// Market data.
 public:
-    virtual void exchange_tick_arrived(std::shared_ptr<types::ExchangeTick> exchange_tick) = 0;
+    virtual void exchange_order_tick_arrived(std::shared_ptr<types::OrderTick> order_tick) = 0;
+    virtual void exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick) = 0;
     virtual void exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick)          = 0;
     virtual void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick)                 = 0;
 };

@@ -23,27 +23,38 @@ trade::reporter::ShmReporter::ShmReporter(
     logger->info("Created/Opened shared memory {} with size {}GB ({} bytes)", m_shm.get_name(), allocated_shm_size / GB, allocated_shm_size);
 
     /// Map areas of shared memory with same size.
-    m_tick_region       = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 0 * allocated_shm_size / 2, allocated_shm_size / 2);
-    m_l2_tick_region    = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 1 * allocated_shm_size / 2, allocated_shm_size / 2);
+    m_order_tick_region    = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 0 * allocated_shm_size / 3, allocated_shm_size / 3);
+    m_trade_tick_region    = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 1 * allocated_shm_size / 3, allocated_shm_size / 3);
+    m_l2_tick_region       = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 2 * allocated_shm_size / 3, allocated_shm_size / 3);
 
-    m_tick_mate_info    = static_cast<SMTickMateInfo*>(m_tick_region->get_address());
-    m_l2_tick_mate_info = static_cast<SML2TickMateInfo*>(m_l2_tick_region->get_address());
+    m_order_tick_mate_info = static_cast<SMTickMateInfo*>(m_order_tick_region->get_address());
+    m_trade_tick_mate_info = static_cast<SMTickMateInfo*>(m_trade_tick_region->get_address());
+    m_l2_tick_mate_info    = static_cast<SML2TickMateInfo*>(m_l2_tick_region->get_address());
 
     /// Set memory areas.
-    memset(m_tick_region->get_address(), 0, allocated_shm_size / 2);
-    memset(m_l2_tick_region->get_address(), 0, allocated_shm_size / 2);
+    memset(m_order_tick_region->get_address(), 0, allocated_shm_size / 3);
+    memset(m_trade_tick_region->get_address(), 0, allocated_shm_size / 3);
+    memset(m_l2_tick_region->get_address(), 0, allocated_shm_size / 3);
 
     /// Assign pointers with start address.
-    m_tick_start      = reinterpret_cast<Tick*>(m_tick_mate_info + 1);
-    m_tick_current    = m_tick_start;
-    m_l2_tick_start   = reinterpret_cast<L2Tick*>(m_l2_tick_mate_info + 1);
-    m_l2_tick_current = m_l2_tick_start;
+    m_order_tick_start   = reinterpret_cast<OrderTick*>(m_order_tick_mate_info + 1);
+    m_order_tick_current = m_order_tick_start;
+    m_trade_tick_start   = reinterpret_cast<TradeTick*>(m_trade_tick_mate_info + 1);
+    m_trade_tick_current = m_trade_tick_start;
+    m_l2_tick_start      = reinterpret_cast<L2Tick*>(m_l2_tick_mate_info + 1);
+    m_l2_tick_current    = m_l2_tick_start;
 }
 
-void trade::reporter::ShmReporter::exchange_tick_arrived(const std::shared_ptr<types::ExchangeTick> exchange_tick)
+void trade::reporter::ShmReporter::exchange_order_tick_arrived(const std::shared_ptr<types::OrderTick> order_tick)
 {
-    do_exchange_tick_report(exchange_tick);
-    m_outside->exchange_tick_arrived(exchange_tick);
+    do_exchange_order_tick_report(order_tick);
+    m_outside->exchange_order_tick_arrived(order_tick);
+}
+
+void trade::reporter::ShmReporter::exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick)
+{
+    do_exchange_trade_tick_report(trade_tick);
+    m_outside->exchange_trade_tick_arrived(trade_tick);
 }
 
 void trade::reporter::ShmReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::L2Tick> l2_tick)
@@ -58,12 +69,11 @@ void trade::reporter::ShmReporter::l2_tick_generated(const std::shared_ptr<types
     m_outside->l2_tick_generated(l2_tick);
 }
 
-void trade::reporter::ShmReporter::do_exchange_tick_report(const std::shared_ptr<types::ExchangeTick>& exchange_tick)
+void trade::reporter::ShmReporter::do_exchange_order_tick_report(const std::shared_ptr<types::OrderTick>& order_tick)
 {
     /// Check if shared memory is full.
-    if (m_tick_current - m_tick_start > m_tick_region->get_size() / sizeof(Tick)) {
+    if (m_order_tick_current - m_order_tick_start > m_order_tick_region->get_size() / sizeof(OrderTick)) {
         logger->error("Shared memory of tick is full");
-        m_outside->exchange_tick_arrived(exchange_tick);
         return;
     }
 
@@ -71,20 +81,53 @@ void trade::reporter::ShmReporter::do_exchange_tick_report(const std::shared_ptr
     {
         boost::interprocess::scoped_lock lock(m_named_mutex);
 
-        m_tick_current->shm_union_type    = ShmUnionType::tick_from_exchange;
+        m_order_tick_current->shm_union_type = ShmUnionType::order_tick_from_exchange;
 
-        M_A {m_tick_current->symbol}      = exchange_tick->symbol();
-        m_tick_current->exec_price        = exchange_tick->exec_price();
-        m_tick_current->exec_quantity     = exchange_tick->exec_quantity();
-        m_tick_current->bid_unique_id     = exchange_tick->bid_unique_id();
-        m_tick_current->ask_unique_id     = exchange_tick->ask_unique_id();
+        m_order_tick_current->unique_id      = order_tick->unique_id();
+        /// TODO: Use convertor here.
+        if (order_tick->order_type() == types::OrderType::cancel)
+            m_order_tick_current->order_type = static_cast<OrderType>(order_tick->order_type());
+        else
+            m_order_tick_current->order_type = static_cast<OrderType>(order_tick->side());
+        M_A {m_order_tick_current->symbol}      = order_tick->symbol();
+        m_order_tick_current->price             = order_tick->price();
+        m_order_tick_current->quantity          = order_tick->quantity();
 
-        m_tick_current->exhange_time      = REMOVE_DATE(utilities::ToTime<int64_t>()(exchange_tick->exchange_time()));
-        m_tick_current->local_system_time = REMOVE_DATE(utilities::Now<int64_t>()());
+        m_order_tick_current->exhange_time      = REMOVE_DATE(order_tick->exchange_time());
+        m_order_tick_current->local_system_time = REMOVE_DATE(utilities::Now<int64_t>()());
 
-        m_tick_current++;
-        m_tick_mate_info->tick_count++;
-        m_tick_mate_info->last_update_time = REMOVE_DATE(utilities::Now<int64_t>()());
+        m_order_tick_current++;
+        m_order_tick_mate_info->tick_count++;
+        m_order_tick_mate_info->last_update_time = REMOVE_DATE(utilities::Now<int64_t>()());
+    }
+}
+
+void trade::reporter::ShmReporter::do_exchange_trade_tick_report(const std::shared_ptr<types::TradeTick>& trade_tick)
+{
+    /// Check if shared memory is full.
+    if (m_trade_tick_current - m_trade_tick_start > m_trade_tick_region->get_size() / sizeof(TradeTick)) {
+        logger->error("Shared memory of tick is full");
+        return;
+    }
+
+    /// Writing scope.
+    {
+        boost::interprocess::scoped_lock lock(m_named_mutex);
+
+        m_trade_tick_current->shm_union_type    = ShmUnionType::trade_tick_from_exchange;
+
+        m_trade_tick_current->ask_unique_id     = trade_tick->ask_unique_id();
+        m_trade_tick_current->bid_unique_id     = trade_tick->bid_unique_id();
+        M_A {m_trade_tick_current->symbol}      = trade_tick->symbol();
+        m_trade_tick_current->exec_price        = trade_tick->exec_price();
+        m_trade_tick_current->exec_quantity     = trade_tick->exec_quantity();
+
+        m_trade_tick_current->exchange_time     = REMOVE_DATE(trade_tick->exchange_time());
+        m_trade_tick_current->local_system_time = REMOVE_DATE(utilities::Now<int64_t>()());
+
+        m_trade_tick_current++;
+        m_trade_tick_mate_info->tick_count++;
+        m_trade_tick_mate_info->last_update_time = REMOVE_DATE(utilities::Now<int64_t>()());
     }
 }
 
@@ -93,7 +136,6 @@ void trade::reporter::ShmReporter::do_l2_tick_report(const std::shared_ptr<types
     /// Check if shared memory is full.
     if (m_l2_tick_current - m_l2_tick_start > m_l2_tick_region->get_size() / sizeof(L2Tick)) {
         logger->error("Shared memory of l2 tick is full");
-        m_outside->l2_tick_generated(l2_tick);
         return;
     }
 

@@ -59,11 +59,18 @@ void trade::reporter::LogReporter::trade_accepted(const std::shared_ptr<types::T
     m_outside->trade_accepted(trade);
 }
 
-void trade::reporter::LogReporter::exchange_tick_arrived(const std::shared_ptr<types::ExchangeTick> exchange_tick)
+void trade::reporter::LogReporter::exchange_order_tick_arrived(std::shared_ptr<types::OrderTick> order_tick)
 {
-    md_logger->debug("Exchange tick arrived: {}", utilities::ToJSON()(*exchange_tick));
+    md_logger->debug("Exchange order tick arrived: {}", utilities::ToJSON()(*order_tick));
 
-    m_outside->exchange_tick_arrived(exchange_tick);
+    m_outside->exchange_order_tick_arrived(order_tick);
+}
+
+void trade::reporter::LogReporter::exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick)
+{
+    md_logger->debug("Exchange trade tick arrived: {}", utilities::ToJSON()(*trade_tick));
+
+    m_outside->exchange_trade_tick_arrived(trade_tick);
 }
 
 void trade::reporter::LogReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::L2Tick> l2_tick)

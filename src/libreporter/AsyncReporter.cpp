@@ -106,10 +106,16 @@ void trade::reporter::AsyncReporter::trade_accepted(const std::shared_ptr<types:
     m_trade_buffer.push_back(trade);
 }
 
-void trade::reporter::AsyncReporter::exchange_tick_arrived(std::shared_ptr<types::ExchangeTick> exchange_tick)
+void trade::reporter::AsyncReporter::exchange_order_tick_arrived(std::shared_ptr<types::OrderTick> order_tick)
 {
-    std::lock_guard lock(m_exchange_tick_mutex);
-    m_exchange_tick_buffer.push_back(exchange_tick);
+    std::lock_guard lock(m_exchange_order_tick_mutex);
+    m_exchange_order_tick_buffer.push_back(order_tick);
+}
+
+void trade::reporter::AsyncReporter::exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick)
+{
+    std::lock_guard lock(m_exchange_trade_tick_mutex);
+    m_exchange_trade_tick_buffer.push_back(trade_tick);
 }
 
 void trade::reporter::AsyncReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::L2Tick> l2_tick)
@@ -266,20 +272,37 @@ void trade::reporter::AsyncReporter::do_trade_accepted()
     }
 }
 
-void trade::reporter::AsyncReporter::do_exchange_tick_arrived()
+void trade::reporter::AsyncReporter::do_exchange_order_tick_arrived()
 {
-    while (IS_RUNNING(m_exchange_tick_buffer, m_exchange_tick_mutex)) {
-        std::shared_ptr<types::ExchangeTick> exchange_tick;
+    while (IS_RUNNING(m_exchange_order_tick_buffer, m_exchange_order_tick_mutex)) {
+        std::shared_ptr<types::OrderTick> exchange_order_tick;
         {
-            std::lock_guard lock(m_exchange_tick_mutex);
+            std::lock_guard lock(m_exchange_order_tick_mutex);
 
-            if (m_exchange_tick_buffer.empty())
+            if (m_exchange_order_tick_buffer.empty())
                 continue;
 
-            exchange_tick = m_exchange_tick_buffer[0];
-            m_exchange_tick_buffer.pop_front();
+            exchange_order_tick = m_exchange_order_tick_buffer[0];
+            m_exchange_order_tick_buffer.pop_front();
         }
-        m_outside->exchange_tick_arrived(exchange_tick);
+        m_outside->exchange_order_tick_arrived(exchange_order_tick);
+    }
+}
+
+void trade::reporter::AsyncReporter::do_exchange_trade_tick_arrived()
+{
+    while (IS_RUNNING(m_exchange_trade_tick_buffer, m_exchange_trade_tick_mutex)) {
+        std::shared_ptr<types::TradeTick> exchange_trade_tick;
+        {
+            std::lock_guard lock(m_exchange_trade_tick_mutex);
+
+            if (m_exchange_trade_tick_buffer.empty())
+                continue;
+
+            exchange_trade_tick = m_exchange_trade_tick_buffer[0];
+            m_exchange_trade_tick_buffer.pop_front();
+        }
+        m_outside->exchange_trade_tick_arrived(exchange_trade_tick);
     }
 }
 

@@ -12,7 +12,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
     const std::string shm_mutex_name = "trade_data_mutex_for_unit_test";
 
     /// Shared memory size.
-    constexpr boost::interprocess::offset_t shm_size = 2 * GB;
+    constexpr boost::interprocess::offset_t shm_size = 3 * GB;
 
     /// Create reporter and the reporter will create shared memory
     /// automatically.
@@ -20,72 +20,147 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
 
     /// Map areas of shared memory with same size.
     boost::interprocess::shared_memory_object shm_reader(boost::interprocess::open_only, shm_name.c_str(), boost::interprocess::read_only); /// Use open_only to make sure reporter created it.
-    auto m_tick_region    = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 0 * shm_size / 2, shm_size / 2);
-    auto m_l2_tick_region = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 1 * shm_size / 2, shm_size / 2);
+    auto m_order_tick_region = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 0 * shm_size / 3, shm_size / 3);
+    auto m_trade_tick_region = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 1 * shm_size / 3, shm_size / 3);
+    auto m_l2_tick_region    = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 2 * shm_size / 3, shm_size / 3);
 
-    SECTION("Tick writing and reading")
+    SECTION("Order tick writing and reading")
     {
-        /// Mock tick data.
-        const auto tick_0 = std::make_shared<trade::types::ExchangeTick>();
+        /// Mock order tick data.
+        const auto tick_0 = std::make_shared<trade::types::OrderTick>();
+        tick_0->set_unique_id(10000);
+        tick_0->set_order_type(trade::types::OrderType::limit);
+        tick_0->set_symbol("600875.SH");
+        tick_0->set_side(trade::types::SideType::buy);
+        tick_0->set_price(11.11);
+        tick_0->set_quantity(100);
+
+        const auto tick_1 = std::make_shared<trade::types::OrderTick>();
+        tick_1->set_unique_id(20000);
+        tick_1->set_order_type(trade::types::OrderType::limit);
+        tick_1->set_symbol("600875.SH");
+        tick_1->set_side(trade::types::SideType::sell);
+        tick_1->set_price(22.22);
+        tick_1->set_quantity(200);
+
+        const auto tick_2 = std::make_shared<trade::types::OrderTick>();
+        tick_2->set_unique_id(30000);
+        tick_2->set_order_type(trade::types::OrderType::market);
+        tick_2->set_symbol("600875.SH");
+        tick_2->set_side(trade::types::SideType::buy);
+        tick_2->set_price(33.33);
+        tick_2->set_quantity(300);
+
+        const auto tick_3 = std::make_shared<trade::types::OrderTick>();
+        tick_3->set_unique_id(40000);
+        tick_3->set_order_type(trade::types::OrderType::cancel);
+        tick_3->set_symbol("600875.SH");
+        tick_3->set_side(trade::types::SideType::sell);
+        tick_3->set_price(44.44);
+        tick_3->set_quantity(400);
+
+        reporter->exchange_order_tick_arrived(tick_0);
+        reporter->exchange_order_tick_arrived(tick_1);
+        reporter->exchange_order_tick_arrived(tick_2);
+        reporter->exchange_order_tick_arrived(tick_3);
+
+        auto shm_mate_info = static_cast<trade::reporter::SMTickMateInfo*>(m_order_tick_region->get_address());
+
+        CHECK(shm_mate_info->tick_count == 4);
+
+        auto md_current = reinterpret_cast<trade::reporter::OrderTick*>(shm_mate_info + 1);
+        CHECK(md_current[0].shm_union_type == trade::reporter::ShmUnionType::order_tick_from_exchange);
+        CHECK(md_current[0].unique_id == 10000);
+        CHECK(md_current[0].order_type == static_cast<trade::reporter::OrderType>(trade::types::SideType::buy));
+        CHECK(std::string(md_current[0].symbol) == "600875.SH");
+        CHECK(md_current[0].price == 11.11);
+        CHECK(md_current[0].quantity == 100);
+
+        CHECK(md_current[1].shm_union_type == trade::reporter::ShmUnionType::order_tick_from_exchange);
+        CHECK(md_current[1].unique_id == 20000);
+        CHECK(md_current[1].order_type == static_cast<trade::reporter::OrderType>(trade::types::SideType::sell));
+        CHECK(std::string(md_current[1].symbol) == "600875.SH");
+        CHECK(md_current[1].price == 22.22);
+        CHECK(md_current[1].quantity == 200);
+
+        CHECK(md_current[2].shm_union_type == trade::reporter::ShmUnionType::order_tick_from_exchange);
+        CHECK(md_current[2].unique_id == 30000);
+        CHECK(md_current[2].order_type == static_cast<trade::reporter::OrderType>(trade::types::SideType::buy));
+        CHECK(std::string(md_current[2].symbol) == "600875.SH");
+        CHECK(md_current[2].price == 33.33);
+        CHECK(md_current[2].quantity == 300);
+
+        CHECK(md_current[3].shm_union_type == trade::reporter::ShmUnionType::order_tick_from_exchange);
+        CHECK(md_current[3].unique_id == 40000);
+        CHECK(md_current[3].order_type == static_cast<trade::reporter::OrderType>(trade::types::OrderType::cancel));
+        CHECK(std::string(md_current[3].symbol) == "600875.SH");
+        CHECK(md_current[3].price == 44.44);
+        CHECK(md_current[3].quantity == 400);
+    }
+
+    SECTION("Trade tick writing and reading")
+    {
+        /// Mock trade tick data.
+        const auto tick_0 = std::make_shared<trade::types::TradeTick>();
         tick_0->set_ask_unique_id(10000);
         tick_0->set_bid_unique_id(10001);
         tick_0->set_symbol("600875.SH");
         tick_0->set_exec_price(11.11);
         tick_0->set_exec_quantity(100);
 
-        const auto tick_1 = std::make_shared<trade::types::ExchangeTick>();
+        const auto tick_1 = std::make_shared<trade::types::TradeTick>();
         tick_1->set_ask_unique_id(20000);
         tick_1->set_bid_unique_id(20001);
         tick_1->set_symbol("600875.SH");
         tick_1->set_exec_price(22.22);
         tick_1->set_exec_quantity(200);
 
-        const auto tick_2 = std::make_shared<trade::types::ExchangeTick>();
+        const auto tick_2 = std::make_shared<trade::types::TradeTick>();
         tick_2->set_ask_unique_id(30000);
         tick_2->set_bid_unique_id(30001);
         tick_2->set_symbol("600875.SH");
         tick_2->set_exec_price(33.33);
         tick_2->set_exec_quantity(300);
 
-        const auto tick_3 = std::make_shared<trade::types::ExchangeTick>();
+        const auto tick_3 = std::make_shared<trade::types::TradeTick>();
         tick_3->set_ask_unique_id(40000);
         tick_3->set_bid_unique_id(40001);
         tick_3->set_symbol("600875.SH");
         tick_3->set_exec_price(44.44);
         tick_3->set_exec_quantity(400);
 
-        reporter->exchange_tick_arrived(tick_0);
-        reporter->exchange_tick_arrived(tick_1);
-        reporter->exchange_tick_arrived(tick_2);
-        reporter->exchange_tick_arrived(tick_3);
+        reporter->exchange_trade_tick_arrived(tick_0);
+        reporter->exchange_trade_tick_arrived(tick_1);
+        reporter->exchange_trade_tick_arrived(tick_2);
+        reporter->exchange_trade_tick_arrived(tick_3);
 
-        auto shm_mate_info = static_cast<trade::reporter::SMTickMateInfo*>(m_tick_region->get_address());
+        auto shm_mate_info = static_cast<trade::reporter::SMTickMateInfo*>(m_trade_tick_region->get_address());
 
         CHECK(shm_mate_info->tick_count == 4);
 
-        auto md_current = reinterpret_cast<trade::reporter::Tick*>(shm_mate_info + 1);
-        CHECK(md_current[0].shm_union_type == trade::reporter::ShmUnionType::tick_from_exchange);
+        auto md_current = reinterpret_cast<trade::reporter::TradeTick*>(shm_mate_info + 1);
+        CHECK(md_current[0].shm_union_type == trade::reporter::ShmUnionType::trade_tick_from_exchange);
         CHECK(md_current[0].ask_unique_id == 10000);
         CHECK(md_current[0].bid_unique_id == 10001);
         CHECK(std::string(md_current[0].symbol) == "600875.SH");
         CHECK(md_current[0].exec_price == 11.11);
         CHECK(md_current[0].exec_quantity == 100);
 
-        CHECK(md_current[1].shm_union_type == trade::reporter::ShmUnionType::tick_from_exchange);
+        CHECK(md_current[1].shm_union_type == trade::reporter::ShmUnionType::trade_tick_from_exchange);
         CHECK(md_current[1].ask_unique_id == 20000);
         CHECK(md_current[1].bid_unique_id == 20001);
         CHECK(std::string(md_current[1].symbol) == "600875.SH");
         CHECK(md_current[1].exec_price == 22.22);
         CHECK(md_current[1].exec_quantity == 200);
 
-        CHECK(md_current[2].shm_union_type == trade::reporter::ShmUnionType::tick_from_exchange);
+        CHECK(md_current[2].shm_union_type == trade::reporter::ShmUnionType::trade_tick_from_exchange);
         CHECK(md_current[2].ask_unique_id == 30000);
         CHECK(md_current[2].bid_unique_id == 30001);
         CHECK(std::string(md_current[2].symbol) == "600875.SH");
         CHECK(md_current[2].exec_price == 33.33);
         CHECK(md_current[2].exec_quantity == 300);
 
-        CHECK(md_current[3].shm_union_type == trade::reporter::ShmUnionType::tick_from_exchange);
+        CHECK(md_current[3].shm_union_type == trade::reporter::ShmUnionType::trade_tick_from_exchange);
         CHECK(md_current[3].ask_unique_id == 40000);
         CHECK(md_current[3].bid_unique_id == 40001);
         CHECK(std::string(md_current[3].symbol) == "600875.SH");

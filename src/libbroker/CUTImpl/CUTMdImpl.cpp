@@ -86,12 +86,16 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
                 booker.switch_to_continuous_stage();
 
             booker.add(order_tick);
+
+            m_reporter->exchange_order_tick_arrived(order_tick);
         }
 
         if (trade_tick != nullptr) {
             logger->debug("Received trade tick: {}", utilities::ToJSON()(*trade_tick));
 
             booker.trade(trade_tick);
+
+            m_reporter->exchange_trade_tick_arrived(trade_tick);
         }
 
         if (l2_tick != nullptr) {
