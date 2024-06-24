@@ -303,8 +303,8 @@ public:
     explicit MCClient(
         const std::string& address,
         const uint16_t port,
-        const std::string& interface_address   = "0.0.0.0",
-        [[deprecated]] const bool non_blocking = false
+        const std::string& interface_address = "0.0.0.0",
+        const time_t timeout_in_ms           = 100
     )
         : m_receive_addr(),
           m_mreq(),
@@ -332,18 +332,12 @@ public:
         m_receive_addr.sin_addr.s_addr = htonl(INADDR_ANY);
         m_receive_addr.sin_port        = htons(port);
 
-        /// Set up non-blocking IO.
-        if (non_blocking) {
-            code = fcntl(m_receiver_fd, F_GETFL, 0);
-
-            if (code < 0 || fcntl(m_receiver_fd, F_SETFL, code | O_NONBLOCK) < 0) {
-                close(m_receiver_fd);
-                throw std::runtime_error(fmt::format("Failed to set receiving socket to non-blocking {}: {}", address, strerror(errno)));
-            }
-        }
-
-        /// TODO: Make this configurable.
-        set_timeout(0, 100000); /// 100ms (= 100,000us)
+        /// Set up non-blocking or timeout IO.
+        if (timeout_in_ms == 0)
+            set_non_blocking();
+        else
+            /// Split timeout in seconds and microseconds.
+            set_timeout(timeout_in_ms / 1000, timeout_in_ms % 1000 * 1000);
 
         /// Bind to receive address.
         code = bind(m_receiver_fd, reinterpret_cast<sockaddr*>(&m_receive_addr), sizeof(m_receive_addr));
@@ -378,11 +372,22 @@ public:
     }
 
 private:
+    void set_non_blocking() const
+    {
+        const auto code = fcntl(m_receiver_fd, F_GETFL, 0);
+
+        if (code < 0 || fcntl(m_receiver_fd, F_SETFL, code | O_NONBLOCK) < 0) {
+            close(m_receiver_fd);
+            throw std::runtime_error(fmt::format("Failed to set receiving socket to non-blocking: {}", strerror(errno)));
+        }
+    }
     void set_timeout(const time_t seconds, const suseconds_t microseconds) const
     {
         const timeval timeout(seconds, microseconds);
 
-        if (setsockopt(m_receiver_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+        const auto code = setsockopt(m_receiver_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+        if (code < 0) {
             close(m_receiver_fd);
             throw std::runtime_error(fmt::format("Failed to set receiving socket timeout: {}", strerror(errno)));
         }

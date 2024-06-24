@@ -58,7 +58,7 @@ void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const s
     booker::Booker booker({}, m_reporter); /// TODO: Initialize tradable symbols here.
 
     const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
-    utilities::MCClient<char[1024]> client(multicast_ip, multicast_port, interface_address, true);
+    utilities::MCClient<char[1024]> client(multicast_ip, multicast_port, interface_address);
 
     std::vector<u_char> buffer(1024);
 
