@@ -96,7 +96,7 @@ bool trade::OSTMdServer::argv_parse(const int argc, char* argv[])
     }
     catch (const boost::wrapexcept<boost::program_options::unknown_option>& e) {
         std::cout << e.what() << std::endl;
-        m_exit_code = 1;
+        m_exit_code = EXIT_FAILURE;
         return false;
     }
 
@@ -113,7 +113,7 @@ bool trade::OSTMdServer::argv_parse(const int argc, char* argv[])
     }
 
     if (m_arguments.contains("version")) {
-        std::cout << fmt::format("mds {}", trade_VERSION) << std::endl;
+        std::cout << fmt::format("{} {}", app_name(), trade_VERSION) << std::endl;
         return false;
     }
 
@@ -121,6 +121,10 @@ bool trade::OSTMdServer::argv_parse(const int argc, char* argv[])
         spdlog::set_level(spdlog::level::debug);
         this->logger->set_level(spdlog::level::debug);
     }
+
+#if WIN32
+    #undef contains
+#endif
 
     return true;
 }
