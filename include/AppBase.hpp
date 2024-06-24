@@ -23,10 +23,11 @@ protected:
 
 public:
     explicit AppBase(
-        const std::string& name,
+        std::string name,
         const std::string& config_path = ""
-    ) : config(!config_path.empty() ? std::make_shared<ConfigType>(config_path) : nullptr),
-        logger(spdlog::default_logger()->clone(name))
+    ) : m_app_name(std::move(name)),
+        config(!config_path.empty() ? std::make_shared<ConfigType>(config_path) : nullptr),
+        logger(spdlog::default_logger()->clone(m_app_name))
     {
         /// TODO: Make it configurable.
         snow_flaker.init(1, 1);
@@ -41,6 +42,12 @@ public:
     virtual ~AppBase() = default;
 
 public:
+    /// Return the application name.
+    std::string app_name()
+    {
+        return m_app_name;
+    }
+
     /// Reset the configuration to the given path.
     /// @param config_path Path to the new configuration.
     /// @throws boost::property_tree::ini_parser_error If the configuration file could not be read.
@@ -82,6 +89,7 @@ public:
     }
 
 public:
+    std::string m_app_name;
     std::shared_ptr<ConfigType> config;
     std::shared_ptr<spdlog::logger> logger;
     utilities::TickerTaper<TickerTaperType> ticker_taper;

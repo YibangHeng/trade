@@ -74,6 +74,11 @@ message Orders
     repeated Order orders = 1;
 }
 
+///
+/// 行情信息
+///
+
+/// 逐笔委托信息
 message OrderTick
 {
     int64 unique_id      = 1; /// 委托 UniqueID
@@ -81,10 +86,11 @@ message OrderTick
     string symbol        = 3; /// 合约代码
     SideType side        = 4; /// 买卖方向
     double price         = 5; /// 价格
-    int64 quantity       = 6; /// 当笔数量
+    int64 quantity       = 6; /// 数量
     int64 exchange_time  = 7; /// 交易所时间
 }
 
+/// 逐笔成交信息
 message TradeTick
 {
     int64 ask_unique_id                    = 1;   /// 卖方委托 UniqueID
@@ -93,5 +99,55 @@ message TradeTick
     double exec_price                      = 4;   /// 执行价格
     int64 exec_quantity                    = 5;   /// 执行数量
     int64 exchange_time                    = 6;   /// 交易所时间
-    optional OrderType x_ost_szse_exe_type = 100; /// 深交所成交类型（目前仅区分成交/撤单）
+    optional OrderType x_ost_szse_exe_type = 100; /// 深交所成交类型（仅区分成交/撤单）
+}
+
+/// L2 行情信息（逐笔成交）
+message L2Tick
+{
+    string symbol                           = 1; /// 合约代码
+    double price                            = 2; /// 价格
+    int64 quantity                          = 3; /// 当笔数量
+    google.protobuf.Timestamp exchange_time = 4; /// 交易所时间
+
+    optional double sell_price_10           = 1110; /// 卖 10
+    optional int64 sell_quantity_10         = 1210; /// 卖 10
+    optional double sell_price_9            = 1109; /// 卖 9
+    optional int64 sell_quantity_9          = 1209; /// 卖 9
+    optional double sell_price_8            = 1108; /// 卖 8
+    optional int64 sell_quantity_8          = 1208; /// 卖 8
+    optional double sell_price_7            = 1107; /// 卖 7
+    optional int64 sell_quantity_7          = 1207; /// 卖 7
+    optional double sell_price_6            = 1106; /// 卖 6
+    optional int64 sell_quantity_6          = 1206; /// 卖 6
+    optional double sell_price_5            = 1105; /// 卖 5
+    optional int64 sell_quantity_5          = 1205; /// 卖 5
+    optional double sell_price_4            = 1104; /// 卖 4
+    optional int64 sell_quantity_4          = 1204; /// 卖 4
+    optional double sell_price_3            = 1103; /// 卖 3
+    optional int64 sell_quantity_3          = 1203; /// 卖 3
+    optional double sell_price_2            = 1102; /// 卖 2
+    optional int64 sell_quantity_2          = 1202; /// 卖 2
+    optional double sell_price_1            = 1101; /// 卖 1
+    optional int64 sell_quantity_1          = 1201; /// 卖 1
+    optional double buy_price_1             = 2101; /// 买 1
+    optional int64 buy_quantity_1           = 2201; /// 买 1
+    optional double buy_price_2             = 2102; /// 买 2
+    optional int64 buy_quantity_2           = 2202; /// 买 2
+    optional double buy_price_3             = 2103; /// 买 3
+    optional int64 buy_quantity_3           = 2203; /// 买 3
+    optional double buy_price_4             = 2104; /// 买 4
+    optional int64 buy_quantity_4           = 2204; /// 买 4
+    optional double buy_price_5             = 2105; /// 买 5
+    optional int64 buy_quantity_5           = 2205; /// 买 5
+    optional double buy_price_6             = 2106; /// 买 6
+    optional int64 buy_quantity_6           = 2206; /// 买 6
+    optional double buy_price_7             = 2107; /// 买 7
+    optional int64 buy_quantity_7           = 2207; /// 买 7
+    optional double buy_price_8             = 2108; /// 买 8
+    optional int64 buy_quantity_8           = 2208; /// 买 8
+    optional double buy_price_9             = 2109; /// 买 9
+    optional int64 buy_quantity_9           = 2209; /// 买 9
+    optional double buy_price_10            = 2110; /// 买 10
+    optional int64 buy_quantity_10          = 2210; /// 买 10
 }

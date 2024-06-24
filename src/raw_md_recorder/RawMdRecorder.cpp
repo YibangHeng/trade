@@ -13,7 +13,7 @@
 #include "utilities/TimeHelper.hpp"
 
 trade::RawMdRecorder::RawMdRecorder(const int argc, char* argv[])
-    : AppBase("RawMdRecorder")
+    : AppBase("raw_md_recorder")
 {
     m_instances.emplace(this);
     m_is_running = argv_parse(argc, argv);
@@ -30,7 +30,7 @@ int trade::RawMdRecorder::run()
     std::vector<std::thread> threads;
 
     for (const auto& address : addresses)
-        threads.emplace_back(&RawMdRecorder::odtd_receiver, this, address, m_arguments["interface-address"].as<std::string>());
+        threads.emplace_back(&RawMdRecorder::tick_receiver, this, address, m_arguments["interface-address"].as<std::string>());
 
     for (auto& thread : threads)
         thread.join();
@@ -89,7 +89,7 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
     }
     catch (const boost::wrapexcept<boost::program_options::unknown_option>& e) {
         std::cout << e.what() << std::endl;
-        m_exit_code = 1;
+        m_exit_code = EXIT_FAILURE;
         return false;
     }
 
@@ -106,7 +106,7 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
     }
 
     if (m_arguments.contains("version")) {
-        std::cout << fmt::format("raw_md_recorder {}", trade_VERSION) << std::endl;
+        std::cout << fmt::format("{} {}", app_name(), trade_VERSION) << std::endl;
         return false;
     }
 
@@ -115,13 +115,17 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
         this->logger->set_level(spdlog::level::debug);
     }
 
+#if WIN32
+    #undef contains
+#endif
+
     return true;
 }
 
-void trade::RawMdRecorder::odtd_receiver(const std::string& address, const std::string& interface_address)
+void trade::RawMdRecorder::tick_receiver(const std::string& address, const std::string& interface_address)
 {
     const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
-    utilities::MCClient<u_char[broker::max_udp_size]> client(multicast_ip, multicast_port, interface_address, true);
+    utilities::MCClient<u_char[broker::max_udp_size]> client(multicast_ip, multicast_port, interface_address);
 
     logger->info("Joined multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
 
@@ -142,7 +146,6 @@ void trade::RawMdRecorder::odtd_receiver(const std::string& address, const std::
 
 void trade::RawMdRecorder::write(const std::vector<u_char>& message, const size_t bytes_received)
 {
-    /// TODO: Is it OK to check message type by message size?
     switch (bytes_received) {
     case sizeof(broker::SSEHpfTick): write_sse_tick(message); break;
     case sizeof(broker::SSEHpfL2Snap): write_sse_l2_snap(message); break;

@@ -303,8 +303,8 @@ public:
     explicit MCClient(
         const std::string& address,
         const uint16_t port,
-        const std::string& interface_address = "0.0.0.0",
-        const bool non_blocking              = false
+        const std::string& interface_address   = "0.0.0.0",
+        [[deprecated]] const bool non_blocking = false
     )
         : m_receive_addr(),
           m_mreq(),
@@ -342,6 +342,9 @@ public:
             }
         }
 
+        /// TODO: Make this configurable.
+        set_timeout(0, 100000); /// 100ms (= 100,000us)
+
         /// Bind to receive address.
         code = bind(m_receiver_fd, reinterpret_cast<sockaddr*>(&m_receive_addr), sizeof(m_receive_addr));
 
@@ -368,10 +371,21 @@ public:
     }
 
 public:
-    size_t receive(std::vector<u_char>& message_buffer)
+    ssize_t receive(std::vector<u_char>& message_buffer)
     {
         message_buffer.resize(sizeof(T));
         return recvfrom(m_receiver_fd, message_buffer.data(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &m_addr_len);
+    }
+
+private:
+    void set_timeout(const time_t seconds, const suseconds_t microseconds) const
+    {
+        const timeval timeout(seconds, microseconds);
+
+        if (setsockopt(m_receiver_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+            close(m_receiver_fd);
+            throw std::runtime_error(fmt::format("Failed to set receiving socket timeout: {}", strerror(errno)));
+        }
     }
 
 private:

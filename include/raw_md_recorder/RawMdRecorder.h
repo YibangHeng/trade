@@ -26,7 +26,7 @@ private:
     bool argv_parse(int argc, char* argv[]);
 
 private:
-    void odtd_receiver(const std::string& address, const std::string& interface_address);
+    void tick_receiver(const std::string& address, const std::string& interface_address);
 
     void write(const std::vector<u_char>& message, size_t bytes_received);
 
