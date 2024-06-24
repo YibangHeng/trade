@@ -26,7 +26,7 @@ public:
     void unsubscribe(const std::unordered_set<std::string>& symbols);
 
 private:
-    void odtd_receiver(const std::string& address, const std::string& interface_address) const;
+    void tick_receiver(const std::string& address, const std::string& interface_address) const;
 
 private:
     std::atomic<bool> is_running;

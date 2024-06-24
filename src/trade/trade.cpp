@@ -34,7 +34,7 @@ int trade::Trade::run()
     }
     catch (const boost::property_tree::ini_parser_error& e) {
         logger->error("Failed to load config: {}", e.what());
-        return 1;
+        return EXIT_FAILURE;
     }
 
     const auto log_reporter = std::make_shared<reporter::LogReporter>();
@@ -69,9 +69,10 @@ int trade::Trade::run()
     }
     else {
         logger->error("Unsupported broker type {}", config->get<std::string>("Broker.Type"));
-        return 1;
+        return EXIT_FAILURE;
     }
 
+    /// Trade login.
     if (config->get<bool>("Functionality.EnableTrade")) {
         m_broker->start_login();
 
@@ -80,20 +81,23 @@ int trade::Trade::run()
         }
         catch (const std::runtime_error& e) {
             logger->error("Failed to login: {}", e.what());
-            return 1;
+            return EXIT_FAILURE;
         }
     }
 
+    /// Market data subscription.
     if (config->get<bool>("Functionality.EnableMd")) {
         m_broker->subscribe({});
     }
 
     m_exit_code = network_events();
 
+    /// Market data unsubscription.
     if (config->get<bool>("Functionality.EnableMd")) {
         m_broker->unsubscribe({});
     }
 
+    /// Trade logout.
     if (config->get<bool>("Functionality.EnableTrade")) {
         m_broker->start_logout();
 
@@ -102,7 +106,7 @@ int trade::Trade::run()
         }
         catch (const std::runtime_error& e) {
             logger->error("Failed to logout: {}", e.what());
-            return 1;
+            return EXIT_FAILURE;
         }
     }
 
@@ -192,7 +196,7 @@ bool trade::Trade::argv_parse(const int argc, char* argv[])
     }
 
     if (m_arguments.contains("version")) {
-        std::cout << fmt::format("trade {}", trade_VERSION) << std::endl;
+        std::cout << fmt::format("{} {}", app_name(), trade_VERSION) << std::endl;
         return false;
     }
 
@@ -201,19 +205,22 @@ bool trade::Trade::argv_parse(const int argc, char* argv[])
         this->logger->set_level(spdlog::level::debug);
     }
 
+#if WIN32
+    #undef contains
+#endif
+
     return true;
 }
 
 int trade::Trade::network_events() const
 {
-    /// Make the network server optional.
     utilities::RRServer server(config->get<std::string>("Server.APIAddress"));
 
     logger->info("Bound ZMQ socket at {}", config->get<std::string>("Server.APIAddress"));
 
     std::vector<u_char> message_buffer;
 
-    while (true) {
+    while (m_is_running) {
         const auto [message_id, message_body_it] = server.receive(message_buffer);
 
         switch (message_id) {
@@ -266,12 +273,13 @@ int trade::Trade::network_events() const
 
             break;
         }
-        default: {
-            /// TODO: Use base64 for message data here.
-            logger->warn("Unknown Message ID {}({}) received with Message Body \"{}\"({} bytes)", MessageID_Name(message_id), static_cast<int>(message_id), message_buffer, static_cast<int>(message_buffer.size()));
-        }
+        default: break;
         }
     }
+
+    logger->info("Network event loop exited");
+
+    return 0;
 }
 
 std::set<trade::Trade*> trade::Trade::m_instances;

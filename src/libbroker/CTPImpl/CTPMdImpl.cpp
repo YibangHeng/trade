@@ -65,6 +65,9 @@ void trade::broker::CTPMdImpl::subscribe(const std::unordered_set<std::string>& 
 
 void trade::broker::CTPMdImpl::unsubscribe(const std::unordered_set<std::string>& symbols) const
 {
+    if (symbols.empty())
+        return;
+
     std::vector<char*> symbol_vector;
     for (const auto& symbol : symbols) {
         const auto symbol_c_array = new char[symbol.size() + 1];

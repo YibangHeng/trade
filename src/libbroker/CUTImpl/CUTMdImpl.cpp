@@ -18,7 +18,7 @@ trade::broker::CUTMdImpl::CUTMdImpl(
 void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& symbols)
 {
     if (!symbols.empty()) {
-        throw std::runtime_error("Wrong usage of subscribe of CUT: symbols treated as multicast address and must be specified in config");
+        throw std::runtime_error("Wrong usage of CUTMdImpl::subscribe: symbols treated as multicast address and must be specified in config");
     }
 
     is_running = true;
@@ -31,7 +31,7 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
     for (auto&& address_part : addresses_view) {
         std::string address(&*address_part.begin(), std::ranges::distance(address_part));
 
-        threads.emplace_back(&CUTMdImpl::odtd_receiver, this, address, config->get<std::string>("Server.InterfaceAddress"));
+        threads.emplace_back(&CUTMdImpl::tick_receiver, this, address, config->get<std::string>("Server.InterfaceAddress"));
 
         logger->info("Subscribed to ODTD multicast address: {} at {}", address, config->get<std::string>("Server.InterfaceAddress"));
     }
@@ -40,7 +40,7 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
 void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>& symbols)
 {
     if (!symbols.empty()) {
-        throw std::runtime_error("Wrong usage of unsubscribe of CUT: symbols treated as multicast address and must be specified in config");
+        throw std::runtime_error("Wrong usage of CUTMdImpl::unsubscribe: symbols treated as multicast address and must be specified in config");
     }
 
     is_running = false;
@@ -53,7 +53,7 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
     }
 }
 
-void trade::broker::CUTMdImpl::odtd_receiver(const std::string& address, const std::string& interface_address) const
+void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const std::string& interface_address) const
 {
     booker::Booker booker({}, m_reporter); /// TODO: Initialize tradable symbols here.
 

@@ -119,7 +119,11 @@ using ZMQSocketPtr = std::unique_ptr<void, ZMQSocketPtrDeleter>;
 class RRServer
 {
 public:
-    explicit RRServer(const std::string& address, const ZMQContextPtr& context = nullptr)
+    explicit RRServer(
+        const std::string& address,
+        const ZMQContextPtr& context = nullptr,
+        const int timeout_ms         = 100
+    )
         : m_zmq_request()
     {
         if (context != nullptr)
@@ -129,7 +133,13 @@ public:
 
         m_zmq_socket.reset(zmq_socket(m_zmq_context.get(), ZMQ_REP));
 
-        const auto code = zmq_bind(m_zmq_socket.get(), address.c_str());
+        auto code = zmq_setsockopt(m_zmq_socket.get(), ZMQ_RCVTIMEO, &timeout_ms, sizeof(timeout_ms));
+
+        if (code != 0) {
+            throw std::runtime_error(fmt::format("Failed to set ZMQ socket timeout: {}", std::string(zmq_strerror(errno))));
+        }
+
+        code = zmq_bind(m_zmq_socket.get(), address.c_str());
 
         if (code != 0) {
             throw std::runtime_error(fmt::format("Failed to bind ZMQ socket at {}: {}", address, std::string(zmq_strerror(errno))));
@@ -143,20 +153,18 @@ public:
 public:
     [[nodiscard]] auto receive(std::vector<u_char>& message_buffer)
     {
-        int code;
+        zmq_msg_init(&m_zmq_request);
+        const int code = zmq_msg_recv(&m_zmq_request, m_zmq_socket.get(), 0);
 
-        do {
-            zmq_msg_init(&m_zmq_request);
-            code = zmq_msg_recv(&m_zmq_request, m_zmq_socket.get(), 0);
-        } while (code < 0);
-
-        /// Copy message to the caller's buffer.
-        message_buffer.clear();
-        message_buffer.insert(
-            message_buffer.begin(),
-            static_cast<u_char*>(zmq_msg_data(&m_zmq_request)),
-            static_cast<u_char*>(zmq_msg_data(&m_zmq_request)) + zmq_msg_size(&m_zmq_request)
-        );
+        if (code > 0) {
+            /// Copy message to the caller's buffer.
+            message_buffer.clear();
+            message_buffer.insert(
+                message_buffer.begin(),
+                static_cast<u_char*>(zmq_msg_data(&m_zmq_request)),
+                static_cast<u_char*>(zmq_msg_data(&m_zmq_request)) + zmq_msg_size(&m_zmq_request)
+            );
+        }
 
         return Serializer::deserialize(message_buffer);
     }
@@ -304,7 +312,7 @@ public:
         const std::string& address,
         const uint16_t port,
         const std::string& interface_address = "0.0.0.0",
-        const time_t timeout_in_ms           = 100
+        const time_t timeout_ms              = 100
     )
         : m_receive_addr(),
           m_mreq(),
@@ -333,11 +341,11 @@ public:
         m_receive_addr.sin_port        = htons(port);
 
         /// Set up non-blocking or timeout IO.
-        if (timeout_in_ms == 0)
+        if (timeout_ms == 0)
             set_non_blocking();
         else
             /// Split timeout in seconds and microseconds.
-            set_timeout(timeout_in_ms / 1000, timeout_in_ms % 1000 * 1000);
+            set_timeout(timeout_ms / 1000, timeout_ms % 1000 * 1000);
 
         /// Bind to receive address.
         code = bind(m_receiver_fd, reinterpret_cast<sockaddr*>(&m_receive_addr), sizeof(m_receive_addr));
