@@ -12,7 +12,7 @@ public:
         const trade::types::SideType side        = trade::types::SideType::invalid_side,
         const double price                       = 0.0,
         const int64_t quantity                   = 0,
-        const int64_t exchange_time              = 1000000 /// 10:00.000 AM.
+        const int64_t exchange_time              = 100000000 /// 10:00.000 AM.
     )
     {
         auto order_tick = std::make_shared<trade::types::OrderTick>();
@@ -56,7 +56,7 @@ public:
         const trade::types::SideType side        = trade::types::SideType::invalid_side,
         const double price                       = 0.0,
         const int64_t quantity                   = 0,
-        const int64_t exchange_time              = 1000000 /// 10:00.000 AM.
+        const int64_t exchange_time              = 100000000 /// 10:00.000 AM.
     )
     {
         return std::make_shared<trade::booker::OrderWrapper>(ororder_tick(

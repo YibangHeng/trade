@@ -69,7 +69,6 @@ void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const s
     while (is_running) {
         const auto bytes_received = client.receive(buffer);
 
-        /// TODO: Is it OK to check message type by message size?
         switch (bytes_received) {
         case sizeof(SSEHpfTick): order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(buffer); break;
         case sizeof(SSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SSEHpfL2Snap>(buffer); break;
@@ -79,10 +78,21 @@ void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const s
         default: break;
         }
 
+        /// SSE has no raw trade tick. We tell it by order type.
+        if (order_tick != nullptr && order_tick->order_type() == types::OrderType::fill) {
+            trade_tick = CUTCommonData::x_ost_forward_to_trade_from_order(order_tick);
+        }
+
+        /// SZSE reports cancel orders as trade tick.
+        /// In this case, forward it to order tick.
+        if (trade_tick != nullptr && trade_tick->x_ost_szse_exe_type() == types::OrderType::cancel) {
+            order_tick = CUTCommonData::x_ost_forward_to_order_from_trade(trade_tick);
+        }
+
         if (order_tick != nullptr) {
             logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
 
-            if (order_tick->exchange_time() >= 93000) [[likely]]
+            if (order_tick->exchange_time() >= 93000000) [[likely]]
                 booker.switch_to_continuous_stage();
 
             booker.add(order_tick);

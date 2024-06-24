@@ -180,34 +180,69 @@ std::tuple<std::string, std::string> trade::broker::CUTCommonData::from_exchange
     return std::make_tuple(exchange, order_sys_id);
 }
 
-double trade::broker::CUTCommonData::to_sse_price(const uint32_t order_price)
+trade::booker::TradeTickPtr trade::broker::CUTCommonData::x_ost_forward_to_trade_from_order(booker::OrderTickPtr& order_tick)
+{
+    auto trade_tick = std::make_shared<types::TradeTick>();
+
+    trade_tick->set_ask_unique_id(order_tick->x_ost_sse_ask_unique_id());
+    trade_tick->set_bid_unique_id(order_tick->x_ost_sse_bid_unique_id());
+    trade_tick->set_symbol(order_tick->symbol());
+    trade_tick->set_exec_price(order_tick->price());
+    trade_tick->set_exec_quantity(order_tick->quantity());
+    trade_tick->set_exchange_time(order_tick->exchange_time());
+
+    /// Reset order tick to nullptr.
+    order_tick.reset();
+
+    return trade_tick;
+}
+
+trade::booker::OrderTickPtr trade::broker::CUTCommonData::x_ost_forward_to_order_from_trade(booker::TradeTickPtr& trade_tick)
+{
+    auto order_tick = std::make_shared<types::OrderTick>();
+
+    order_tick->set_unique_id(trade_tick->ask_unique_id() + trade_tick->bid_unique_id());
+    order_tick->set_order_type(trade_tick->x_ost_szse_exe_type());
+    order_tick->set_symbol(trade_tick->symbol());
+    order_tick->set_side(types::SideType::invalid_side);
+    order_tick->set_price(trade_tick->exec_price());
+    order_tick->set_quantity(trade_tick->exec_quantity());
+    order_tick->set_exchange_time(trade_tick->exchange_time());
+
+    /// Reset trade tick to nullptr.
+    trade_tick.reset();
+
+    return order_tick;
+}
+
+double trade::broker::CUTCommonData::to_price_from_sse(const uint32_t order_price)
 {
     return order_price / 1000.;
 }
 
-double trade::broker::CUTCommonData::to_szse_price(const uint32_t exe_px)
+double trade::broker::CUTCommonData::to_price_from_szse(const uint32_t exe_px)
 {
     return exe_px / 10000.;
 }
 
-int64_t trade::broker::CUTCommonData::to_sse_quantity(const uint32_t qty)
+int64_t trade::broker::CUTCommonData::to_quantity_from_sse(const uint32_t qty)
 {
     return qty / 1000;
 }
 
-int64_t trade::broker::CUTCommonData::to_szse_quantity(const uint32_t exe_qty)
+int64_t trade::broker::CUTCommonData::to_quantity_from_szse(const uint32_t exe_qty)
 {
     return exe_qty / 100;
 }
 
-int64_t trade::broker::CUTCommonData::to_sse_time(const uint32_t tick_time)
+int64_t trade::broker::CUTCommonData::to_time_from_sse(const uint32_t tick_time)
 {
     /// tick_time example: 9250000.
-    return tick_time / 100;
+    return tick_time * 10;
 }
 
-int64_t trade::broker::CUTCommonData::to_szse_time(const uint64_t quote_update_time)
+int64_t trade::broker::CUTCommonData::to_time_from_szse(const uint64_t quote_update_time)
 {
     /// quote_update_time exmaple: 20240612092500000.
-    return static_cast<int64_t>(quote_update_time % 1000000000 / 1000);
+    return static_cast<int64_t>(quote_update_time % 1000000000);
 }

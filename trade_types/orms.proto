@@ -87,7 +87,9 @@ message OrderTick
     SideType side        = 4; /// 买卖方向
     double price         = 5; /// 价格
     int64 quantity       = 6; /// 数量
-    int64 exchange_time  = 7; /// 交易所时间
+    int64 exchange_time  = 7; /// 交易所时间（HHMMSSmmm）
+    optional int64 x_ost_sse_ask_unique_id = 100; /// 上交所卖方委托 UniqueID
+    optional int64 x_ost_sse_bid_unique_id = 101; /// 上交所买方委托 UniqueID
 }
 
 /// 逐笔成交信息
@@ -98,7 +100,7 @@ message TradeTick
     string symbol                          = 3;   /// 合约代码
     double exec_price                      = 4;   /// 执行价格
     int64 exec_quantity                    = 5;   /// 执行数量
-    int64 exchange_time                    = 6;   /// 交易所时间
+    int64 exchange_time                    = 6;   /// 交易所时间（HHMMSSmmm）
     optional OrderType x_ost_szse_exe_type = 100; /// 深交所成交类型（仅区分成交/撤单）
 }
 
@@ -108,7 +110,7 @@ message L2Tick
     string symbol                           = 1; /// 合约代码
     double price                            = 2; /// 价格
     int64 quantity                          = 3; /// 当笔数量
-    google.protobuf.Timestamp exchange_time = 4; /// 交易所时间
+    google.protobuf.Timestamp exchange_time = 4; /// 交易所时间（HHMMSSmmm）
 
     optional double sell_price_10           = 1110; /// 卖 10
     optional int64 sell_quantity_10         = 1210; /// 卖 10

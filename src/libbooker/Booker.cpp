@@ -40,7 +40,7 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
     }
 
     /// If in call auction stage.
-    if (order_wrapper->exchange_time() < 92500) {
+    if (order_wrapper->exchange_time() < 92500000) {
         m_call_auction_holders[order_wrapper->symbol()].push(order_wrapper);
     }
     /// If in continuous trade stage.
@@ -51,25 +51,8 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
 
 void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
 {
-    /// SZSE reports cancel orders as trade ticks.
-    /// In this case, forward it to Booker::add().
-    if (trade_tick->x_ost_szse_exe_type() == types::OrderType::cancel) [[likely]] {
-        const auto order_tick = std::make_shared<types::OrderTick>();
-
-        /// Canceling only requires unique_id, order_type and symbol.
-        /// See Booker's unit tests.
-        order_tick->set_unique_id(trade_tick->ask_unique_id() + trade_tick->bid_unique_id());
-        order_tick->set_order_type(types::OrderType::cancel);
-        order_tick->set_symbol(trade_tick->symbol());
-        order_tick->set_side(types::SideType::invalid_side);
-        order_tick->set_price(trade_tick->exec_price());
-        order_tick->set_quantity(trade_tick->exec_quantity());
-        order_tick->set_exchange_time(trade_tick->exchange_time());
-
-        add(order_tick);
-    }
     /// Otherwise, only accepts trade made in call auction stage.
-    else if (trade_tick->exchange_time() == 92500) [[unlikely]] {
+    if (trade_tick->exchange_time() / 1000 == 92500) [[unlikely]] {
         m_call_auction_holders[trade_tick->symbol()].trade(*trade_tick);
 
         /// Report trade.

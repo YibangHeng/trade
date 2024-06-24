@@ -370,15 +370,15 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
         {
             trade::booker::Booker booker({}, reporter());
 
-            booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", SELL, 22.33, 20, 91500));
-            booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 33.22, 40, 91500));
-            booker.add(OrderCreator::ororder_tick(2, LIMIT, "600875.SH", SELL, 33.33, 80, 91500));
-            booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", BUY, 22.22, 100, 91500));
-            booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", BUY, 22.33, 100, 91500));
-            booker.add(OrderCreator::ororder_tick(5, LIMIT, "600875.SH", BUY, 33.22, 100, 91500));
+            booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", SELL, 22.33, 20, 91500000));
+            booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 33.22, 40, 91500000));
+            booker.add(OrderCreator::ororder_tick(2, LIMIT, "600875.SH", SELL, 33.33, 80, 91500000));
+            booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", BUY, 22.22, 100, 91500000));
+            booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", BUY, 22.33, 100, 91500000));
+            booker.add(OrderCreator::ororder_tick(5, LIMIT, "600875.SH", BUY, 33.22, 100, 91500000));
 
-            booker.trade(OrderCreator::trade_tick(1, 5, "600875.SH", 33.22, 40, 92500));
-            booker.trade(OrderCreator::trade_tick(0, 5, "600875.SH", 33.22, 20, 92500));
+            booker.trade(OrderCreator::trade_tick(1, 5, "600875.SH", 33.22, 40, 92500000));
+            booker.trade(OrderCreator::trade_tick(0, 5, "600875.SH", 33.22, 20, 92500000));
 
             booker.switch_to_continuous_stage();
 
@@ -390,20 +390,20 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
         {
             trade::booker::Booker booker({}, reporter());
 
-            booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", SELL, 22.33, 20, 91500));
-            booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 33.22, 40, 91500));
-            booker.add(OrderCreator::ororder_tick(2, LIMIT, "600875.SH", SELL, 33.33, 80, 91500));
-            booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", BUY, 22.22, 100, 91500));
-            booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", BUY, 22.33, 100, 91500));
-            booker.add(OrderCreator::ororder_tick(5, LIMIT, "600875.SH", BUY, 33.22, 100, 91500));
+            booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", SELL, 22.33, 20, 91500000));
+            booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 33.22, 40, 91500000));
+            booker.add(OrderCreator::ororder_tick(2, LIMIT, "600875.SH", SELL, 33.33, 80, 91500000));
+            booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", BUY, 22.22, 100, 91500000));
+            booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", BUY, 22.33, 100, 91500000));
+            booker.add(OrderCreator::ororder_tick(5, LIMIT, "600875.SH", BUY, 33.22, 100, 91500000));
 
-            booker.trade(OrderCreator::trade_tick(1, 5, "600875.SH", 33.22, 40, 92500));
-            booker.trade(OrderCreator::trade_tick(0, 5, "600875.SH", 33.22, 20, 92500));
+            booker.trade(OrderCreator::trade_tick(1, 5, "600875.SH", 33.22, 40, 92500000));
+            booker.trade(OrderCreator::trade_tick(0, 5, "600875.SH", 33.22, 20, 92500000));
 
             booker.switch_to_continuous_stage();
 
-            booker.add(OrderCreator::ororder_tick(6, MARKET, "600875.SH", BUY, 0, 80, 93000));
-            booker.add(OrderCreator::ororder_tick(7, MARKET, "600875.SH", SELL, 0, 240, 93000));
+            booker.add(OrderCreator::ororder_tick(6, MARKET, "600875.SH", BUY, 0, 80, 93000000));
+            booker.add(OrderCreator::ororder_tick(7, MARKET, "600875.SH", SELL, 0, 240, 93000000));
 
             CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0040 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n"
                                                     "600875.SH:33.22:0020 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n"
