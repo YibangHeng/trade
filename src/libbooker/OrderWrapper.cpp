@@ -66,6 +66,11 @@ liquibook::book::Quantity trade::booker::OrderWrapper::quantity_on_market() cons
     return BookerCommonData::to_quantity(m_order->quantity()) - filled_quantity;
 }
 
+trade::booker::OrderTickPtr trade::booker::OrderWrapper::raw_order_tick() const
+{
+    return m_order;
+}
+
 void trade::booker::OrderWrapper::mark_as_cancel() const
 {
     m_order->set_order_type(types::OrderType::cancel);

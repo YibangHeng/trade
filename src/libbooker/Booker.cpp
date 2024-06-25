@@ -27,7 +27,7 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
         order_wrapper = m_orders[order_tick->unique_id()];
 
         if (order_tick->order_type() != types::OrderType::cancel) {
-            logger->warn("Received duplicated order with unexpected order_type: {}", utilities::ToJSON()(*order_tick));
+            logger->warn("Received duplicated order with unexpected order_type: the existing order is {} and the new arrived order is {}", utilities::ToJSON()(*order_wrapper->raw_order_tick()), utilities::ToJSON()(*order_tick));
             return;
         }
 

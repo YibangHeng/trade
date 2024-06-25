@@ -62,12 +62,12 @@ void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const s
 
     std::vector<u_char> buffer(1024);
 
-    booker::OrderTickPtr order_tick;
-    booker::TradeTickPtr trade_tick;
-    booker::L2TickPtr l2_tick;
-
     while (is_running) {
         const auto bytes_received = client.receive(buffer);
+
+        booker::OrderTickPtr order_tick;
+        booker::TradeTickPtr trade_tick;
+        booker::L2TickPtr l2_tick;
 
         switch (bytes_received) {
         case sizeof(SSEHpfTick): order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(buffer); break;

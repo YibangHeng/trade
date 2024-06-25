@@ -49,6 +49,7 @@ public:
     [[nodiscard]] int64_t exchange_time() const;
     /// Return the quantity that not yet filled.
     [[nodiscard]] liquibook::book::Quantity quantity_on_market() const;
+    [[nodiscard]] OrderTickPtr raw_order_tick() const;
 
 public:
     void mark_as_cancel() const;
