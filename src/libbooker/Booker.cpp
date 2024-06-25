@@ -51,7 +51,7 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
 
 void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
 {
-    /// Otherwise, only accepts trade made in call auction stage.
+    /// If trade made in call auction stage.
     if (trade_tick->exchange_time() / 1000 == 92500) [[unlikely]] {
         m_call_auction_holders[trade_tick->symbol()].trade(*trade_tick);
 
@@ -65,12 +65,18 @@ void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         l2_tick->set_bid_unique_id(trade_tick->bid_unique_id());
 
         m_reporter->l2_tick_generated(l2_tick);
+
+        return;
     }
+
+    if (!m_md_validator.check(trade_tick))
+        logger->error("Verification failed for {}'s trade tick", trade_tick->symbol());
 }
 
-bool trade::booker::Booker::l2(const L2TickPtr& l2_tick) const
+void trade::booker::Booker::l2(const L2TickPtr& l2_tick) const
 {
-    return m_md_validator.check(l2_tick);
+    if (!m_md_validator.check(l2_tick))
+        logger->error("Verification failed for {}'s l2 snapshot", l2_tick->symbol());
 }
 
 void trade::booker::Booker::switch_to_continuous_stage()

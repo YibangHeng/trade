@@ -35,7 +35,7 @@ public:
     void trade(const TradeTickPtr& trade_tick);
     /// Accept l2 snap info, whilch will be used for checking the self-generated
     /// md info.
-    bool l2(const L2TickPtr& l2_tick) const;
+    void l2(const L2TickPtr& l2_tick) const;
     void switch_to_continuous_stage();
 
 private:

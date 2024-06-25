@@ -111,8 +111,7 @@ void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const s
         if (l2_tick != nullptr) {
             logger->debug("Received l2 tick: {}", utilities::ToJSON()(*l2_tick));
 
-            if (booker.l2(l2_tick))
-                logger->error("Verification failed for {}'s l2 snapshot", l2_tick->symbol());
+            booker.l2(l2_tick);
 
             m_reporter->exchange_l2_tick_arrived(l2_tick);
         }
