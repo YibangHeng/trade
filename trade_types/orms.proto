@@ -81,13 +81,13 @@ message Orders
 /// 逐笔委托信息
 message OrderTick
 {
-    int64 unique_id      = 1; /// 委托 UniqueID
-    OrderType order_type = 2; /// 委托类型
-    string symbol        = 3; /// 合约代码
-    SideType side        = 4; /// 买卖方向
-    double price         = 5; /// 价格
-    int64 quantity       = 6; /// 数量
-    int64 exchange_time  = 7; /// 交易所时间（HHMMSSmmm）
+    int64 unique_id                        = 1;   /// 委托 UniqueID
+    OrderType order_type                   = 2;   /// 委托类型
+    string symbol                          = 3;   /// 合约代码
+    SideType side                          = 4;   /// 买卖方向
+    double price                           = 5;   /// 价格
+    int64 quantity                         = 6;   /// 数量
+    int64 exchange_time                    = 7;   /// 交易所时间（HHMMSSmmm）
     optional int64 x_ost_sse_ask_unique_id = 100; /// 上交所卖方委托 UniqueID
     optional int64 x_ost_sse_bid_unique_id = 101; /// 上交所买方委托 UniqueID
 }
@@ -110,7 +110,9 @@ message L2Tick
     string symbol                           = 1; /// 合约代码
     double price                            = 2; /// 价格
     int64 quantity                          = 3; /// 当笔数量
-    google.protobuf.Timestamp exchange_time = 4; /// 交易所时间（HHMMSSmmm）
+    int64 ask_unique_id                     = 4; /// 卖方委托 UniqueID
+    int64 bid_unique_id                     = 5; /// 买方委托 UniqueID
+    google.protobuf.Timestamp exchange_time = 6; /// 交易所时间（HHMMSSmmm）
 
     optional double sell_price_10           = 1110; /// 卖 10
     optional int64 sell_quantity_10         = 1210; /// 卖 10

@@ -13,29 +13,23 @@ public:
 public:
     void reset()
     {
-        m_trade_result.str("");
+        m_trade_results.clear();
     }
 
 public:
-    [[nodiscard]] std::string get_trade_result() const
+    [[nodiscard]] auto get_trade_result() const
     {
-        return m_trade_result.str();
+        return m_trade_results;
     }
 
 public:
     void l2_tick_generated(const std::shared_ptr<trade::types::L2Tick> l2_tick) override
     {
-        /// TODO: Add l2 quantity check.
-        m_trade_result << fmt::format(
-            "{}:{:05.2f}:{:04} S{:05.2f}:S{:05.2f}:S{:05.2f} B{:05.2f}:B{:05.2f}:B{:05.2f}\n",
-            l2_tick->symbol(), l2_tick->price(), l2_tick->quantity(),                  /// Symbol, price and quantity of last trade.
-            l2_tick->sell_price_3(), l2_tick->sell_price_2(), l2_tick->sell_price_1(), /// Sell level prices.
-            l2_tick->buy_price_1(), l2_tick->buy_price_2(), l2_tick->buy_price_3()     /// Buy level prices.
-        );
+        m_trade_results.push_back(l2_tick);
     }
 
 private:
-    std::ostringstream m_trade_result;
+    std::vector<std::shared_ptr<trade::types::L2Tick>> m_trade_results;
 };
 
 const auto g_reporter = std::make_shared<SeqChecker>();
@@ -54,7 +48,19 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", BUY, 22.33, 100));
             booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 22.33, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 1);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
         }
 
         SECTION("Buy after sell with same price")
@@ -64,7 +70,19 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", SELL, 22.33, 100));
             booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", BUY, 22.33, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 1);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
         }
 
         SECTION("Sell after buy with lower price")
@@ -74,7 +92,19 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", BUY, 33.22, 100));
             booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 22.33, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0100 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 1);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
         }
 
         SECTION("Buy after sell with higher price")
@@ -84,7 +114,19 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(0, LIMIT, "600875.SH", SELL, 22.33, 100));
             booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", BUY, 33.22, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 1);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
         }
 
         SECTION("Sell after buy with higher price")
@@ -120,10 +162,55 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", BUY, 22.33, 100));
             booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", BUY, 22.33, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S00.00 B22.33:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 4);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[2]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[3]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 4);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_3() == 0);
         }
 
         SECTION("Buy after sell with same price")
@@ -136,10 +223,55 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", BUY, 22.33, 100));
             booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", BUY, 22.33, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S00.00 B22.33:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 4);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[2]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[3]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 4);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_3() == 0);
         }
 
         SECTION("Sell after buy with lower price")
@@ -152,12 +284,55 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", SELL, 22.33, 100));
             booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", SELL, 22.33, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0020 S00.00:S00.00:S00.00 B33.22:B00.00:B00.00\n"
-                                                    "600875.SH:33.22:0040 S00.00:S00.00:S00.00 B33.22:B00.00:B00.00\n"
-                                                    "600875.SH:33.22:0040 S00.00:S00.00:S00.00 B33.22:B00.00:B00.00\n"
-                                                    "600875.SH:33.22:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
+            CHECK(g_reporter->get_trade_result().size() == 4);
 
-            );
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[2]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[3]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 4);
+            CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_3() == 0);
         }
 
         SECTION("Buy after sell with higher price")
@@ -170,10 +345,55 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", BUY, 33.22, 100));
             booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", BUY, 33.22, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S00.00 B33.22:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 4);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[2]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[3]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 4);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_3() == 0);
         }
 
         SECTION("Sell after buy with step price")
@@ -186,9 +406,43 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", SELL, 33.22, 100));
             booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", SELL, 33.22, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:33.33:0080 S00.00:S00.00:S00.00 B33.22:B22.33:B00.00\n"
-                                                    "600875.SH:33.22:0020 S00.00:S00.00:S00.00 B33.22:B22.33:B00.00\n"
-                                                    "600875.SH:33.22:0020 S00.00:S00.00:S33.22 B22.33:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 3);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 33.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 80);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[2]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[2]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 4);
+            CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_3() == 0);
         }
 
         SECTION("Buy after sell with step price")
@@ -201,8 +455,31 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(3, LIMIT, "600875.SH", BUY, 22.33, 100));
             booker.add(OrderCreator::ororder_tick(4, LIMIT, "600875.SH", BUY, 22.33, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.22:0020 S00.00:S00.00:S33.22 B22.33:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S33.22 B22.33:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 2);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.22);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
         }
     }
 
@@ -230,7 +507,19 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(0, CANCEL, "600875.SH", INV_SIDE, 0, 0));
             booker.add(OrderCreator::ororder_tick(2, LIMIT, "600875.SH", SELL, 22.33, 50));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0050 S00.00:S00.00:S00.00 B22.33:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 1);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 50);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
         }
 
         SECTION("Limit order with cancel after full fill")
@@ -241,7 +530,19 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 22.33, 100));
             booker.add(OrderCreator::ororder_tick(0, CANCEL, "600875.SH", INV_SIDE, 0, 0));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 1);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
         }
     }
 
@@ -255,7 +556,19 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", BUY, 33.22, 100));
             booker.add(OrderCreator::ororder_tick(2, MARKET, "600875.SH", SELL, 0, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0100 S00.00:S00.00:S00.00 B22.33:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 1);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
         }
 
         SECTION("Buy after sell with market price")
@@ -266,7 +579,19 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(1, LIMIT, "600875.SH", SELL, 33.22, 100));
             booker.add(OrderCreator::ororder_tick(2, MARKET, "600875.SH", BUY, 0, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0100 S00.00:S00.00:S33.22 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 1);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
         }
     }
 
@@ -282,10 +607,55 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(3, MARKET, "600875.SH", BUY, 0, 100));
             booker.add(OrderCreator::ororder_tick(4, MARKET, "600875.SH", BUY, 0, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 4);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[2]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[3]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 4);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_3() == 0);
         }
 
         SECTION("Buy after sell with market price")
@@ -298,10 +668,55 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(3, MARKET, "600875.SH", BUY, 0, 100));
             booker.add(OrderCreator::ororder_tick(4, MARKET, "600875.SH", BUY, 0, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 4);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[2]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[3]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 4);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_3() == 0);
         }
 
         SECTION("Sell after buy with step market price")
@@ -314,10 +729,55 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(3, MARKET, "600875.SH", SELL, 0, 100));
             booker.add(OrderCreator::ororder_tick(4, MARKET, "600875.SH", SELL, 0, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:33.33:0080 S00.00:S00.00:S00.00 B33.22:B22.33:B00.00\n"
-                                                    "600875.SH:33.22:0020 S00.00:S00.00:S00.00 B33.22:B22.33:B00.00\n"
-                                                    "600875.SH:33.22:0020 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0020 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 4);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 33.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 80);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[2]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[2]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 4);
+            CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[3]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[3]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 4);
+            CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_3() == 0);
         }
 
         SECTION("Buy after sell with step market price")
@@ -330,10 +790,55 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(3, MARKET, "600875.SH", BUY, 0, 100));
             booker.add(OrderCreator::ororder_tick(4, MARKET, "600875.SH", BUY, 0, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.22:0020 S00.00:S00.00:S33.22 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S33.22 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:33.22:0040 S00.00:S00.00:S33.22 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:33.22:0040 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 4);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.22);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[2]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[3]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 4);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_3() == 0);
         }
     }
 
@@ -347,8 +852,31 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(1, BEST_PRICE, "600875.SH", BUY, 0, 40));
             booker.add(OrderCreator::ororder_tick(2, LIMIT, "600875.SH", SELL, 22.33, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S22.33 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 2);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
         }
 
         SECTION("Buy after sell with best price")
@@ -359,8 +887,31 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(1, BEST_PRICE, "600875.SH", SELL, 0, 40));
             booker.add(OrderCreator::ororder_tick(2, LIMIT, "600875.SH", BUY, 22.33, 100));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:22.33:0020 S00.00:S00.00:S00.00 B22.33:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0040 S00.00:S00.00:S00.00 B22.33:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 2);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 22.33);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
         }
     }
 
@@ -382,8 +933,19 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
 
             booker.switch_to_continuous_stage();
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0040 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:33.22:0020 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 2);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 5);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
         }
 
         SECTION("Continuous trade after call auction")
@@ -405,12 +967,79 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             booker.add(OrderCreator::ororder_tick(6, MARKET, "600875.SH", BUY, 0, 80, 93000000));
             booker.add(OrderCreator::ororder_tick(7, MARKET, "600875.SH", SELL, 0, 240, 93000000));
 
-            CHECK(g_reporter->get_trade_result() == "600875.SH:33.22:0040 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:33.22:0020 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:33.33:0080 S00.00:S00.00:S00.00 B33.22:B22.33:B22.22\n"
-                                                    "600875.SH:33.22:0040 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.33:0100 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n"
-                                                    "600875.SH:22.22:0100 S00.00:S00.00:S00.00 B00.00:B00.00:B00.00\n");
+            CHECK(g_reporter->get_trade_result().size() == 6);
+
+            CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[0]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[0]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
+            CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 5);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[1]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[1]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 5);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[2]->price() == 33.33);
+            CHECK(g_reporter->get_trade_result()[2]->quantity() == 80);
+            CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
+            CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 6);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1() == 33.22);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_2() == 22.33);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_3() == 22.22);
+
+            CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[3]->price() == 33.22);
+            CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 7);
+            CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 5);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[4]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[4]->price() == 22.33);
+            CHECK(g_reporter->get_trade_result()[4]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[4]->ask_unique_id() == 7);
+            CHECK(g_reporter->get_trade_result()[4]->bid_unique_id() == 4);
+            CHECK(g_reporter->get_trade_result()[4]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[4]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[4]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[4]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[4]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[4]->buy_price_3() == 0);
+
+            CHECK(g_reporter->get_trade_result()[5]->symbol() == "600875.SH");
+            CHECK(g_reporter->get_trade_result()[5]->price() == 22.22);
+            CHECK(g_reporter->get_trade_result()[5]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[5]->ask_unique_id() == 7);
+            CHECK(g_reporter->get_trade_result()[5]->bid_unique_id() == 3);
+            CHECK(g_reporter->get_trade_result()[5]->sell_price_3() == 0);
+            CHECK(g_reporter->get_trade_result()[5]->sell_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[5]->sell_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[5]->buy_price_1() == 0);
+            CHECK(g_reporter->get_trade_result()[5]->buy_price_2() == 0);
+            CHECK(g_reporter->get_trade_result()[5]->buy_price_3() == 0);
         }
     }
 }

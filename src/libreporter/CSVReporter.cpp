@@ -8,10 +8,12 @@ void trade::reporter::CSVReporter::l2_tick_generated(const std::shared_ptr<types
     new_l2_tick_writer(l2_tick->symbol());
 
     m_l2_tick_writers[l2_tick->symbol()] << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         l2_tick->symbol(),
         l2_tick->price(),
         l2_tick->quantity(),
+        l2_tick->ask_unique_id(),
+        l2_tick->bid_unique_id(),
         l2_tick->sell_price_10(),
         l2_tick->sell_quantity_10(),
         l2_tick->sell_price_9(),
@@ -73,6 +75,8 @@ void trade::reporter::CSVReporter::new_l2_tick_writer(const std::string& symbol)
             << "symbol,"
             << "price,"
             << "quantity,"
+            << "ask_unique_id,"
+            << "bid_unique_id,"
             << "sell_price_10,"
             << "sell_quantity_10,"
             << "sell_price_9,"

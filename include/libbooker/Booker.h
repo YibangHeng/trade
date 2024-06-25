@@ -32,12 +32,8 @@ public:
     /// Booker will process order in auction stage and continuous stage.
     void add(const OrderTickPtr& order_tick);
     /// Accept trades in call auction stage (whose exec time == 925000).
-    ///
-    /// Also accept SZSE new cancel.
-    /// SZSE reports cancel orders as trade ticks. In this case, let
-    /// Booker::add() handle it.
     void trade(const TradeTickPtr& trade_tick);
-    /// Accept l2 md info, whilch will be used for checking the self-generated
+    /// Accept l2 snap info, whilch will be used for checking the self-generated
     /// md info.
     bool l2(const L2TickPtr& l2_tick) const;
     void switch_to_continuous_stage();
@@ -51,20 +47,30 @@ private:
         liquibook::book::Quantity qty,
         liquibook::book::Price price
     ) override;
-    void generate_level_price(const std::string& symbol, const std::shared_ptr<types::L2Tick>& l2_tick);
 
 private:
     void on_accept(const OrderWrapperPtr& order) override {}
     void on_trigger_stop(const OrderWrapperPtr& order) override {}
     void on_reject(const OrderWrapperPtr& order, const char* reason) override;
-    void on_fill(const OrderWrapperPtr& order, const OrderWrapperPtr& matched_order, liquibook::book::Quantity fill_qty, liquibook::book::Price fill_price) override {}
+    void on_fill(
+        const OrderWrapperPtr& order,
+        const OrderWrapperPtr& matched_order,
+        liquibook::book::Quantity fill_qty,
+        liquibook::book::Price fill_price
+    ) override;
     void on_cancel(const OrderWrapperPtr& order) override {}
     void on_cancel_reject(const OrderWrapperPtr& order, const char* reason) override;
     void on_replace(const OrderWrapperPtr& order, const int64_t& size_delta, liquibook::book::Price new_price) override {}
     void on_replace_reject(const OrderWrapperPtr& order, const char* reason) override;
 
 private:
+    void generate_level_price();
+
+private:
     void new_booker(const std::string& symbol);
+
+private:
+    L2TickPtr m_latest_l2_tick;
 
 private:
     /// Symbol -> OrderBook.
