@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/circular_buffer.hpp>
+#include <boost/functional/hash.hpp>
 
 #include "BookerCommonData.h"
 #include "networks.pb.h"
@@ -8,26 +9,72 @@
 namespace trade::booker
 {
 
-class MdTradeHash
+class TradeTickHash
+{
+public:
+    using HashType = decltype(std::hash<std::string>()(""));
+
+    HashType operator()(const types::TradeTick& trade_tick) const
+    {
+        HashType seed = 0;
+
+        boost::hash_combine(seed, std::hash<int64_t>()(trade_tick.ask_unique_id()));
+        boost::hash_combine(seed, std::hash<int64_t>()(trade_tick.bid_unique_id()));
+        boost::hash_combine(seed, std::hash<std::string>()(trade_tick.symbol()));
+        boost::hash_combine(seed, std::hash<double>()(trade_tick.exec_price()));
+        boost::hash_combine(seed, std::hash<int64_t>()(trade_tick.exec_quantity()));
+
+        return seed;
+    }
+
+    /// Trade ticks are fed by l2 ticks. Therefore, TradeTickHash should accept
+    /// l2 ticks.
+    HashType operator()(const types::L2Tick& l2_tick) const
+    {
+        HashType seed = 0;
+
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.ask_unique_id()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.bid_unique_id()));
+        boost::hash_combine(seed, std::hash<std::string>()(l2_tick.symbol()));
+        boost::hash_combine(seed, std::hash<double>()(l2_tick.price()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.quantity()));
+
+        return seed;
+    }
+};
+
+class L2TickHash
 {
 public:
     using HashType = decltype(std::hash<double>()(0.));
 
     HashType operator()(const types::L2Tick& l2_tick) const
     {
-        const std::size_t sp1 = std::hash<double>()(l2_tick.sell_price_1());
-        const std::size_t sp2 = std::hash<double>()(l2_tick.sell_price_2());
-        const std::size_t sp3 = std::hash<double>()(l2_tick.sell_price_3());
-        const std::size_t sp4 = std::hash<double>()(l2_tick.sell_price_4());
-        const std::size_t sp5 = std::hash<double>()(l2_tick.sell_price_5());
+        HashType seed = 0;
 
-        const std::size_t bp1 = std::hash<double>()(l2_tick.buy_price_1());
-        const std::size_t bp2 = std::hash<double>()(l2_tick.buy_price_2());
-        const std::size_t bp3 = std::hash<double>()(l2_tick.buy_price_3());
-        const std::size_t bp4 = std::hash<double>()(l2_tick.buy_price_4());
-        const std::size_t bp5 = std::hash<double>()(l2_tick.buy_price_5());
+        boost::hash_combine(seed, std::hash<std::string>()(l2_tick.symbol()));
+        boost::hash_combine(seed, std::hash<double>()(l2_tick.sell_price_1()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.sell_quantity_1()));
+        boost::hash_combine(seed, std::hash<double>()(l2_tick.sell_price_2()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.sell_quantity_2()));
+        boost::hash_combine(seed, std::hash<double>()(l2_tick.sell_price_3()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.sell_quantity_3()));
+        boost::hash_combine(seed, std::hash<double>()(l2_tick.sell_price_4()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.sell_quantity_4()));
+        boost::hash_combine(seed, std::hash<double>()(l2_tick.sell_price_5()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.sell_quantity_5()));
+        boost::hash_combine(seed, std::hash<double>()(l2_tick.buy_price_1()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.buy_quantity_1()));
+        boost::hash_combine(seed, std::hash<double>()(l2_tick.buy_price_2()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.buy_quantity_2()));
+        boost::hash_combine(seed, std::hash<double>()(l2_tick.buy_price_3()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.buy_quantity_3()));
+        boost::hash_combine(seed, std::hash<double>()(l2_tick.buy_price_4()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.buy_quantity_4()));
+        boost::hash_combine(seed, std::hash<double>()(l2_tick.buy_price_5()));
+        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.buy_quantity_5()));
 
-        return sp1 ^ sp2 << 1 ^ sp3 << 2 ^ sp4 << 3 ^ sp5 << 4 ^ bp1 << 5 ^ bp2 << 6 ^ bp3 << 7 ^ bp4 << 8 ^ bp5 << 9;
+        return seed;
     }
 };
 
@@ -39,18 +86,25 @@ public:
 
     /// Market data.
 public:
-    void l2_tick_generated(const std::shared_ptr<types::L2Tick>& l2_tick);
+    /// Feed self-generated l2 tick.
+    void l2_tick_generated(const L2TickPtr& l2_tick);
 
 public:
+    /// Check by exchange trade tick.
+    bool check(const TradeTickPtr& trade_tick) const;
+    /// Check by exchange l2 tick.
     bool check(const L2TickPtr& l2_tick) const;
 
 private:
+    void new_trade_tick_buffer(const std::string& symbol);
     void new_l2_tick_buffer(const std::string& symbol);
 
 private:
-    /// Symbol -> trades.
-    std::unordered_map<std::string, boost::circular_buffer<MdTradeHash::HashType>> m_l2_tick_buffers;
-    constexpr static int m_buffer_size = 1000; /// Last 1000 trades.
+    constexpr static int m_buffer_size = 1024; /// Last 1024 ticks.
+    /// Symbol -> trade ticks.
+    std::unordered_map<std::string, boost::circular_buffer<TradeTickHash::HashType>> m_trade_tick_buffers;
+    /// Symbol -> l2 ticks.
+    std::unordered_map<std::string, boost::circular_buffer<L2TickHash::HashType>> m_l2_tick_buffers;
 };
 
 } // namespace trade::booker
