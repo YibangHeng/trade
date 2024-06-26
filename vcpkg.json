@@ -16,6 +16,10 @@
       "version>=": "1.84.0"
     },
     {
+      "name": "boost-lockfree",
+      "version>=": "1.84.0"
+    },
+    {
       "name": "boost-logic",
       "version>=": "1.84.0"
     },

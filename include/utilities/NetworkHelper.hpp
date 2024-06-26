@@ -373,10 +373,12 @@ public:
     }
 
 public:
-    ssize_t receive(std::vector<u_char>& message_buffer)
+    ssize_t receive(std::vector<u_char>& message)
     {
-        message_buffer.resize(sizeof(T));
-        return recvfrom(m_receiver_fd, message_buffer.data(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &m_addr_len);
+        message.resize(sizeof(T));
+        const auto bytes_received = recvfrom(m_receiver_fd, message.data(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &m_addr_len);
+        message.resize(bytes_received >= 0 ? bytes_received : 0);
+        return bytes_received;
     }
 
 private:
