@@ -76,6 +76,10 @@ public:
     [[nodiscard]] static int64_t to_time_from_sse(uint32_t tick_time);
     [[nodiscard]] static int64_t to_time_from_szse(uint64_t quote_update_time);
 
+    /// Append symbol info to exchange_raw id as prefix.
+    template<std::integral IdType>
+    [[nodiscard]] static int64_t to_unique_id(IdType exchange_raw_id, std::string_view symbol);
+
 public:
     TUTSystemNameType m_system_name;
     TUTUserIDType m_user_id;
@@ -92,15 +96,15 @@ inline booker::OrderTickPtr CUTCommonData::to_order_tick<SSEHpfTick>(const std::
     assert(message.size() == sizeof(SSEHpfTick));
     const auto raw_order = reinterpret_cast<const SSEHpfTick*>(message.data());
 
-    order_tick->set_unique_id(static_cast<int64_t>(raw_order->m_buy_order_no + raw_order->m_sell_order_no));
+    order_tick->set_unique_id(to_unique_id(raw_order->m_buy_order_no + raw_order->m_sell_order_no, raw_order->m_symbol_id));
     order_tick->set_order_type(to_order_type_from_sse(raw_order->m_tick_type));
     order_tick->set_symbol(raw_order->m_symbol_id);
     order_tick->set_side(to_md_side_from_sse(raw_order->m_side_flag));
     order_tick->set_price(to_price_from_sse(raw_order->m_order_price));
     order_tick->set_quantity(to_quantity_from_sse(raw_order->m_qty));
     order_tick->set_exchange_time(to_time_from_sse(raw_order->m_tick_time));
-    order_tick->set_x_ost_sse_ask_unique_id(static_cast<int64_t>(raw_order->m_sell_order_no));
-    order_tick->set_x_ost_sse_bid_unique_id(static_cast<int64_t>(raw_order->m_buy_order_no));
+    order_tick->set_x_ost_sse_ask_unique_id(to_unique_id(raw_order->m_sell_order_no, raw_order->m_symbol_id));
+    order_tick->set_x_ost_sse_bid_unique_id(to_unique_id(raw_order->m_buy_order_no, raw_order->m_symbol_id));
 
     /// Just ignore fill tick.
     if (order_tick->order_type() == types::OrderType::invalid_order_type
@@ -118,7 +122,7 @@ inline booker::OrderTickPtr CUTCommonData::to_order_tick<SZSEHpfOrderTick>(const
     assert(message.size() == sizeof(SZSEHpfOrderTick));
     const auto raw_order = reinterpret_cast<const SZSEHpfOrderTick*>(message.data());
 
-    order_tick->set_unique_id(raw_order->m_header.m_sequence_num);
+    order_tick->set_unique_id(to_unique_id(raw_order->m_header.m_sequence_num, raw_order->m_header.m_symbol));
     order_tick->set_order_type(to_order_type_from_szse(raw_order->m_order_type));
     order_tick->set_symbol(raw_order->m_header.m_symbol);
     order_tick->set_side(to_md_side_from_szse(raw_order->m_side));
@@ -142,8 +146,8 @@ inline booker::TradeTickPtr CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(const
     assert(message.size() == sizeof(SZSEHpfTradeTick));
     const auto raw_trade = reinterpret_cast<const SZSEHpfTradeTick*>(message.data());
 
-    trade_tick->set_ask_unique_id(raw_trade->m_ask_app_seq_num);
-    trade_tick->set_bid_unique_id(raw_trade->m_bid_app_seq_num);
+    trade_tick->set_ask_unique_id(to_unique_id(raw_trade->m_ask_app_seq_num, raw_trade->m_header.m_symbol));
+    trade_tick->set_bid_unique_id(to_unique_id(raw_trade->m_bid_app_seq_num, raw_trade->m_header.m_symbol));
     trade_tick->set_symbol(raw_trade->m_header.m_symbol);
     trade_tick->set_exec_price(to_price_from_szse(raw_trade->m_exe_px));
     trade_tick->set_exec_quantity(to_quantity_from_szse(raw_trade->m_exe_qty));
@@ -169,7 +173,6 @@ inline booker::L2TickPtr CUTCommonData::to_l2_tick<SSEHpfL2Snap>(const std::vect
     l2_tick->set_symbol(raw_l2_tick->m_symbol_id);
     l2_tick->set_price(to_price_from_sse(raw_l2_tick->m_last_price));
     l2_tick->set_quantity(to_quantity_from_sse(raw_l2_tick->m_trade_volume));
-    l2_tick->set_sell_price_10(to_price_from_sse(raw_l2_tick->m_ask_px[0].m_px));
 
     l2_tick->set_sell_price_1(to_price_from_sse(raw_l2_tick->m_ask_px[0].m_px));
     l2_tick->set_sell_quantity_1(to_quantity_from_sse(raw_l2_tick->m_ask_px[0].m_qty));
@@ -271,6 +274,21 @@ inline booker::L2TickPtr CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(const std::vec
     l2_tick->set_buy_quantity_10(to_quantity_from_szse(raw_l2_tick->m_bid_unit[9].m_qty));
 
     return l2_tick;
+}
+
+template<std::integral T>
+int64_t CUTCommonData::to_unique_id(T exchange_raw_id, const std::string_view symbol)
+{
+    int64_t unique_id = static_cast<int64_t>(exchange_raw_id) * 1000000;
+
+    try {
+        unique_id += std::stoll(symbol.data());
+    }
+    catch (...) {
+        /// If the symbol is not a number, we just ignore it.
+    }
+
+    return unique_id;
 }
 
 } // namespace trade::broker
