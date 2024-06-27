@@ -355,6 +355,16 @@ public:
             throw std::runtime_error(fmt::format("Failed to bind receiving socket at {}:{}: {}", address, port, strerror(errno)));
         }
 
+        constexpr int buff_size = 1024 * 1024 * 1024; /// 1GB for udp buffer.
+
+        /// Increase UDP receive buffer size.
+        code = setsockopt(m_receiver_fd, SOL_SOCKET, SO_RCVBUF, &buff_size, sizeof(buff_size));
+
+        if (code < 0) {
+            close(m_receiver_fd);
+            throw std::runtime_error(fmt::format("Failed to increase receive buffer size: {}", strerror(errno)));
+        }
+
         /// Set up multicast address.
         m_mreq.imr_multiaddr.s_addr = inet_addr(address.c_str());
         m_mreq.imr_interface.s_addr = inet_addr(interface_address.c_str());
