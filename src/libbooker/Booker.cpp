@@ -5,13 +5,20 @@
 
 trade::booker::Booker::Booker(
     const std::vector<std::string>& symbols,
-    const std::shared_ptr<reporter::IReporter>& reporter
+    const std::shared_ptr<reporter::IReporter>& reporter,
+    const bool enable_validation
 ) : AppBase("Booker"),
     m_in_continuous_stage(),
+    m_md_validator(enable_validation ? MdValidator() : std::optional<MdValidator> {}),
     m_reporter(reporter)
 {
     for (const auto& symbol : symbols)
         new_booker(symbol);
+
+    if (m_md_validator.has_value())
+        logger->info("Real-time market data validation enabled");
+    else
+        logger->info("Real-time market data validation disabled");
 }
 
 void trade::booker::Booker::add(const OrderTickPtr& order_tick)
@@ -69,13 +76,13 @@ void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         return;
     }
 
-    if (!m_md_validator.check(trade_tick))
+    if (m_md_validator.has_value() && !m_md_validator.value().check(trade_tick))
         logger->error("Verification failed for {}'s trade tick", trade_tick->symbol());
 }
 
 void trade::booker::Booker::l2(const L2TickPtr& l2_tick) const
 {
-    if (!m_md_validator.check(l2_tick))
+    if (m_md_validator.has_value() && !m_md_validator.value().check(l2_tick))
         logger->error("Verification failed for {}'s l2 snapshot", l2_tick->symbol());
 }
 
@@ -164,7 +171,7 @@ void trade::booker::Booker::on_trade(
 
     generate_level_price();
 
-    m_md_validator.l2_tick_generated(m_latest_l2_tick); /// Feed to validator first.
+    m_md_validator.has_value() ? m_md_validator.value().l2_tick_generated(m_latest_l2_tick) : void(); /// Feed to validator first.
     m_reporter->l2_tick_generated(m_latest_l2_tick);
 }
 

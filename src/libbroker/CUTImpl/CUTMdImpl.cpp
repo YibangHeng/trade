@@ -1,5 +1,7 @@
-#include "libbroker/CUTImpl/CUTMdImpl.h"
+#include <utility>
+
 #include "libbroker/CUTImpl/CUTCommonData.h"
+#include "libbroker/CUTImpl/CUTMdImpl.h"
 #include "libbroker/CUTImpl/RawStructure.h"
 #include "utilities/AddressHelper.hpp"
 #include "utilities/NetworkHelper.hpp"
@@ -8,10 +10,9 @@
 trade::broker::CUTMdImpl::CUTMdImpl(
     std::shared_ptr<ConfigType> config,
     std::shared_ptr<holder::IHolder> holder,
-    std::shared_ptr<reporter::IReporter> reporter,
-    const size_t booker_thread_size
+    std::shared_ptr<reporter::IReporter> reporter
 ) : AppBase("CUTMdImpl", std::move(config)),
-    m_booker_thread_size(booker_thread_size),
+    m_booker_thread_size(AppBase::config->get<size_t>("Performance.BookerConcurrency", std::thread::hardware_concurrency())),
     m_holder(std::move(holder)),
     m_reporter(std::move(reporter))
 {
@@ -45,7 +46,7 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
     m_message_buffers.reserve(m_booker_thread_size);
 
     for (size_t i = 0; i < m_booker_thread_size; i++) {
-        auto& message_buffer = m_message_buffers.emplace_back(new MessageBufferType);
+        auto& message_buffer = m_message_buffers.emplace_back(new MessageBufferType(100000));
 
         m_booker_threads.emplace_back(&CUTMdImpl::booker, this, std::ref(*message_buffer));
 
@@ -82,13 +83,21 @@ void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const s
     const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
     utilities::MCClient<max_udp_size> client(multicast_ip, multicast_port, interface_address);
 
-    while (m_is_running) {
-        auto message              = new std::vector<u_char>;
+    /// boost::freelock::queue imposes a constraint that its elements
+    /// must have trivial destructors. Consequently, usage of
+    /// std::unique_ptr/std::shared_ptr is not viable here.
+    /// The message will be deleted in @booker.
+    /// TODO: Use memory pool to implement this.
+    auto message = new std::vector<u_char>;
 
-        const auto bytes_received = client.receive(*message);
+    while (m_is_running) {
+        if (!message->empty()) /// For reducing usage of new.
+            message = new std::vector<u_char>;
+
+        client.receive(*message);
 
         /// Non-blocking receiver may return empty data.
-        if (bytes_received <= 0)
+        if (message->empty())
             continue;
 
         const int64_t symbol = CUTCommonData::get_symbol_from_message(*message);
@@ -105,66 +114,69 @@ void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const s
 
 void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
 {
+    booker::Booker booker({}, m_reporter, config->get<bool>("Performance.EnableVerification", false)); /// TODO: Initialize tradable symbols here.
+
     while (m_is_running) {
-        message_buffer.consume_all([&](const std::vector<u_char>* message) {
-            booker::Booker booker({}, m_reporter); /// TODO: Initialize tradable symbols here.
+        std::vector<u_char>* message;
 
-            booker::OrderTickPtr order_tick;
-            booker::TradeTickPtr trade_tick;
-            booker::L2TickPtr l2_tick;
+        if (!message_buffer.pop(message))
+            continue;
 
-            switch (message->size()) {
-            case sizeof(SSEHpfTick): order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(*message); break;
-            case sizeof(SSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SSEHpfL2Snap>(*message); break;
-            case sizeof(SZSEHpfOrderTick): order_tick = CUTCommonData::to_order_tick<SZSEHpfOrderTick>(*message); break;
-            case sizeof(SZSEHpfTradeTick): trade_tick = CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(*message); break;
-            case sizeof(SZSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(*message); break;
-            default: break;
-            }
+        booker::OrderTickPtr order_tick;
+        booker::TradeTickPtr trade_tick;
+        booker::L2TickPtr l2_tick;
 
-            /// SSE has no raw trade tick. We tell it by order type.
-            if (order_tick != nullptr && order_tick->order_type() == types::OrderType::fill) {
-                trade_tick = CUTCommonData::x_ost_forward_to_trade_from_order(order_tick);
-            }
+        switch (message->size()) {
+        case sizeof(SSEHpfTick): order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(*message); break;
+        case sizeof(SSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SSEHpfL2Snap>(*message); break;
+        case sizeof(SZSEHpfOrderTick): order_tick = CUTCommonData::to_order_tick<SZSEHpfOrderTick>(*message); break;
+        case sizeof(SZSEHpfTradeTick): trade_tick = CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(*message); break;
+        case sizeof(SZSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(*message); break;
+        default: break;
+        }
 
-            /// SZSE reports cancel orders as trade tick.
-            /// In this case, forward it to order tick.
-            if (trade_tick != nullptr && trade_tick->x_ost_szse_exe_type() == types::OrderType::cancel) {
-                order_tick = CUTCommonData::x_ost_forward_to_order_from_trade(trade_tick);
-            }
+        /// SSE has no raw trade tick. We tell it by order type.
+        if (order_tick != nullptr && order_tick->order_type() == types::OrderType::fill) {
+            trade_tick = CUTCommonData::x_ost_forward_to_trade_from_order(order_tick);
+        }
 
-            if (order_tick != nullptr) {
-                logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
+        /// SZSE reports cancel orders as trade tick.
+        /// In this case, forward it to order tick.
+        if (trade_tick != nullptr && trade_tick->x_ost_szse_exe_type() == types::OrderType::cancel) {
+            order_tick = CUTCommonData::x_ost_forward_to_order_from_trade(trade_tick);
+        }
 
-                if (order_tick->exchange_time() >= 93000000) [[likely]]
-                    booker.switch_to_continuous_stage();
+        if (order_tick != nullptr) {
+            logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
 
-                booker.add(order_tick);
+            if (order_tick->exchange_time() >= 93000000) [[likely]]
+                booker.switch_to_continuous_stage();
 
-                m_reporter->exchange_order_tick_arrived(order_tick);
-            }
+            booker.add(order_tick);
 
-            if (trade_tick != nullptr) {
-                logger->debug("Received trade tick: {}", utilities::ToJSON()(*trade_tick));
+            m_reporter->exchange_order_tick_arrived(order_tick);
+        }
 
-                booker.trade(trade_tick);
+        if (trade_tick != nullptr) {
+            logger->debug("Received trade tick: {}", utilities::ToJSON()(*trade_tick));
 
-                m_reporter->exchange_trade_tick_arrived(trade_tick);
-            }
+            booker.trade(trade_tick);
 
-            if (l2_tick != nullptr) {
-                logger->debug("Received l2 tick: {}", utilities::ToJSON()(*l2_tick));
+            m_reporter->exchange_trade_tick_arrived(trade_tick);
+        }
 
-                booker.l2(l2_tick);
+        if (l2_tick != nullptr) {
+            logger->debug("Received l2 tick: {}", utilities::ToJSON()(*l2_tick));
 
-                m_reporter->exchange_l2_tick_arrived(l2_tick);
-            }
+            booker.l2(l2_tick);
 
-            /// boost::freelock::queue imposes a constraint that its elements
-            /// must have trivial destructors. Consequently, usage of
-            /// std::unique_ptr/std::shared_ptr is not viable here.
-            /// We need delete message manually.
-            delete message;
-        });
+            m_reporter->exchange_l2_tick_arrived(l2_tick);
+        }
+
+        /// boost::freelock::queue imposes a constraint that its elements
+        /// must have trivial destructors. Consequently, usage of
+        /// std::unique_ptr/std::shared_ptr is not viable here.
+        /// We need delete message manually.
+        delete message;
     }
 }

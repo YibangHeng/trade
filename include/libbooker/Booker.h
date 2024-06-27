@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <third/liquibook/src/book/order_book.h>
 
 #include "AppBase.hpp"
@@ -23,7 +24,8 @@ class PUBLIC_API Booker final: AppBase<>,
 public:
     explicit Booker(
         const std::vector<std::string>& symbols,
-        const std::shared_ptr<reporter::IReporter>& reporter
+        const std::shared_ptr<reporter::IReporter>& reporter,
+        bool enable_validation = false
     );
     ~Booker() override = default;
 
@@ -81,7 +83,7 @@ private:
     std::unordered_map<int64_t, OrderWrapperPtr> m_orders;
     /// Indicates if the book is in call auction stage or in continuous trade stage.
     bool m_in_continuous_stage;
-    MdValidator m_md_validator;
+    std::optional<MdValidator> m_md_validator;
 
 private:
     std::shared_ptr<reporter::IReporter> m_reporter;

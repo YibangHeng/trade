@@ -1,5 +1,9 @@
 #pragma once
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+
 #include "visibility.h"
 
 /// Also check ./SZSEHpfTick.lua.

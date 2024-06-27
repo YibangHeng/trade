@@ -3,7 +3,6 @@
 #include <boost/lockfree/queue.hpp>
 
 #include "AppBase.hpp"
-#include "RawStructure.h"
 #include "libbooker/Booker.h"
 #include "libholder/IHolder.h"
 #include "libreporter/IReporter.hpp"
@@ -20,8 +19,7 @@ public:
     CUTMdImpl(
         std::shared_ptr<ConfigType> config,
         std::shared_ptr<holder::IHolder> holder,
-        std::shared_ptr<reporter::IReporter> reporter,
-        size_t booker_thread_size = 16
+        std::shared_ptr<reporter::IReporter> reporter
     );
     ~CUTMdImpl() override = default;
 
