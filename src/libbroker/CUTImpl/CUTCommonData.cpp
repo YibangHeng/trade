@@ -180,6 +180,27 @@ std::tuple<std::string, std::string> trade::broker::CUTCommonData::from_exchange
     return std::make_tuple(exchange, order_sys_id);
 }
 
+int64_t trade::broker::CUTCommonData::get_symbol_from_message(const std::vector<u_char>& message)
+{
+    int64_t symbol = 0;
+
+    try {
+        switch (message.size()) {
+        case sizeof(SSEHpfTick): symbol = std::stoll(reinterpret_cast<const SSEHpfTick*>(message.data())->m_symbol_id); break;
+        case sizeof(SSEHpfL2Snap): symbol = std::stoll(reinterpret_cast<const SSEHpfL2Snap*>(message.data())->m_symbol_id); break;
+        case sizeof(SZSEHpfOrderTick): symbol = std::stoll(reinterpret_cast<const SZSEHpfOrderTick*>(message.data())->m_header.m_symbol); break;
+        case sizeof(SZSEHpfTradeTick): symbol = std::stoll(reinterpret_cast<const SZSEHpfTradeTick*>(message.data())->m_header.m_symbol); break;
+        case sizeof(SZSEHpfL2Snap): symbol = std::stoll(reinterpret_cast<const SZSEHpfL2Snap*>(message.data())->m_header.m_symbol); break;
+        default: break;
+        }
+    }
+    catch (...) {
+        symbol = -1;
+    }
+
+    return symbol;
+}
+
 trade::booker::TradeTickPtr trade::broker::CUTCommonData::x_ost_forward_to_trade_from_order(booker::OrderTickPtr& order_tick)
 {
     auto trade_tick = std::make_shared<types::TradeTick>();

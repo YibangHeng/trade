@@ -137,7 +137,7 @@ void trade::RawMdRecorder::tick_receiver(
 ) const
 {
     const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
-    utilities::MCClient<u_char[broker::max_udp_size]> client(multicast_ip, multicast_port, interface_address);
+    utilities::MCClient<broker::max_udp_size> client(multicast_ip, multicast_port, interface_address);
 
     logger->info("Joined multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
 

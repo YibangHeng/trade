@@ -6,7 +6,6 @@
 #include <fast-cpp-csv-parser/csv.h>
 
 #include "AppBase.hpp"
-#include "enums.pb.h"
 #include "visibility.h"
 
 namespace trade

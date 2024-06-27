@@ -8,8 +8,10 @@
 trade::broker::CUTMdImpl::CUTMdImpl(
     std::shared_ptr<ConfigType> config,
     std::shared_ptr<holder::IHolder> holder,
-    std::shared_ptr<reporter::IReporter> reporter
+    std::shared_ptr<reporter::IReporter> reporter,
+    const size_t booker_thread_size
 ) : AppBase("CUTMdImpl", std::move(config)),
+    m_booker_thread_size(booker_thread_size),
     m_holder(std::move(holder)),
     m_reporter(std::move(reporter))
 {
@@ -21,19 +23,33 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
         throw std::runtime_error("Wrong usage of CUTMdImpl::subscribe: symbols treated as multicast address and must be specified in config");
     }
 
-    is_running = true;
+    m_is_running = true;
 
     /// Split multicast addresses and start receiving in separate threads.
     auto addresses = config->get<std::string>("Server.MdAddresses");
     std::erase_if(addresses, [](const char c) { return std::isblank(c); });
     auto addresses_view = addresses | std::views::split(',');
 
+    /// Create tick receiver threads.
     for (auto&& address_part : addresses_view) {
         std::string address(&*address_part.begin(), std::ranges::distance(address_part));
 
-        threads.emplace_back(&CUTMdImpl::tick_receiver, this, address, config->get<std::string>("Server.InterfaceAddress"));
+        m_tick_receiver_threads.emplace_back(&CUTMdImpl::tick_receiver, this, address, config->get<std::string>("Server.InterfaceAddress"));
 
         logger->info("Subscribed to ODTD multicast address: {} at {}", address, config->get<std::string>("Server.InterfaceAddress"));
+    }
+
+    /// Create booker threads.
+    /// Ensure that m_message_buffers does not undergo resizing.
+    /// TODO: Is it necessary?
+    m_message_buffers.reserve(m_booker_thread_size);
+
+    for (size_t i = 0; i < m_booker_thread_size; i++) {
+        auto& message_buffer = m_message_buffers.emplace_back(new MessageBufferType);
+
+        m_booker_threads.emplace_back(&CUTMdImpl::booker, this, std::ref(*message_buffer));
+
+        logger->info("Booker thread {} started", i);
     }
 }
 
@@ -43,77 +59,112 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
         throw std::runtime_error("Wrong usage of CUTMdImpl::unsubscribe: symbols treated as multicast address and must be specified in config");
     }
 
-    is_running = false;
+    m_is_running = false;
 
-    for (auto&& thread : threads) {
+    for (auto&& thread : m_tick_receiver_threads) {
         thread.joinable() ? thread.join() : void();
 
         /// TODO: Find a way to get multicast address here.
         logger->info("Unsubscribed from ODTD multicast address: {} at {}", "unknown", config->get<std::string>("Server.InterfaceAddress"));
     }
+
+    /// Waiting for all booker threads to exit.
+    for (auto& booker_thread : m_booker_threads) {
+        static size_t booker_thread_id = 0;
+        booker_thread.joinable() ? booker_thread.join() : void();
+
+        logger->info("Booker thread {} exited", booker_thread_id++);
+    }
 }
 
 void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const std::string& interface_address) const
 {
-    booker::Booker booker({}, m_reporter); /// TODO: Initialize tradable symbols here.
-
     const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
-    utilities::MCClient<char[1024]> client(multicast_ip, multicast_port, interface_address);
+    utilities::MCClient<max_udp_size> client(multicast_ip, multicast_port, interface_address);
 
-    std::vector<u_char> buffer(1024);
+    while (m_is_running) {
+        auto message              = new std::vector<u_char>;
 
-    while (is_running) {
-        const auto bytes_received = client.receive(buffer);
+        const auto bytes_received = client.receive(*message);
 
-        booker::OrderTickPtr order_tick;
-        booker::TradeTickPtr trade_tick;
-        booker::L2TickPtr l2_tick;
+        /// Non-blocking receiver may return empty data.
+        if (bytes_received <= 0)
+            continue;
 
-        switch (bytes_received) {
-        case sizeof(SSEHpfTick): order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(buffer); break;
-        case sizeof(SSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SSEHpfL2Snap>(buffer); break;
-        case sizeof(SZSEHpfOrderTick): order_tick = CUTCommonData::to_order_tick<SZSEHpfOrderTick>(buffer); break;
-        case sizeof(SZSEHpfTradeTick): trade_tick = CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(buffer); break;
-        case sizeof(SZSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(buffer); break;
-        default: break;
+        const int64_t symbol = CUTCommonData::get_symbol_from_message(*message);
+
+        while (!m_message_buffers[symbol % m_message_buffers.size()]->push(message)) {
+            if (!m_is_running)
+                break;
+
+            logger->warn("Message buffer is full, which may cause data dropping");
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
+    }
+}
 
-        /// SSE has no raw trade tick. We tell it by order type.
-        if (order_tick != nullptr && order_tick->order_type() == types::OrderType::fill) {
-            trade_tick = CUTCommonData::x_ost_forward_to_trade_from_order(order_tick);
-        }
+void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
+{
+    while (m_is_running) {
+        message_buffer.consume_all([&](const std::vector<u_char>* message) {
+            booker::Booker booker({}, m_reporter); /// TODO: Initialize tradable symbols here.
 
-        /// SZSE reports cancel orders as trade tick.
-        /// In this case, forward it to order tick.
-        if (trade_tick != nullptr && trade_tick->x_ost_szse_exe_type() == types::OrderType::cancel) {
-            order_tick = CUTCommonData::x_ost_forward_to_order_from_trade(trade_tick);
-        }
+            booker::OrderTickPtr order_tick;
+            booker::TradeTickPtr trade_tick;
+            booker::L2TickPtr l2_tick;
 
-        if (order_tick != nullptr) {
-            logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
+            switch (message->size()) {
+            case sizeof(SSEHpfTick): order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(*message); break;
+            case sizeof(SSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SSEHpfL2Snap>(*message); break;
+            case sizeof(SZSEHpfOrderTick): order_tick = CUTCommonData::to_order_tick<SZSEHpfOrderTick>(*message); break;
+            case sizeof(SZSEHpfTradeTick): trade_tick = CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(*message); break;
+            case sizeof(SZSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(*message); break;
+            default: break;
+            }
 
-            if (order_tick->exchange_time() >= 93000000) [[likely]]
-                booker.switch_to_continuous_stage();
+            /// SSE has no raw trade tick. We tell it by order type.
+            if (order_tick != nullptr && order_tick->order_type() == types::OrderType::fill) {
+                trade_tick = CUTCommonData::x_ost_forward_to_trade_from_order(order_tick);
+            }
 
-            booker.add(order_tick);
+            /// SZSE reports cancel orders as trade tick.
+            /// In this case, forward it to order tick.
+            if (trade_tick != nullptr && trade_tick->x_ost_szse_exe_type() == types::OrderType::cancel) {
+                order_tick = CUTCommonData::x_ost_forward_to_order_from_trade(trade_tick);
+            }
 
-            m_reporter->exchange_order_tick_arrived(order_tick);
-        }
+            if (order_tick != nullptr) {
+                logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
 
-        if (trade_tick != nullptr) {
-            logger->debug("Received trade tick: {}", utilities::ToJSON()(*trade_tick));
+                if (order_tick->exchange_time() >= 93000000) [[likely]]
+                    booker.switch_to_continuous_stage();
 
-            booker.trade(trade_tick);
+                booker.add(order_tick);
 
-            m_reporter->exchange_trade_tick_arrived(trade_tick);
-        }
+                m_reporter->exchange_order_tick_arrived(order_tick);
+            }
 
-        if (l2_tick != nullptr) {
-            logger->debug("Received l2 tick: {}", utilities::ToJSON()(*l2_tick));
+            if (trade_tick != nullptr) {
+                logger->debug("Received trade tick: {}", utilities::ToJSON()(*trade_tick));
 
-            booker.l2(l2_tick);
+                booker.trade(trade_tick);
 
-            m_reporter->exchange_l2_tick_arrived(l2_tick);
-        }
+                m_reporter->exchange_trade_tick_arrived(trade_tick);
+            }
+
+            if (l2_tick != nullptr) {
+                logger->debug("Received l2 tick: {}", utilities::ToJSON()(*l2_tick));
+
+                booker.l2(l2_tick);
+
+                m_reporter->exchange_l2_tick_arrived(l2_tick);
+            }
+
+            /// boost::freelock::queue imposes a constraint that its elements
+            /// must have trivial destructors. Consequently, usage of
+            /// std::unique_ptr/std::shared_ptr is not viable here.
+            /// We need delete message manually.
+            delete message;
+        });
     }
 }

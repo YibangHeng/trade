@@ -304,7 +304,7 @@ private:
 /// This class manages the lifecycle of a raw socket, handling the
 /// initialization, and cleanup. It provides methods to receive messages using
 /// the UDP multicast pattern.
-template<typename T>
+template<size_t BufferSize>
 class MCClient
 {
 public:
@@ -375,8 +375,8 @@ public:
 public:
     ssize_t receive(std::vector<u_char>& message)
     {
-        message.resize(sizeof(T));
-        const auto bytes_received = recvfrom(m_receiver_fd, message.data(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &m_addr_len);
+        message.resize(BufferSize);
+        const auto bytes_received = recvfrom(m_receiver_fd, message.data(), BufferSize, 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &m_addr_len);
         message.resize(bytes_received >= 0 ? bytes_received : 0);
         return bytes_received;
     }

@@ -59,6 +59,7 @@ public:
     /// @return std::tuple<exchange, order_sys_id>. Empty string if exchange_id
     /// is not in format.
     [[nodiscard]] static std::tuple<std::string, std::string> from_exchange_id(const std::string& exchange_id);
+    [[nodiscard]] static int64_t get_symbol_from_message(const std::vector<u_char>& message);
     template<IsOrderTick MessageType>
     [[nodiscard]] static booker::OrderTickPtr to_order_tick(const std::vector<u_char>& message);
     template<IsTradeTick Mess7ageType>

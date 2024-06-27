@@ -199,7 +199,7 @@ TEST_CASE("Communication with UDP multicast", "[MCServer/MCClient]")
 
         /// Client side.
         auto client_worker = [multicast_address, &touched_times] {
-            trade::utilities::MCClient<char[1024]> client(multicast_address, multicast_port);
+            trade::utilities::MCClient<1024> client(multicast_address, multicast_port);
 
             std::vector<u_char> message_buffer;
 
