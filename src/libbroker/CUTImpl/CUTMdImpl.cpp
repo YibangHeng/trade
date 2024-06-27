@@ -88,11 +88,11 @@ void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const s
     /// std::unique_ptr/std::shared_ptr is not viable here.
     /// The message will be deleted in @booker.
     /// TODO: Use memory pool to implement this.
-    auto message = new std::vector<u_char>;
+    auto message = new std::vector<u_char>(max_udp_size);
 
     while (m_is_running) {
         if (!message->empty()) /// For reducing usage of new.
-            message = new std::vector<u_char>;
+            message = new std::vector<u_char>(max_udp_size);
 
         client.receive(*message);
 

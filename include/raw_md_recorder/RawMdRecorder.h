@@ -27,7 +27,7 @@ private:
 
 private:
     /// TODO: Make it configurable.
-    using MessageBufferType = boost::lockfree::spsc_queue<std::shared_ptr<std::vector<u_char>>, boost::lockfree::capacity<100000>>;
+    using MessageBufferType = boost::lockfree::spsc_queue<std::vector<u_char>*, boost::lockfree::capacity<100000>>;
 
     void tick_receiver(
         const std::string& address,

@@ -141,8 +141,14 @@ void trade::RawMdRecorder::tick_receiver(
 
     logger->info("Joined multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
 
+    /// Use raw pointer for acceleration.
+    /// The message will be deleted in @writer.
+    /// TODO: Use memory pool to implement this.
+    auto message = new std::vector<u_char>(broker::max_udp_size);
+
     while (m_is_running) {
-        auto message = std::make_shared<std::vector<u_char>>(broker::max_udp_size);
+        if (!message->empty()) /// For reducing usage of new.
+            message = new std::vector<u_char>(broker::max_udp_size);
 
         client.receive(*message);
 
@@ -165,16 +171,22 @@ void trade::RawMdRecorder::tick_receiver(
 void trade::RawMdRecorder::writer(MessageBufferType& message_buffer)
 {
     while (m_is_running) {
-        message_buffer.consume_all([&](const std::shared_ptr<std::vector<u_char>>& message) {
-            switch (message->size()) {
-            case sizeof(broker::SSEHpfTick): write_sse_tick(*message); break;
-            case sizeof(broker::SSEHpfL2Snap): write_sse_l2_snap(*message); break;
-            case sizeof(broker::SZSEHpfOrderTick): write_szse_order_tick(*message); break;
-            case sizeof(broker::SZSEHpfTradeTick): write_szse_trade_tick(*message); break;
-            case sizeof(broker::SZSEHpfL2Snap): write_szse_l2_snap(*message); break;
-            default: break;
-            }
-        });
+        std::vector<u_char>* message;
+
+        if (!message_buffer.pop(message))
+            continue;
+
+        switch (message->size()) {
+        case sizeof(broker::SSEHpfTick): write_sse_tick(*message); break;
+        case sizeof(broker::SSEHpfL2Snap): write_sse_l2_snap(*message); break;
+        case sizeof(broker::SZSEHpfOrderTick): write_szse_order_tick(*message); break;
+        case sizeof(broker::SZSEHpfTradeTick): write_szse_trade_tick(*message); break;
+        case sizeof(broker::SZSEHpfL2Snap): write_szse_l2_snap(*message); break;
+        default: break;
+        }
+
+        /// We need delete message manually.
+        delete message;
     }
 }
 
