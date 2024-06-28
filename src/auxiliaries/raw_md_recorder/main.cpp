@@ -1,6 +1,6 @@
 #include <csignal>
 
-#include "raw_md_recorder/RawMdRecorder.h"
+#include "auxiliaries/raw_md_recorder/RawMdRecorder.h"
 
 auto main(const int argc, char* argv[]) -> int
 {

@@ -1,6 +1,6 @@
 #include <csignal>
 
-#include "mds/OSTMdServer.h"
+#include "auxiliaries/mds/OSTMdServer.h"
 
 auto main(const int argc, char* argv[]) -> int
 {

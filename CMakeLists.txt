@@ -55,8 +55,9 @@ add_subdirectory(src/libbooker)
 add_subdirectory(src/libbroker)
 add_subdirectory(src/libreporter)
 add_subdirectory(src/libholder)
-add_subdirectory(src/mds)
-add_subdirectory(src/raw_md_recorder)
+add_subdirectory(src/auxiliaries/mds)
+add_subdirectory(src/auxiliaries/raw_md_recorder)
+add_subdirectory(src/auxiliaries/seq_checker)
 add_subdirectory(src/trade)
 
 # Configuration files.
