@@ -157,11 +157,10 @@ void trade::RawMdRecorder::tick_receiver(
             continue;
 
         while (!message_buffer.push(message)) {
-            if (!m_is_running)
+            if (!m_is_running) [[unlikely]]
                 break;
 
             logger->warn("Message buffer is full, which may cause data dropping");
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
 

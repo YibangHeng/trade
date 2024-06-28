@@ -103,11 +103,10 @@ void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const s
         const int64_t symbol = CUTCommonData::get_symbol_from_message(*message);
 
         while (!m_message_buffers[symbol % m_message_buffers.size()]->push(message)) {
-            if (!m_is_running)
+            if (!m_is_running) [[unlikely]]
                 break;
 
             logger->warn("Message buffer is full, which may cause data dropping");
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
 }
