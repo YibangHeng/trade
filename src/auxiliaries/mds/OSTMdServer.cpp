@@ -2,10 +2,10 @@
 #include <fast-cpp-csv-parser/csv.h>
 #include <iostream>
 
+#include "auxiliaries/mds/OSTMdServer.h"
 #include "enums.pb.h"
 #include "info.h"
 #include "libbooker/BookerCommonData.h"
-#include "auxiliaries/mds/OSTMdServer.h"
 #include "utilities/MakeAssignable.hpp"
 #include "utilities/NetworkHelper.hpp"
 
@@ -24,14 +24,14 @@ int trade::OSTMdServer::run()
 
     utilities::MCServer server("239.255.255.255", 5555);
 
-    std::vector<u_char> message_buffer;
-    message_buffer.resize(sizeof(broker::SSEHpfTick));
+    std::vector<u_char> message;
+    message.resize(sizeof(broker::SSEHpfTick));
 
     while (m_is_running) {
         const auto tick = emit_sse_tick(m_arguments["sse-tick-file"].as<std::string>());
 
-        memcpy(message_buffer.data(), &tick, sizeof(broker::SSEHpfTick));
-        server.send(message_buffer);
+        memcpy(message.data(), &tick, sizeof(broker::SSEHpfTick));
+        server.send(message);
 
         logger->info("Emitted order tick: {:>6} {:>6} {:>6.2f} {:>6} {:>1} {:>1} {:>6}", tick.m_buy_order_no + tick.m_sell_order_no, tick.m_symbol_id, tick.m_order_price / 1000., tick.m_qty / 1000, tick.m_side_flag, tick.m_tick_type, tick.m_tick_time / 100);
 
@@ -184,8 +184,8 @@ std::vector<trade::broker::SSEHpfTick> trade::OSTMdServer::read_sse_tick(const s
         "instrument_status"
     );
 
-    std::vector<broker::SSEHpfTick> order_ticks;
-    order_ticks.reserve(in.get_file_line());
+    std::vector<broker::SSEHpfTick> ticks;
+    ticks.reserve(in.get_file_line());
 
     /// SSEHpfPackageHead.
     uint32_t m_seq_num;
@@ -244,9 +244,9 @@ std::vector<trade::broker::SSEHpfTick> trade::OSTMdServer::read_sse_tick(const s
         m_side_flag,
         m_instrument_status
     )) {
-        order_ticks.emplace_back();
+        ticks.emplace_back();
 
-        auto& order_tick = order_ticks.back();
+        auto& order_tick = ticks.back();
 
         /// SSEHpfPackageHead.
         order_tick.m_head.m_seq_num       = m_seq_num;
@@ -277,9 +277,9 @@ std::vector<trade::broker::SSEHpfTick> trade::OSTMdServer::read_sse_tick(const s
         order_tick.m_instrument_status = m_instrument_status;
     }
 
-    logger->debug("Loaded {} order ticks", order_ticks.size());
+    logger->debug("Loaded {} order ticks", ticks.size());
 
-    return order_ticks;
+    return ticks;
 }
 
 std::set<trade::OSTMdServer*> trade::OSTMdServer::m_instances;

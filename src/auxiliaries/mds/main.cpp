@@ -6,6 +6,6 @@ auto main(const int argc, char* argv[]) -> int
 {
     std::signal(SIGINT, trade::OSTMdServer::signal);
 
-    trade::OSTMdServer trade(argc, argv);
-    return trade.run();
+    trade::OSTMdServer mds(argc, argv);
+    return mds.run();
 }
