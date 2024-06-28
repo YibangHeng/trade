@@ -38,7 +38,7 @@ TEST_CASE("AsyncReporter reporting", "[AsyncReporter]")
 {
     SECTION("Huge reporting")
     {
-        constexpr int iteration_times = 100000;
+        constexpr int iteration_times = 1000000;
 
         /// Report and count.
         const auto counter_checker = std::make_shared<CounterChecker>();

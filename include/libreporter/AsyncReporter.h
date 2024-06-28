@@ -1,6 +1,6 @@
 #pragma once
 
-#include <boost/circular_buffer.hpp>
+#include <boost/lockfree/spsc_queue.hpp>
 #include <thread>
 
 #include "IReporter.hpp"
@@ -14,8 +14,6 @@ class PUBLIC_API AsyncReporter final: public IReporter
 public:
     explicit AsyncReporter(std::shared_ptr<IReporter> outside = std::make_shared<NopReporter>());
     ~AsyncReporter() override;
-
-    /// BUG: Buffer may overflow and cause the task to be lost.
 
     /// Order.
 public:
@@ -67,55 +65,43 @@ public:
     void do_l2_tick_generated();
 
 private:
+    template<typename T>
+    using BufferType = boost::lockfree::spsc_queue<std::shared_ptr<T>, boost::lockfree::capacity<1024 * 1024>>;
+
     /// Order.
-    boost::circular_buffer<std::shared_ptr<types::BrokerAcceptance>> m_broker_acceptance_buffer;
-    std::mutex m_broker_acceptance_mutex;
+    BufferType<types::BrokerAcceptance> m_broker_acceptance_buffer;
     std::thread m_broker_acceptance_thread;
-    boost::circular_buffer<std::shared_ptr<types::ExchangeAcceptance>> m_exchange_acceptance_buffer;
-    std::mutex m_exchange_acceptance_mutex;
+    BufferType<types::ExchangeAcceptance> m_exchange_acceptance_buffer;
     std::thread m_exchange_acceptance_thread;
-    boost::circular_buffer<std::shared_ptr<types::OrderRejection>> m_order_rejection_buffer;
-    std::mutex m_order_rejection_mutex;
+    BufferType<types::OrderRejection> m_order_rejection_buffer;
     std::thread m_order_rejection_thread;
 
     /// Cancel.
-    boost::circular_buffer<std::shared_ptr<types::CancelBrokerAcceptance>> m_cancel_broker_acceptance_buffer;
-    std::mutex m_cancel_broker_acceptance_mutex;
+    BufferType<types::CancelBrokerAcceptance> m_cancel_broker_acceptance_buffer;
     std::thread m_cancel_broker_acceptance_thread;
-    boost::circular_buffer<std::shared_ptr<types::CancelExchangeAcceptance>> m_cancel_exchange_acceptance_buffer;
-    std::mutex m_cancel_exchange_acceptance_mutex;
+    BufferType<types::CancelExchangeAcceptance> m_cancel_exchange_acceptance_buffer;
     std::thread m_cancel_exchange_acceptance_thread;
-    boost::circular_buffer<std::shared_ptr<types::CancelSuccess>> m_cancel_success_buffer;
-    std::mutex m_cancel_success_mutex;
+    BufferType<types::CancelSuccess> m_cancel_success_buffer;
     std::thread m_cancel_success_thread;
-    boost::circular_buffer<std::shared_ptr<types::CancelOrderRejection>> m_cancel_order_rejection_buffer;
-    std::mutex m_cancel_order_rejection_mutex;
+    BufferType<types::CancelOrderRejection> m_cancel_order_rejection_buffer;
     std::thread m_cancel_order_rejection_thread;
 
     /// Trade.
-    boost::circular_buffer<std::shared_ptr<types::Trade>> m_trade_buffer;
-    std::mutex m_trade_mutex;
+    BufferType<types::Trade> m_trade_buffer;
     std::thread m_trade_thread;
 
     /// Market data.
-    boost::circular_buffer<std::shared_ptr<types::OrderTick>> m_exchange_order_tick_buffer;
-    std::mutex m_exchange_order_tick_mutex;
+    BufferType<types::OrderTick> m_exchange_order_tick_buffer;
     std::thread m_exchange_order_tick_thread;
-    boost::circular_buffer<std::shared_ptr<types::TradeTick>> m_exchange_trade_tick_buffer;
-    std::mutex m_exchange_trade_tick_mutex;
+    BufferType<types::TradeTick> m_exchange_trade_tick_buffer;
     std::thread m_exchange_trade_tick_thread;
-    boost::circular_buffer<std::shared_ptr<types::L2Tick>> m_exchange_l2_tick_buffer;
-    std::mutex m_exchange_l2_tick_mutex;
+    BufferType<types::L2Tick> m_exchange_l2_tick_buffer;
     std::thread m_exchange_l2_tick_thread;
-    boost::circular_buffer<std::shared_ptr<types::L2Tick>> m_l2_tick_buffer;
-    std::mutex m_l2_tick_mutex;
+    BufferType<types::L2Tick> m_l2_tick_buffer;
     std::thread m_l2_tick_thread;
 
 private:
-    std::atomic<bool> is_running;
-
-private:
-    static constexpr size_t m_buffer_size = 1024 * 1024 * 1024; /// Make a big buffer.
+    std::atomic<bool> m_is_running;
 
 private:
     std::shared_ptr<IReporter> m_outside;
