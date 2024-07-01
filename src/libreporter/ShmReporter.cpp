@@ -190,7 +190,7 @@ void trade::reporter::ShmReporter::do_l2_tick_report(const std::shared_ptr<types
         m_l2_tick_current->buy_10.price      = l2_tick->buy_price_10();
         m_l2_tick_current->buy_10.quantity   = l2_tick->buy_quantity_10();
 
-        m_l2_tick_current->exhange_time      = REMOVE_DATE(utilities::ToTime<int64_t>()(l2_tick->exchange_time()));
+        m_l2_tick_current->exchange_time      = REMOVE_DATE(l2_tick->exchange_time());
         m_l2_tick_current->local_system_time = REMOVE_DATE(utilities::Now<int64_t>()());
 
         m_l2_tick_current++;

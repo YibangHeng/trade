@@ -144,7 +144,7 @@ struct PUBLIC_API L2Tick {
     PriceQuantityPair buy_9;
     PriceQuantityPair buy_10;
 
-    int64_t exhange_time      = 0;
+    int64_t exchange_time     = 0;
     int64_t local_system_time = 0;
 
     RESERVED(140)

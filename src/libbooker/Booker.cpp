@@ -197,6 +197,8 @@ void trade::booker::Booker::on_fill(
         m_latest_l2_tick->set_ask_unique_id(order->unique_id());
         m_latest_l2_tick->set_bid_unique_id(matched_order->unique_id());
     }
+
+    m_latest_l2_tick->set_exchange_time(order->exchange_time());
 }
 
 void trade::booker::Booker::on_cancel_reject(const OrderWrapperPtr& order, const char* reason)
