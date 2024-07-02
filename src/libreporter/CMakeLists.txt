@@ -8,4 +8,7 @@ target_link_libraries(
         ${PROJECT_NAME}
         PRIVATE
         trade_types
+        PRIVATE
+        date::date
+        date::date-tz
 )

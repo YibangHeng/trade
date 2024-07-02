@@ -8,7 +8,7 @@ void trade::reporter::CSVReporter::l2_tick_generated(const std::shared_ptr<types
     new_l2_tick_writer(l2_tick->symbol());
 
     m_l2_tick_writers[l2_tick->symbol()] << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         l2_tick->symbol(),
         l2_tick->price(),
         l2_tick->quantity(),
@@ -55,6 +55,7 @@ void trade::reporter::CSVReporter::l2_tick_generated(const std::shared_ptr<types
         l2_tick->buy_price_10(),
         l2_tick->buy_quantity_10(),
         /// Time.
+        l2_tick->exchange_time(),
         utilities::Now<std::string>()()
     );
 
@@ -116,9 +117,10 @@ void trade::reporter::CSVReporter::new_l2_tick_writer(const std::string& symbol)
             << "buy_price_9,"
             << "buy_quantity_9,"
             << "buy_price_10,"
-            << "buy_pquantity10,"
+            << "buy_quantity10,"
             /// Time.
-            << "time"
+            << "exchange_time,"
+            << "local_system_time"
             << std::endl;
     }
 }
