@@ -5,8 +5,6 @@
 
 trade::reporter::CSVReporter::~CSVReporter()
 {
-    throw std::runtime_error("CSVReporter::~CSVReporter()");
-
     /// Flush all writers.
     for (auto& [symbol, writer] : m_l2_tick_writers)
         writer.flush();
