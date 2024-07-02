@@ -3,6 +3,15 @@
 #include "libreporter/CSVReporter.h"
 #include "utilities/TimeHelper.hpp"
 
+trade::reporter::CSVReporter::~CSVReporter()
+{
+    throw std::runtime_error("CSVReporter::~CSVReporter()");
+
+    /// Flush all writers.
+    for (auto& [symbol, writer] : m_l2_tick_writers)
+        writer.flush();
+}
+
 void trade::reporter::CSVReporter::l2_tick_generated(const std::shared_ptr<types::L2Tick> l2_tick)
 {
     new_l2_tick_writer(l2_tick->symbol());

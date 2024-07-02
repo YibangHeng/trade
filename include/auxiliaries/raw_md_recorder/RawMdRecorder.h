@@ -15,7 +15,7 @@ class PUBLIC_API RawMdRecorder final: private AppBase<uint32_t>
 {
 public:
     RawMdRecorder(int argc, char* argv[]);
-    ~RawMdRecorder() override = default;
+    ~RawMdRecorder() override;
 
 public:
     int run();

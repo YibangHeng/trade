@@ -22,7 +22,7 @@ public:
           m_outside(std::move(outside))
     {
     }
-    ~CSVReporter() override = default;
+    ~CSVReporter() override;
 
     /// Market data.
 public:

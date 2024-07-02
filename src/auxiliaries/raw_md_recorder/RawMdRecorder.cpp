@@ -19,6 +19,37 @@ trade::RawMdRecorder::RawMdRecorder(const int argc, char* argv[])
     m_is_running = argv_parse(argc, argv);
 }
 
+trade::RawMdRecorder::~RawMdRecorder()
+{
+    /// Flush and close all writers.
+    for (auto& [symbol, writer] : m_sse_tick_writers) {
+        writer.flush();
+        writer.close();
+    }
+    logger->info("Flushed {} SSE tick writers.", m_sse_tick_writers.size());
+    for (auto& [symbol, writer] : m_sse_l2_snap_writers) {
+        writer.flush();
+        writer.close();
+    }
+    logger->info("Flushed {} SSE L2 snap writers.", m_sse_l2_snap_writers.size());
+
+    for (auto& [symbol, writer] : m_szse_order_writers) {
+        writer.flush();
+        writer.close();
+    }
+    logger->info("Flushed {} SZSE order writers.", m_szse_order_writers.size());
+    for (auto& [symbol, writer] : m_szse_trade_writers) {
+        writer.flush();
+        writer.close();
+    }
+    logger->info("Flushed {} SZSE trade writers.", m_szse_trade_writers.size());
+    for (auto& [symbol, writer] : m_szse_l2_snap_writers) {
+        writer.flush();
+        writer.close();
+    }
+    logger->info("Flushed {} SZSE L2 snap writers.", m_szse_l2_snap_writers.size());
+}
+
 int trade::RawMdRecorder::run()
 {
     if (!m_is_running) {
