@@ -160,7 +160,7 @@ void trade::SeqChecker::load_seq(const std::string& path)
 
     while (m_is_running && in.read_row(channel_id, tick_index)) {
         while (!m_pairs.push(ChannelSeqPair(channel_id, tick_index)))
-            logger->debug("Adding tick {:>8} for channel {:<3} failed", tick_index, channel_id);
+            logger->debug("Adding tick {:>8} for channel {:<3}", tick_index, channel_id);
         logger->debug("Added tick {:>8} for channel {:<3}", tick_index, channel_id);
     }
 }

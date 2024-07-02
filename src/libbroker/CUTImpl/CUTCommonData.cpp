@@ -264,6 +264,6 @@ int64_t trade::broker::CUTCommonData::to_time_from_sse(const uint32_t tick_time)
 
 int64_t trade::broker::CUTCommonData::to_time_from_szse(const uint64_t quote_update_time)
 {
-    /// quote_update_time exmaple: 20240612092500000.
+    /// quote_update_time example: 20210701092500000.
     return static_cast<int64_t>(quote_update_time % 1000000000);
 }

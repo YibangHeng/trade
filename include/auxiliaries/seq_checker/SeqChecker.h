@@ -15,7 +15,7 @@ struct ChannelSeqPair {
     uint64_t seq;
 };
 
-class PUBLIC_API SeqChecker final: private AppBase<uint32_t>
+class PUBLIC_API SeqChecker final: private AppBase<>
 {
 public:
     SeqChecker(int argc, char* argv[]);
