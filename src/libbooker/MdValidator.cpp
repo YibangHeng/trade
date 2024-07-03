@@ -12,7 +12,7 @@ void trade::booker::MdValidator::l2_tick_generated(const L2TickPtr& l2_tick)
 bool trade::booker::MdValidator::check(const TradeTickPtr& trade_tick) const
 {
     if (!m_trade_tick_buffers.contains(trade_tick->symbol()))
-        return false;
+        return true;
 
     const auto& buffer = m_trade_tick_buffers.at(trade_tick->symbol());
 
@@ -22,7 +22,7 @@ bool trade::booker::MdValidator::check(const TradeTickPtr& trade_tick) const
 bool trade::booker::MdValidator::check(const L2TickPtr& l2_tick) const
 {
     if (!m_l2_tick_buffers.contains(l2_tick->symbol()))
-        return false;
+        return true;
 
     const auto& buffer = m_l2_tick_buffers.at(l2_tick->symbol());
 

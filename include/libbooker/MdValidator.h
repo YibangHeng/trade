@@ -18,9 +18,6 @@ public:
     {
         HashType seed = 0;
 
-        boost::hash_combine(seed, std::hash<int64_t>()(trade_tick.ask_unique_id()));
-        boost::hash_combine(seed, std::hash<int64_t>()(trade_tick.bid_unique_id()));
-        boost::hash_combine(seed, std::hash<std::string>()(trade_tick.symbol()));
         boost::hash_combine(seed, std::hash<double>()(trade_tick.exec_price()));
         boost::hash_combine(seed, std::hash<int64_t>()(trade_tick.exec_quantity()));
 
@@ -33,9 +30,6 @@ public:
     {
         HashType seed = 0;
 
-        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.ask_unique_id()));
-        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.bid_unique_id()));
-        boost::hash_combine(seed, std::hash<std::string>()(l2_tick.symbol()));
         boost::hash_combine(seed, std::hash<double>()(l2_tick.price()));
         boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.quantity()));
 
@@ -52,27 +46,18 @@ public:
     {
         HashType seed = 0;
 
-        boost::hash_combine(seed, std::hash<std::string>()(l2_tick.symbol()));
         boost::hash_combine(seed, std::hash<double>()(l2_tick.sell_price_1()));
         boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.sell_quantity_1()));
         boost::hash_combine(seed, std::hash<double>()(l2_tick.sell_price_2()));
         boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.sell_quantity_2()));
         boost::hash_combine(seed, std::hash<double>()(l2_tick.sell_price_3()));
         boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.sell_quantity_3()));
-        boost::hash_combine(seed, std::hash<double>()(l2_tick.sell_price_4()));
-        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.sell_quantity_4()));
-        boost::hash_combine(seed, std::hash<double>()(l2_tick.sell_price_5()));
-        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.sell_quantity_5()));
         boost::hash_combine(seed, std::hash<double>()(l2_tick.buy_price_1()));
         boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.buy_quantity_1()));
         boost::hash_combine(seed, std::hash<double>()(l2_tick.buy_price_2()));
         boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.buy_quantity_2()));
         boost::hash_combine(seed, std::hash<double>()(l2_tick.buy_price_3()));
         boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.buy_quantity_3()));
-        boost::hash_combine(seed, std::hash<double>()(l2_tick.buy_price_4()));
-        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.buy_quantity_4()));
-        boost::hash_combine(seed, std::hash<double>()(l2_tick.buy_price_5()));
-        boost::hash_combine(seed, std::hash<int64_t>()(l2_tick.buy_quantity_5()));
 
         return seed;
     }
