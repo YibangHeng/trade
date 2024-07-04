@@ -92,6 +92,8 @@ import os
 import numpy as np
 import pandas as pd
 
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
 
 def list_symbols(input_folder):
     for symbol in os.listdir(input_folder):
@@ -112,40 +114,45 @@ def convert(input_folder, output_folder, skip_converted = False):
     no_data_list = []
     bad_data_list = []
 
-    for symbol_folder in list_symbols(input_folder):
-        if not os.path.isdir(os.path.join(input_folder, symbol_folder)):
-            continue
+    with ProcessPoolExecutor() as executor:
+        future_to_symbol = {
+            executor.submit(do_convert, input_folder, symbol_folder, output_folder, skip_converted):
+                symbol_folder for symbol_folder in list_symbols(input_folder)
+        }
 
-        exchange = check_exchange(symbol_folder)
-
-        if skip_converted and os.path.exists(os.path.join(output_folder, f"{symbol_folder}-std-tick.csv")):
-            logging.info(f"Skipping converted symbol {symbol_folder}")
-            continue
-
-        if exchange == "SSE":
+        for future in as_completed(future_to_symbol):
+            symbol_folder = future_to_symbol[future]
             try:
-                converted = convert_sse(input_folder, symbol_folder, output_folder)
+                converted = future.result()
             except Exception as e:
                 logging.error(f"Failed to convert symbol {symbol_folder}: {e}")
                 bad_data_list.append(symbol_folder)
-                continue
-        elif exchange == "SZSE":
-            try:
-                converted = convert_szse(input_folder, symbol_folder, output_folder)
-            except Exception as e:
-                logging.error(f"Failed to convert symbol {symbol_folder}: {e}")
-                bad_data_list.append(symbol_folder)
-                continue
-        else:
-            logging.error(f"Unknown exchange for symbol {symbol_folder}")
-            continue
-
-        if converted:
-            converted_list.append(symbol_folder)
-        else:
-            no_data_list.append(symbol_folder)
+            else:
+                if converted:
+                    converted_list.append(symbol_folder)
+                else:
+                    no_data_list.append(symbol_folder)
 
     return converted_list, no_data_list, bad_data_list
+
+
+def do_convert(input_folder, symbol_folder, output_folder, skip_converted):
+    if not os.path.isdir(os.path.join(input_folder, symbol_folder)):
+        return False
+
+    if skip_converted and os.path.exists(os.path.join(output_folder, f"{symbol_folder}-std-tick.csv")):
+        logging.info(f"Skipping converted symbol {symbol_folder}")
+        return False
+
+    exchange = check_exchange(symbol_folder)
+
+    if exchange == "SSE":
+        return convert_sse(input_folder, symbol_folder, output_folder)
+    elif exchange == "SZSE":
+        return convert_szse(input_folder, symbol_folder, output_folder)
+    else:
+        logging.error(f"Unknown exchange for symbol {symbol_folder}")
+        return False
 
 
 def convert_sse(input_folder, symbol_folder, output_folder):
