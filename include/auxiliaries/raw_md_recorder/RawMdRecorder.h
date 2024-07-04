@@ -44,12 +44,12 @@ private:
     void write_szse_trade_tick(const std::vector<u_char>& message);
     void write_szse_l2_snap(const std::vector<u_char>& message);
 
-    void new_sse_tick_writer(const std::string& symbol);
-    void new_sse_l2_snap_writer(const std::string& symbol);
+    void new_sse_tick_writer();
+    void new_sse_l2_snap_writer();
 
-    void new_szse_order_writer(const std::string& symbol);
-    void new_szse_trade_writer(const std::string& symbol);
-    void new_szse_l2_snap_writer(const std::string& symbol);
+    void new_szse_order_writer();
+    void new_szse_trade_writer();
+    void new_szse_l2_snap_writer();
 
 private:
     boost::program_options::variables_map m_arguments;
@@ -62,12 +62,12 @@ private:
 private:
     std::vector<std::unique_ptr<MessageBufferType>> m_message_buffers;
 
-    std::unordered_map<std::string, std::ofstream> m_sse_tick_writers;
-    std::unordered_map<std::string, std::ofstream> m_sse_l2_snap_writers;
+    std::ofstream m_sse_tick_writer;
+    std::ofstream m_sse_l2_snap_writer;
 
-    std::unordered_map<std::string, std::ofstream> m_szse_order_writers;
-    std::unordered_map<std::string, std::ofstream> m_szse_trade_writers;
-    std::unordered_map<std::string, std::ofstream> m_szse_l2_snap_writers;
+    std::ofstream m_szse_order_writer;
+    std::ofstream m_szse_trade_writer;
+    std::ofstream m_szse_l2_snap_writer;
 
 private:
     static std::set<RawMdRecorder*> m_instances;
