@@ -632,7 +632,7 @@ void trade::RawMdRecorder::new_sse_l2_snap_writer()
 
 void trade::RawMdRecorder::new_szse_order_writer()
 {
-    const std::filesystem::path file_path = fmt::format("{}/{}/szse-order.csv", m_arguments["output-folder"].as<std::string>(), utilities::Date<std::string>()());
+    const std::filesystem::path file_path = fmt::format("{}/{}/szse-order-tick.csv", m_arguments["output-folder"].as<std::string>(), utilities::Date<std::string>()());
 
     create_directories(std::filesystem::path(file_path).parent_path());
 
@@ -666,7 +666,7 @@ void trade::RawMdRecorder::new_szse_order_writer()
 
 void trade::RawMdRecorder::new_szse_trade_writer()
 {
-    const std::filesystem::path file_path = fmt::format("{}/{}/szse-trade.csv", m_arguments["output-folder"].as<std::string>(), utilities::Date<std::string>()());
+    const std::filesystem::path file_path = fmt::format("{}/{}/szse-trade-tick.csv", m_arguments["output-folder"].as<std::string>(), utilities::Date<std::string>()());
 
     create_directories(std::filesystem::path(file_path).parent_path());
 
