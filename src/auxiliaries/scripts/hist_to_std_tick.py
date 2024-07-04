@@ -85,6 +85,7 @@
 # 对于 time：是原始逐笔数据中自然日和时间的组合值。
 
 import argparse
+import datetime
 import logging
 import os
 
@@ -106,37 +107,71 @@ def check_exchange(symbol):
         return ""
 
 
-def convert(input_folder, output_folder):
+def convert(input_folder, output_folder, skip_converted = False):
+    converted_list = []
+    no_data_list = []
+    bad_data_list = []
+
     for symbol_folder in list_symbols(input_folder):
         if not os.path.isdir(os.path.join(input_folder, symbol_folder)):
             continue
 
         exchange = check_exchange(symbol_folder)
 
+        if skip_converted and os.path.exists(os.path.join(output_folder, f"{symbol_folder}-std-tick.csv")):
+            logging.info(f"Skipping converted symbol {symbol_folder}")
+            continue
+
         if exchange == "SSE":
-            convert_sse(input_folder, symbol_folder, output_folder)
+            try:
+                converted = convert_sse(input_folder, symbol_folder, output_folder)
+            except Exception as e:
+                logging.error(f"Failed to convert symbol {symbol_folder}: {e}")
+                bad_data_list.append(symbol_folder)
+                continue
         elif exchange == "SZSE":
-            convert_szse(input_folder, symbol_folder, output_folder)
+            try:
+                converted = convert_szse(input_folder, symbol_folder, output_folder)
+            except Exception as e:
+                logging.error(f"Failed to convert symbol {symbol_folder}: {e}")
+                bad_data_list.append(symbol_folder)
+                continue
         else:
             logging.error(f"Unknown exchange for symbol {symbol_folder}")
             continue
 
+        if converted:
+            converted_list.append(symbol_folder)
+        else:
+            no_data_list.append(symbol_folder)
+
+    return converted_list, no_data_list, bad_data_list
+
 
 def convert_sse(input_folder, symbol_folder, output_folder):
-    logging.info(f"Loading data in folder {input_folder}/{symbol_folder} for symbol {symbol_folder}")
+    logging.info(f"Loading {symbol_folder}'s data from folder {os.path.join(input_folder, symbol_folder)}")
 
     od = convert_sse_od(os.path.join(input_folder, symbol_folder))
     td = convert_sse_td(os.path.join(input_folder, symbol_folder))
+
+    if od is None or td is None:
+        logging.warning(f"No data for symbol {symbol_folder}, skipped")
+        return False
 
     std_tick = join_to_std_tick(od, td)
 
     std_tick.to_csv(os.path.join(output_folder, f"{symbol_folder}-std-tick.csv"), index = False)
 
-    logging.info(f"Saved data in file {output_folder}/{symbol_folder}-std-tick.csv for symbol {symbol_folder}")
+    logging.info(f"Saved {symbol_folder}'s std tick in file {os.path.join(output_folder, symbol_folder)}-std-tick.csv")
+
+    return True
 
 
 def convert_sse_od(input_file):
     od = pd.read_csv(os.path.join(input_file, "逐笔委托.csv"), encoding = "gbk", low_memory = False)
+
+    if len(od) <= 2:
+        return None
 
     od = od[(od["委托代码"] == "B") | (od["委托代码"] == "S")]
     od["时间"] = od["时间"].apply(
@@ -184,6 +219,9 @@ def convert_sse_od(input_file):
 def convert_sse_td(input_file):
     td = pd.read_csv(os.path.join(input_file, "逐笔成交.csv"), encoding = "gbk", low_memory = False)
 
+    if len(td) <= 2:
+        return None
+
     td = td[td["成交编号"] != 0]
     td["时间"] = td["时间"].apply(
         lambda x: "0" + str(int(x)) if len(str(int(x))) == 8 else str(int(x))
@@ -225,20 +263,29 @@ def convert_sse_td(input_file):
 
 
 def convert_szse(input_folder, symbol_folder, output_folder):
-    logging.info(f"Loading data in folder {input_folder}/{symbol_folder} for symbol {symbol_folder}")
+    logging.info(f"Loading {symbol_folder}'s data from folder {os.path.join(input_folder, symbol_folder)}")
 
     od = convert_szse_od(os.path.join(input_folder, symbol_folder))
     td = convert_szse_td(os.path.join(input_folder, symbol_folder))
+
+    if od is None or td is None:
+        logging.warning(f"No data for symbol {symbol_folder}, skipped")
+        return False
 
     std_tick = join_to_std_tick(od, td)
 
     std_tick.to_csv(os.path.join(output_folder, f"{symbol_folder}-std-tick.csv"), index = False)
 
-    logging.info(f"Saved data in file {output_folder}/{symbol_folder}-std-tick.csv for symbol {symbol_folder}")
+    logging.info(f"Saved {symbol_folder}'s std tick in file {os.path.join(output_folder, symbol_folder)}-std-tick.csv")
+
+    return True
 
 
 def convert_szse_od(input_file):
     od = pd.read_csv(os.path.join(input_file, "逐笔委托.csv"), encoding = "gbk", low_memory = False)
+
+    if len(od) <= 2:
+        return None
 
     od = od[(od["委托代码"] == "B") | (od["委托代码"] == "S")]
     od["时间"] = od["时间"].apply(
@@ -285,6 +332,9 @@ def convert_szse_od(input_file):
 
 def convert_szse_td(input_file):
     td = pd.read_csv(os.path.join(input_file, "逐笔成交.csv"), encoding = "gbk", low_memory = False)
+
+    if len(td) <= 2:
+        return None
 
     td = td[td["成交编号"] != 0]
     td["时间"] = td["时间"].apply(
@@ -357,15 +407,54 @@ if __name__ == "__main__":
         help = "folder to save std_tick files",
     )
 
+    parser.add_argument(
+        "-s",
+        "--skip-converted",
+        action = "store_true",
+        help = "skip already converted files",
+    )
+
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action = "store_true",
+        help = "enable debug log",
+    )
+
+    parser.add_argument(
+        "-w",
+        "--warnings-only",
+        action = "store_true",
+        help = "only show warning log",
+    )
+
     args = parser.parse_args()
 
+    if args.debug:
+        logging_level = logging.DEBUG
+    else:
+        logging_level = logging.INFO
+
+    if args.warnings_only:
+        logging_level = logging.WARN
+
     logging.basicConfig(
-        level = logging.DEBUG,
+        level = logging_level,
         format = '[%(asctime)s] [%(levelname)s] %(message)s',
         datefmt = '%Y-%m-%d %H:%M:%S'
     )
 
+    now = datetime.datetime.now()
+
     if not os.path.exists(args.output_folder):
         os.mkdir(os.path.join(args.output_folder))
 
-    convert(args.input_folder, args.output_folder)
+    converted_list, no_data_list, bad_data_list = convert(args.input_folder, args.output_folder, args.skip_converted)
+
+    if len(no_data_list) > 0:
+        logging.warning(f"{len(no_data_list)} symbols are not converted because of no data: {no_data_list}")
+
+    if len(bad_data_list) > 0:
+        logging.warning(f"{len(bad_data_list)} symbols are not converted because of bad data: {bad_data_list}")
+
+    logging.info(f"Converted {len(converted_list)} symbols in {datetime.datetime.now() - now}")
