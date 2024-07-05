@@ -33,8 +33,6 @@ int trade::OSTMdServer::run()
         memcpy(message.data(), &tick, sizeof(broker::SSEHpfTick));
         server.send(message);
 
-        logger->info("Emitted order tick: {:>6} {:>6} {:>6.2f} {:>6} {:>1} {:>1} {:>6}", tick.m_buy_order_no + tick.m_sell_order_no, tick.m_symbol_id, tick.m_order_price / 1000., tick.m_qty / 1000, tick.m_side_flag, tick.m_tick_type, tick.m_tick_time / 100);
-
         if (m_arguments["emit-interval"].as<int64_t>() > 0)
             std::this_thread::sleep_for(std::chrono::milliseconds(m_arguments["emit-interval"].as<int64_t>()));
     }
@@ -146,7 +144,11 @@ const trade::broker::SSEHpfTick& trade::OSTMdServer::emit_sse_tick(const std::st
         /// Stop emitting.
         m_is_running = false;
 
-    return order_ticks[index++ % order_ticks.size()];
+    const auto& tick = order_ticks[index++ % order_ticks.size()];
+
+    logger->info("Emitted order tick {} of {} ({:.2f}%): {:>6} {:>6} {:>6.2f} {:>6} {:>1} {:>1} {:>6}", index, order_ticks.size(), static_cast<double>(index) / static_cast<double>(order_ticks.size()), tick.m_buy_order_no + tick.m_sell_order_no, tick.m_symbol_id, tick.m_order_price / 1000., tick.m_qty / 1000, tick.m_side_flag, tick.m_tick_type, tick.m_tick_time / 100);
+
+    return tick;
 }
 
 std::vector<trade::broker::SSEHpfTick> trade::OSTMdServer::read_sse_tick(const std::string& path) const
