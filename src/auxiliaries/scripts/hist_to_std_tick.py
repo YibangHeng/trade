@@ -81,7 +81,7 @@
 #   time
 #
 # 对于 ask_unique_id/bid_unique_id：对应原始逐笔数据中的交易所委托号，且可通过两者值确定委托的交易方向；
-# 对于 order_type：仅含 L、M、BP、C 和 T 三类，分别表示限价委托、对方最优价（市价）委托、本方最优价委托、撤单和成交；
+# 对于 order_type：仅含 L、M、B、C 和 T 三类，分别表示限价委托、对方最优价（市价）委托、本方最优价委托、撤单和成交；
 # 对于 time：是原始逐笔数据中自然日和时间的组合值。
 
 import argparse
@@ -314,7 +314,7 @@ def convert_szse_od(input_file):
     )
 
     od["symbol"] = od["symbol"].apply(lambda x: f"{x:06d}")
-    od["order_type"] = od["order_type"].map({"0": "L", "1": "M", "U": "BP"})
+    od["order_type"] = od["order_type"].map({"0": "L", "1": "M", "U": "B"})
     od["price"] = od["price"].apply(lambda x: float(x) / 10000)
     od["ask_unique_id"] = np.where(od["side"] == "S", od["unique_id"], 0)
     od["bid_unique_id"] = np.where(od["side"] == "B", od["unique_id"], 0)

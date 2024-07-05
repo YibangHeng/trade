@@ -17,6 +17,13 @@ trade::OfflineBooker::OfflineBooker(const int argc, char* argv[])
 {
     m_instances.emplace(this);
     m_is_running = argv_parse(argc, argv);
+}
+
+int trade::OfflineBooker::run()
+{
+    if (!m_is_running) {
+        return m_exit_code;
+    }
 
     /// We only need csv_reporter here.
     const auto csv_reporter   = std::make_shared<reporter::CSVReporter>(m_arguments["l2-output-file"].as<std::string>());
@@ -27,13 +34,6 @@ trade::OfflineBooker::OfflineBooker(const int argc, char* argv[])
 
     /// Booker.
     m_booker = std::make_shared<booker::Booker>(std::vector<std::string> {}, m_reporter, false);
-}
-
-int trade::OfflineBooker::run()
-{
-    if (!m_is_running) {
-        return m_exit_code;
-    }
 
     const std::filesystem::path std_file(m_arguments["std-tick-file"].as<std::string>());
 
@@ -101,8 +101,8 @@ bool trade::OfflineBooker::argv_parse(const int argc, char* argv[])
     desc.add_options()("debug,d", "enable debug output");
 
     /// Order/Trade ticks folder and generated l2 output file.
-    desc.add_options()("std-tick-file", boost::program_options::value<std::string>()->default_value("./data/std_tick"), "Standard tick file");
-    desc.add_options()("l2-output-file", boost::program_options::value<std::string>()->default_value("./output/l2_tick"), "L2 output file");
+    desc.add_options()("std-tick-file,i", boost::program_options::value<std::string>()->default_value("./data/std_tick"), "standard tick file");
+    desc.add_options()("l2-output-file,o", boost::program_options::value<std::string>()->default_value("./output/l2_tick"), "l2 output file");
 
     try {
         store(parse_command_line(argc, argv, desc), m_arguments);
@@ -186,7 +186,7 @@ void trade::OfflineBooker::load_tick(const std::string& path)
         );
 
         while (!m_pairs.push(std_tick))
-            logger->debug("Adding tick {:<6} {:>8} {:>8} {:<5} {:5.2f} {:>5} {}", symbol, ask_unique_id, bid_unique_id, OrderType_Name(to_order_type(order_type)), price, quantity, time);
+            ;
         logger->debug("Added tick {:<6} {:>8} {:>8} {:<5} {:5.2f} {:>5} {}", symbol, ask_unique_id, bid_unique_id, OrderType_Name(to_order_type(order_type)), price, quantity, time);
     }
 }
@@ -195,6 +195,9 @@ void trade::OfflineBooker::booker(StdTick* std_tick) const
 {
     const booker::OrderTickPtr order_tick = to_order_tick(std_tick);
     const booker::TradeTickPtr trade_tick = to_trade_tick(std_tick);
+
+    if (order_tick == nullptr && trade_tick == nullptr)
+        logger->error("Invalid tick fed: neither order nor trade tick");
 
     if (order_tick != nullptr) {
         if (order_tick->exchange_time() >= 93000000) [[likely]]
@@ -215,8 +218,10 @@ void trade::OfflineBooker::booker(StdTick* std_tick) const
 trade::types::OrderType trade::OfflineBooker::to_order_type(const char order_type)
 {
     switch (order_type) {
-    case 'A': return types::OrderType::limit;
-    case 'D': return types::OrderType::cancel;
+    case 'L': return types::OrderType::limit;
+    case 'M': return types::OrderType::market;
+    case 'B': return types::OrderType::best_price;
+    case 'C': return types::OrderType::cancel;
     case 'T': return types::OrderType::fill;
     default: return types::OrderType::invalid_order_type;
     }
@@ -260,8 +265,8 @@ trade::booker::TradeTickPtr trade::OfflineBooker::to_trade_tick(StdTick* std_tic
 
 trade::types::SideType trade::OfflineBooker::to_side(const int64_t ask_unique_id, const int64_t bid_unique_id)
 {
-    assert(ask_unique_id + bid_unique_id == ask_unique_id);
-    assert(ask_unique_id + bid_unique_id == bid_unique_id);
+    /// Assert only one of them is 0.
+    assert(ask_unique_id == 0 ^ bid_unique_id == 0);
 
     return ask_unique_id == 0 ? types::SideType::buy : types::SideType::sell;
 }

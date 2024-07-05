@@ -51,7 +51,7 @@ private:
 
 private:
     boost::lockfree::spsc_queue<StdTick*, boost::lockfree::capacity<1024>> m_pairs;
-    std::shared_ptr<trade::booker::Booker> m_booker;
+    std::shared_ptr<booker::Booker> m_booker;
     std::shared_ptr<reporter::IReporter> m_reporter;
 
 private:
