@@ -42,7 +42,7 @@ public:
 
 public:
     /// Accept a trade on this order and return true if the order is filled.
-    bool accept(const types::TradeTick& order_tick);
+    bool accept(const types::TradeTick& trade_tick);
 
 public:
     [[nodiscard]] types::OrderType order_type() const;

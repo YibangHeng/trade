@@ -45,9 +45,9 @@ bool trade::booker::OrderWrapper::is_limit() const
     return order_type() == types::OrderType::limit;
 }
 
-bool trade::booker::OrderWrapper::accept(const types::TradeTick& order_tick)
+bool trade::booker::OrderWrapper::accept(const types::TradeTick& trade_tick)
 {
-    return (filled_quantity += BookerCommonData::to_quantity(order_tick.exec_quantity()))
+    return (filled_quantity += BookerCommonData::to_quantity(trade_tick.exec_quantity()))
         >= BookerCommonData::to_quantity(m_order->quantity());
 }
 
