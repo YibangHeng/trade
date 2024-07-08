@@ -93,6 +93,15 @@ import numpy as np
 import pandas as pd
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from enum import Enum
+
+
+class ErrorType(Enum):
+    NoError = 0
+    NoFile = 1
+    NoData = 2
+    BadData = 3
+    IDMissing = 4
 
 
 def list_symbols(input_folder):
@@ -113,6 +122,7 @@ def convert(input_folder, output_folder, skip_converted = False):
     converted_list = []
     no_data_list = []
     bad_data_list = []
+    id_missing_list = []
 
     with ProcessPoolExecutor() as executor:
         future_to_symbol = {
@@ -122,37 +132,41 @@ def convert(input_folder, output_folder, skip_converted = False):
 
         for future in as_completed(future_to_symbol):
             symbol_folder = future_to_symbol[future]
-            try:
-                converted = future.result()
-            except Exception as e:
-                logging.error(f"Failed to convert symbol {symbol_folder}: {e}")
-                bad_data_list.append(symbol_folder)
-            else:
-                if converted:
-                    converted_list.append(symbol_folder)
-                else:
-                    no_data_list.append(symbol_folder)
+            error_type = future.result()
 
-    return converted_list, no_data_list, bad_data_list
+            match error_type:
+                case ErrorType.NoError:
+                    converted_list.append(symbol_folder)
+                case ErrorType.NoData:
+                    no_data_list.append(symbol_folder)
+                case ErrorType.BadData:
+                    bad_data_list.append(symbol_folder)
+                case ErrorType.IDMissing:
+                    id_missing_list.append(symbol_folder)
+                case _:
+                    pass
+
+    return converted_list, no_data_list, bad_data_list, id_missing_list
 
 
 def do_convert(input_folder, symbol_folder, output_folder, skip_converted):
     if not os.path.isdir(os.path.join(input_folder, symbol_folder)):
-        return False
+        return ErrorType.NoFile
 
     if skip_converted and os.path.exists(os.path.join(output_folder, f"{symbol_folder}-std-tick.csv")):
         logging.info(f"Skipping converted symbol {symbol_folder}")
-        return False
+        return ErrorType.NoError
 
     exchange = check_exchange(symbol_folder)
 
-    if exchange == "SSE":
-        return convert_sse(input_folder, symbol_folder, output_folder)
-    elif exchange == "SZSE":
-        return convert_szse(input_folder, symbol_folder, output_folder)
-    else:
-        logging.error(f"Unknown exchange for symbol {symbol_folder}")
-        return False
+    try:
+        if exchange == "SSE":
+            return convert_sse(input_folder, symbol_folder, output_folder)
+        if exchange == "SZSE":
+            return convert_szse(input_folder, symbol_folder, output_folder)
+    except Exception as e:
+        logging.error(f"Failed to convert symbol {symbol_folder}: {e}")
+        return ErrorType.BadData
 
 
 def convert_sse(input_folder, symbol_folder, output_folder):
@@ -163,11 +177,20 @@ def convert_sse(input_folder, symbol_folder, output_folder):
 
     if od is None or td is None:
         logging.warning(f"No data for symbol {symbol_folder}, skipped")
-        return False
+        return ErrorType.NoData
+
+    ask_unique_id_diff, bid_unique_id_diff = check_sse_id(od, td)
 
     std_tick = join_to_std_tick(od, td)
 
     std_tick.to_csv(os.path.join(output_folder, f"{symbol_folder}-std-tick.csv"), index = False)
+
+    if len(ask_unique_id_diff) > 0:
+        logging.error(f"For {symbol_folder}, ask_unique_id in td but not in od: {ask_unique_id_diff}")
+        return ErrorType.IDMissing
+    if len(bid_unique_id_diff) > 0:
+        logging.error(f"For {symbol_folder}, bid_unique_id in td but not in od: {bid_unique_id_diff}")
+        return ErrorType.IDMissing
 
     logging.info(f"Saved {symbol_folder}'s std tick in file {os.path.join(output_folder, symbol_folder)}-std-tick.csv")
 
@@ -279,9 +302,18 @@ def convert_szse(input_folder, symbol_folder, output_folder):
         logging.warning(f"No data for symbol {symbol_folder}, skipped")
         return False
 
+    ask_unique_id_diff, bid_unique_id_diff = check_sse_id(od, td)
+
     std_tick = join_to_std_tick(od, td)
 
     std_tick.to_csv(os.path.join(output_folder, f"{symbol_folder}-std-tick.csv"), index = False)
+
+    if len(ask_unique_id_diff) > 0:
+        logging.error(f"For {symbol_folder}, ask_unique_id in td but not in od: {ask_unique_id_diff}")
+        return ErrorType.IDMissing
+    if len(bid_unique_id_diff) > 0:
+        logging.error(f"For {symbol_folder}, bid_unique_id in td but not in od: {bid_unique_id_diff}")
+        return ErrorType.IDMissing
 
     logging.info(f"Saved {symbol_folder}'s std tick in file {os.path.join(output_folder, symbol_folder)}-std-tick.csv")
 
@@ -384,6 +416,18 @@ def convert_szse_td(input_file):
     return td
 
 
+def check_sse_id(od, td):
+    ask_unique_id_in_od = set(od[od["ask_unique_id"] != 0]["ask_unique_id"])
+    bid_unique_id_in_od = set(od[od["bid_unique_id"] != 0]["bid_unique_id"])
+    ask_unique_id_in_td = set(td[td["ask_unique_id"] != 0]["ask_unique_id"])
+    bid_unique_id_in_td = set(td[td["bid_unique_id"] != 0]["bid_unique_id"])
+
+    ask_unique_id_diff = ask_unique_id_in_td - ask_unique_id_in_od
+    bid_unique_id_diff = bid_unique_id_in_td - bid_unique_id_in_od
+
+    return ask_unique_id_diff, bid_unique_id_diff
+
+
 def join_to_std_tick(od, td):
     std_tick = pd.concat([od, td])
 
@@ -456,12 +500,18 @@ if __name__ == "__main__":
     if not os.path.exists(args.output_folder):
         os.mkdir(os.path.join(args.output_folder))
 
-    converted_list, no_data_list, bad_data_list = convert(args.input_folder, args.output_folder, args.skip_converted)
+    (converted_list,
+     no_data_list,
+     bad_data_list,
+     id_missing_list) = convert(args.input_folder, args.output_folder, args.skip_converted)
 
     if len(no_data_list) > 0:
         logging.warning(f"{len(no_data_list)} symbols are not converted because of no data: {no_data_list}")
 
     if len(bad_data_list) > 0:
         logging.warning(f"{len(bad_data_list)} symbols are not converted because of bad data: {bad_data_list}")
+
+    if len(id_missing_list) > 0:
+        logging.warning(f"{len(id_missing_list)} symbols are not converted because of missing unique id: {id_missing_list}")
 
     logging.info(f"Converted {len(converted_list)} symbols in {datetime.datetime.now() - now}")
