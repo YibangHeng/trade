@@ -52,7 +52,7 @@ public:
     [[nodiscard]] OrderTickPtr raw_order_tick() const;
 
 public:
-    void mark_as_cancel() const;
+    void mark_as_cancel(int64_t exchange_time) const;
 
 private:
     OrderTickPtr m_order;

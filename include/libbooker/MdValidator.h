@@ -86,8 +86,9 @@ private:
 
 private:
     constexpr static int m_buffer_size = 1024; /// Last 1024 ticks.
-    /// Symbol -> trade ticks.
-    std::unordered_map<std::string, boost::circular_buffer<TradeTickHash::HashType>> m_trade_tick_buffers;
+    /// Symbol -> traded ask/bid unique ids.
+    std::unordered_map<std::string, boost::circular_buffer<int64_t>> m_traded_ask_unique_ids;
+    std::unordered_map<std::string, boost::circular_buffer<int64_t>> m_traded_bid_unique_ids;
     /// Symbol -> l2 ticks.
     std::unordered_map<std::string, boost::circular_buffer<L2TickHash::HashType>> m_l2_tick_buffers;
 };

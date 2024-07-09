@@ -39,20 +39,22 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
         }
 
         /// Changing order status manually is needed since booker does not use order_tick.
-        order_wrapper->mark_as_cancel();
+        order_wrapper->mark_as_cancel(order_tick->exchange_time());
+
+        auction(order_wrapper);
     }
     else {
         order_wrapper = std::make_shared<OrderWrapper>(order_tick);
-        m_orders.emplace(order_tick->unique_id(), order_wrapper);
-    }
 
-    /// If in call auction stage.
-    if (order_wrapper->exchange_time() < 92500000) {
-        m_call_auction_holders[order_wrapper->symbol()].push(order_wrapper);
-    }
-    /// If in continuous trade stage.
-    else {
-        auction(order_wrapper);
+        /// If in call auction stage.
+        if (order_wrapper->exchange_time() < 92500000) {
+            m_call_auction_holders[order_wrapper->symbol()].push(order_wrapper);
+        }
+        /// If in continuous trade stage.
+        else {
+            m_orders.emplace(order_tick->unique_id(), order_wrapper);
+            auction(order_wrapper);
+        }
     }
 }
 
@@ -74,6 +76,7 @@ void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         l2_tick->set_quantity(trade_tick->exec_quantity());
         l2_tick->set_ask_unique_id(trade_tick->ask_unique_id());
         l2_tick->set_bid_unique_id(trade_tick->bid_unique_id());
+        l2_tick->set_exchange_time(trade_tick->exchange_time());
 
         m_reporter->l2_tick_generated(l2_tick);
 
@@ -81,7 +84,7 @@ void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
     }
 
     if (m_md_validator.has_value() && !m_md_validator.value().check(trade_tick))
-        logger->error("Verification failed for {}'s trade tick", trade_tick->symbol());
+        logger->error("Verification failed for trade tick: {}", utilities::ToJSON()(*trade_tick));
 }
 
 void trade::booker::Booker::l2(const L2TickPtr& l2_tick) const
@@ -96,7 +99,7 @@ void trade::booker::Booker::switch_to_continuous_stage()
         return;
 
     /// Move all unfinished orders from call auction stage to continuous trade stage.
-    for (auto& call_auction_holder : m_call_auction_holders | std::views::values) {
+    for (auto& [symbol, call_auction_holder] : m_call_auction_holders) {
         while (true) {
             const auto order_tick = call_auction_holder.pop();
             if (order_tick == nullptr)
@@ -104,7 +107,9 @@ void trade::booker::Booker::switch_to_continuous_stage()
 
             logger->debug("Added unfinished order in call auction stage: {}", utilities::ToJSON()(*order_tick));
 
-            auction(std::make_shared<OrderWrapper>(order_tick));
+            order_tick->set_exchange_time(93000000);
+
+            add(order_tick);
         }
     }
 
@@ -116,8 +121,11 @@ void trade::booker::Booker::switch_to_continuous_stage()
 void trade::booker::Booker::auction(const OrderWrapperPtr& order_wrapper)
 {
     switch (order_wrapper->order_type()) {
-    case types::OrderType::limit:
     case types::OrderType::market: {
+        order_wrapper->raw_order_tick()->set_price(0);
+        /// No break here.
+    }
+    case types::OrderType::limit: {
         m_books[order_wrapper->symbol()]->add(order_wrapper);
         break;
     }

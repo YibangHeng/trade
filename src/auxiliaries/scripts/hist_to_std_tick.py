@@ -222,6 +222,7 @@ def convert_sse_od(input_file):
         inplace = True,
     )
 
+    od["index"] = od["unique_id"]
     od["symbol"] = od["symbol"].apply(lambda x: f"{x:06d}")
     od["order_type"] = od["order_type"].map({"A": "L", "D": "C", })
     od["price"] = od["price"].apply(lambda x: float(x) / 10000)
@@ -231,6 +232,7 @@ def convert_sse_od(input_file):
 
     od = od[
         [
+            "index",
             "symbol",
             "ask_unique_id",
             "bid_unique_id",
@@ -259,6 +261,7 @@ def convert_sse_td(input_file):
 
     td.rename(
         columns = {
+            "成交编号"  : "index",
             "交易所代码": "symbol",
             "叫卖序号"  : "ask_unique_id",
             "叫买序号"  : "bid_unique_id",
@@ -277,6 +280,7 @@ def convert_sse_td(input_file):
 
     td = td[
         [
+            "index",
             "symbol",
             "ask_unique_id",
             "bid_unique_id",
@@ -345,6 +349,7 @@ def convert_szse_od(input_file):
         inplace = True,
     )
 
+    od["index"] = od["unique_id"]
     od["symbol"] = od["symbol"].apply(lambda x: f"{x:06d}")
     od["order_type"] = od["order_type"].map({"0": "L", "1": "M", "U": "B"})
     od["price"] = od["price"].apply(lambda x: float(x) / 10000)
@@ -354,6 +359,7 @@ def convert_szse_od(input_file):
 
     od = od[
         [
+            "index",
             "symbol",
             "ask_unique_id",
             "bid_unique_id",
@@ -382,6 +388,7 @@ def convert_szse_td(input_file):
 
     td.rename(
         columns = {
+            "成交编号"  : "index",
             "交易所代码": "symbol",
             "叫卖序号"  : "ask_unique_id",
             "叫买序号"  : "bid_unique_id",
@@ -401,6 +408,7 @@ def convert_szse_td(input_file):
 
     td = td[
         [
+            "index",
             "symbol",
             "ask_unique_id",
             "bid_unique_id",
@@ -432,7 +440,7 @@ def join_to_std_tick(od, td):
     std_tick = pd.concat([od, td])
 
     # Sort by time.
-    std_tick = std_tick.sort_values(by = "time", ascending = True, kind = "mergesort")
+    std_tick = std_tick.sort_values(by = "index", ascending = True, kind = "mergesort")
 
     logging.debug(f"\n{std_tick}")
 

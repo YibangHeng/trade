@@ -3,6 +3,13 @@
 
 void trade::booker::CallAuctionHolder::push(const OrderWrapperPtr& order_wrapper)
 {
+    if (order_wrapper->order_type() == types::OrderType::cancel) {
+        order_wrapper->is_buy()
+            ? m_bid_orders.erase(order_wrapper->unique_id())
+            : m_ask_orders.erase(order_wrapper->unique_id());
+        return;
+    }
+
     order_wrapper->is_buy()
         ? m_bid_orders.emplace(order_wrapper->unique_id(), order_wrapper)
         : m_ask_orders.emplace(order_wrapper->unique_id(), order_wrapper);

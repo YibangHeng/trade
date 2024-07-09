@@ -9,6 +9,7 @@
 #include "info.h"
 #include "libreporter/AsyncReporter.h"
 #include "libreporter/CSVReporter.h"
+#include "libreporter/LogReporter.h"
 #include "utilities/MakeAssignable.hpp"
 #include "utilities/NetworkHelper.hpp"
 
@@ -25,15 +26,14 @@ int trade::OfflineBooker::run()
         return m_exit_code;
     }
 
-    /// We only need csv_reporter here.
-    const auto csv_reporter   = std::make_shared<reporter::CSVReporter>(m_arguments["l2-output-file"].as<std::string>());
-    const auto async_reporter = std::make_shared<reporter::AsyncReporter>(csv_reporter);
+    const auto log_reporter = std::make_shared<reporter::LogReporter>();
+    const auto csv_reporter = std::make_shared<reporter::CSVReporter>(m_arguments["l2-output-file"].as<std::string>(), log_reporter);
 
     /// Reporter.
-    m_reporter = async_reporter;
+    m_reporter = csv_reporter;
 
     /// Booker.
-    m_booker = std::make_shared<booker::Booker>(std::vector<std::string> {}, m_reporter, false);
+    m_booker = std::make_shared<booker::Booker>(std::vector<std::string> {}, m_reporter, true);
 
     const std::filesystem::path std_file(m_arguments["std-tick-file"].as<std::string>());
 
@@ -187,7 +187,6 @@ void trade::OfflineBooker::load_tick(const std::string& path)
 
         while (!m_pairs.push(std_tick))
             ;
-        logger->debug("Added tick {:<6} {:>8} {:>8} {:<5} {:5.2f} {:>5} {}", symbol, ask_unique_id, bid_unique_id, OrderType_Name(to_order_type(order_type)), price, quantity, time);
     }
 }
 
@@ -196,8 +195,15 @@ void trade::OfflineBooker::booker(StdTick* std_tick) const
     const booker::OrderTickPtr order_tick = to_order_tick(std_tick);
     const booker::TradeTickPtr trade_tick = to_trade_tick(std_tick);
 
-    if (order_tick == nullptr && trade_tick == nullptr)
+    if (order_tick == nullptr && trade_tick == nullptr) {
         logger->error("Invalid tick fed: neither order nor trade tick");
+        return;
+    }
+
+    if (order_tick != nullptr && trade_tick != nullptr) {
+        logger->error("Invalid tick fed: both order and trade tick");
+        return;
+    }
 
     if (order_tick != nullptr) {
         if (order_tick->exchange_time() >= 93000000) [[likely]]
@@ -230,6 +236,8 @@ trade::types::OrderType trade::OfflineBooker::to_order_type(const char order_typ
 trade::booker::OrderTickPtr trade::OfflineBooker::to_order_tick(StdTick* std_tick)
 {
     if (std_tick->order_type != types::OrderType::limit
+        && std_tick->order_type != types::OrderType::market
+        && std_tick->order_type != types::OrderType::best_price
         && std_tick->order_type != types::OrderType::cancel)
         return nullptr;
 

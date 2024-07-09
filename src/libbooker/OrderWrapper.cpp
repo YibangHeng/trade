@@ -71,7 +71,8 @@ trade::booker::OrderTickPtr trade::booker::OrderWrapper::raw_order_tick() const
     return m_order;
 }
 
-void trade::booker::OrderWrapper::mark_as_cancel() const
+void trade::booker::OrderWrapper::mark_as_cancel(const int64_t exchange_time) const
 {
     m_order->set_order_type(types::OrderType::cancel);
+    m_order->set_exchange_time(exchange_time);
 }
