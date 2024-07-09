@@ -87,12 +87,6 @@ void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         logger->error("Verification failed for trade tick: {}", utilities::ToJSON()(*trade_tick));
 }
 
-void trade::booker::Booker::l2(const L2TickPtr& l2_tick) const
-{
-    if (m_md_validator.has_value() && !m_md_validator.value().check(l2_tick))
-        logger->error("Verification failed for {}'s l2 snapshot", l2_tick->symbol());
-}
-
 void trade::booker::Booker::switch_to_continuous_stage()
 {
     if (m_in_continuous_stage) [[likely]]

@@ -167,8 +167,6 @@ void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
         if (l2_tick != nullptr) {
             logger->debug("Received l2 tick: {}", utilities::ToJSON()(*l2_tick));
 
-            booker.l2(l2_tick);
-
             m_reporter->exchange_l2_tick_arrived(l2_tick);
         }
 
