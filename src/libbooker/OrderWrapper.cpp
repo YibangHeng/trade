@@ -14,7 +14,7 @@ int64_t trade::booker::OrderWrapper::unique_id() const
 
 void trade::booker::OrderWrapper::to_limit_order(const double price) const
 {
-    assert(m_order->order_type() == types::OrderType::best_price);
+    assert(m_order->order_type() == types::OrderType::market || m_order->order_type() == types::OrderType::best_price);
 
     m_order->set_order_type(types::OrderType::limit);
     m_order->set_price(price);

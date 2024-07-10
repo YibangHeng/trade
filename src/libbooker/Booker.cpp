@@ -115,40 +115,56 @@ void trade::booker::Booker::switch_to_continuous_stage()
 void trade::booker::Booker::auction(const OrderWrapperPtr& order_wrapper)
 {
     switch (order_wrapper->order_type()) {
-    case types::OrderType::market: {
-        order_wrapper->raw_order_tick()->set_price(0);
-        /// No break here.
-    }
     case types::OrderType::limit: {
         m_books[order_wrapper->symbol()]->add(order_wrapper);
         break;
     }
-        /// TODO: Make the matching logic for best price clearer.
+    case types::OrderType::market: {
+        double price;
+
+        if (order_wrapper->is_buy()) {
+            const auto asks = m_books[order_wrapper->symbol()]->asks();
+
+            if (asks.empty())
+                break;
+
+            price = BookerCommonData::to_price(asks.begin()->first.price());
+        }
+        else {
+            const auto bids = m_books[order_wrapper->symbol()]->bids();
+
+            if (bids.empty())
+                break;
+
+            price = BookerCommonData::to_price(bids.begin()->first.price());
+        }
+
+        order_wrapper->to_limit_order(price);
+
+        m_books[order_wrapper->symbol()]->add(order_wrapper);
+        break;
+    }
     case types::OrderType::best_price: {
-        double best_price;
+        double price;
 
         if (order_wrapper->is_buy()) {
             const auto bids = m_books[order_wrapper->symbol()]->bids();
 
-            if (bids.empty()) {
-                logger->error("A best price order {} arrived while no bid exists", order_wrapper->unique_id());
+            if (bids.empty())
                 break;
-            }
 
-            best_price = BookerCommonData::to_price(bids.begin()->first.price());
+            price = BookerCommonData::to_price(bids.begin()->first.price());
         }
         else {
             const auto asks = m_books[order_wrapper->symbol()]->asks();
 
-            if (asks.empty()) {
-                logger->error("A best price order {} arrived while no ask exists", order_wrapper->unique_id());
+            if (asks.empty())
                 break;
-            }
 
-            best_price = BookerCommonData::to_price(asks.begin()->first.price());
+            price = BookerCommonData::to_price(asks.begin()->first.price());
         }
 
-        order_wrapper->to_limit_order(best_price);
+        order_wrapper->to_limit_order(price);
 
         m_books[order_wrapper->symbol()]->add(order_wrapper);
         break;

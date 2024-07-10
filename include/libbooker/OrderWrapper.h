@@ -20,7 +20,7 @@ public:
 public:
     /// Convert order type to limit from best price.
     ///
-    /// @param price The latest best market price.
+    /// @param price The latest price.
     ///
     /// @note A best price order acts like a limit order that automatically
     /// fills with the latest best market price with side matching the order's
