@@ -50,6 +50,9 @@ add_subdirectory(trade_types)
 include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/trade_types) # For generated *.pb.h.
 
+# Muduo.
+include_directories(include/third/muduo)
+
 # Binaries and libraries.
 add_subdirectory(src/libbooker)
 add_subdirectory(src/libbroker)

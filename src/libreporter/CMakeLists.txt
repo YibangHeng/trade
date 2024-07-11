@@ -11,4 +11,7 @@ target_link_libraries(
         PRIVATE
         date::date
         date::date-tz
+        z
+        muduo_base
+        muduo_net
 )
