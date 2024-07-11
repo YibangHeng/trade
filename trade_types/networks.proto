@@ -18,10 +18,14 @@ enum MessageID
     new_cancel_req     = 1001; /// 新撤单创建请求
     new_cancel_all_req = 1002; /// 新全部撤单创建请求
 
+    new_subscribe_req  = 1003; /// 新订阅请求
+
     /// 内部响应。仅用于标识 trade 已接收到相应的命令
     new_order_rsp      = 2000; /// 新委托创建响应
     new_cancel_rsp     = 2001; /// 新撤单创建响应
     new_cancel_all_rsp = 2002; /// 新全部撤单创建响应
+
+    new_subscribe_rsp  = 2003; /// 新订阅响应
 
     /// 状体推送消息。更新来自券商的订单状态推送或查询结果
 
@@ -99,6 +103,23 @@ message NewCancelAllRsp
     google.protobuf.Timestamp creation_time = 2; /// 撤单创建时间
     optional RejectionCode rejection_code   = 3; /// 拒绝代码
     optional string rejection_reason        = 4; /// 拒绝原因
+}
+
+/// 新订阅请求
+message NewSubscribeReq
+{
+    optional int64 request_id          = 1; /// 请求 ID
+    optional string app_name           = 2; /// 客户端应用名
+    repeated string symbols_subscribe  = 3; /// 新增订阅合约
+    repeated string symbol_unsubscribe = 4; /// 取消订阅合约
+    bool request_last_data             = 5; /// 是否发送当前的行情
+}
+
+/// 新订阅响应
+message NewSubscribeRsp
+{
+    int64 request_id                  = 1; /// 请求 ID
+    repeated string subscribed_symbol = 2; /// 当前订阅的合约
 }
 
 ///
