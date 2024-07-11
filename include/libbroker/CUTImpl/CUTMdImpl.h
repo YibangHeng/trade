@@ -1,6 +1,6 @@
 #pragma once
 
-#include <boost/lockfree/queue.hpp>
+#include <boost/lockfree/spsc_queue.hpp>
 
 #include "AppBase.hpp"
 #include "libbooker/Booker.h"
@@ -28,7 +28,7 @@ public:
     void unsubscribe(const std::unordered_set<std::string>& symbols);
 
 private:
-    using MessageBufferType = boost::lockfree::queue<std::vector<u_char>*>;
+    using MessageBufferType = boost::lockfree::spsc_queue<std::vector<u_char>*, boost::lockfree::capacity<1000000>>;
 
     void tick_receiver(const std::string& address, const std::string& interface_address) const;
     void booker(MessageBufferType& message_buffer);

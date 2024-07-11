@@ -46,7 +46,7 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
     m_message_buffers.reserve(m_booker_thread_size);
 
     for (size_t i = 0; i < m_booker_thread_size; i++) {
-        auto& message_buffer = m_message_buffers.emplace_back(new MessageBufferType(100000));
+        auto& message_buffer = m_message_buffers.emplace_back(new MessageBufferType);
 
         m_booker_threads.emplace_back(&CUTMdImpl::booker, this, std::ref(*message_buffer));
 
