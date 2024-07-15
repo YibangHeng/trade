@@ -40,7 +40,7 @@ private:
 
 private:
     void load_tick(const std::string& path);
-    void booker(StdTick* std_tick) const;
+    void booker(StdTick* std_tick);
 
 private:
     [[nodiscard]] static types::OrderType to_order_type(char order_type);

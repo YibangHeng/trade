@@ -33,8 +33,7 @@ public:
     /// Add a new order/cancel to the book.
     /// Booker will process order in auction stage and continuous stage.
     void add(const OrderTickPtr& order_tick);
-    /// Accept trades in call auction stage (whose exec time == 925000).
-    void trade(const TradeTickPtr& trade_tick);
+    bool trade(const TradeTickPtr& trade_tick);
     void switch_to_continuous_stage();
 
 private:

@@ -75,7 +75,7 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
     }
 }
 
-void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
+bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
 {
     /// If trade arrived while a remained market order exists.
     if (m_market_order.contains(trade_tick->symbol())) {
@@ -93,7 +93,7 @@ void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
             m_market_order.erase(trade_tick->symbol());
         }
 
-        return;
+        return true;
     }
 
     const auto exchange_time = trade_tick->exchange_time() / 1000;
@@ -116,11 +116,15 @@ void trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
 
         m_reporter->l2_tick_generated(l2_tick);
 
-        return;
+        return true;
     }
 
-    if (m_md_validator.has_value() && !m_md_validator.value().check(trade_tick))
+    if (m_md_validator.has_value() && !m_md_validator.value().check(trade_tick)) {
         logger->error("Verification failed for trade tick: {}", utilities::ToJSON()(*trade_tick));
+        return false;
+    }
+
+    return true;
 }
 
 void trade::booker::Booker::switch_to_continuous_stage()

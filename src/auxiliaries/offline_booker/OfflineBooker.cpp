@@ -185,11 +185,12 @@ void trade::OfflineBooker::load_tick(const std::string& path)
             time
         );
 
-        while (!m_pairs.push(std_tick));
+        while (!m_pairs.push(std_tick))
+            ;
     }
 }
 
-void trade::OfflineBooker::booker(StdTick* std_tick) const
+void trade::OfflineBooker::booker(StdTick* std_tick)
 {
     const booker::OrderTickPtr order_tick = to_order_tick(std_tick);
     const booker::TradeTickPtr trade_tick = to_trade_tick(std_tick);
@@ -214,7 +215,11 @@ void trade::OfflineBooker::booker(StdTick* std_tick) const
     }
 
     if (trade_tick != nullptr) {
-        m_booker->trade(trade_tick);
+        const auto verification_passed = m_booker->trade(trade_tick);
+
+        if (!verification_passed) {
+            m_exit_code++;
+        }
 
         m_reporter->exchange_trade_tick_arrived(trade_tick);
     }
