@@ -17,49 +17,49 @@ void trade::reporter::CSVReporter::l2_tick_generated(const std::shared_ptr<types
     m_l2_tick_writers[l2_tick->symbol()] << fmt::format(
         "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         l2_tick->symbol(),
-        l2_tick->price(),
+        l2_tick->price_1000x(),
         l2_tick->quantity(),
         l2_tick->ask_unique_id(),
         l2_tick->bid_unique_id(),
-        l2_tick->sell_price_10(),
+        l2_tick->sell_price_1000x_10(),
         l2_tick->sell_quantity_10(),
-        l2_tick->sell_price_9(),
+        l2_tick->sell_price_1000x_9(),
         l2_tick->sell_quantity_9(),
-        l2_tick->sell_price_8(),
+        l2_tick->sell_price_1000x_8(),
         l2_tick->sell_quantity_8(),
-        l2_tick->sell_price_7(),
+        l2_tick->sell_price_1000x_7(),
         l2_tick->sell_quantity_7(),
-        l2_tick->sell_price_6(),
+        l2_tick->sell_price_1000x_6(),
         l2_tick->sell_quantity_6(),
-        l2_tick->sell_price_5(),
+        l2_tick->sell_price_1000x_5(),
         l2_tick->sell_quantity_5(),
-        l2_tick->sell_price_4(),
+        l2_tick->sell_price_1000x_4(),
         l2_tick->sell_quantity_4(),
-        l2_tick->sell_price_3(),
+        l2_tick->sell_price_1000x_3(),
         l2_tick->sell_quantity_3(),
-        l2_tick->sell_price_2(),
+        l2_tick->sell_price_1000x_2(),
         l2_tick->sell_quantity_2(),
-        l2_tick->sell_price_1(),
+        l2_tick->sell_price_1000x_1(),
         l2_tick->sell_quantity_1(),
-        l2_tick->buy_price_1(),
+        l2_tick->buy_price_1000x_1(),
         l2_tick->buy_quantity_1(),
-        l2_tick->buy_price_2(),
+        l2_tick->buy_price_1000x_2(),
         l2_tick->buy_quantity_2(),
-        l2_tick->buy_price_3(),
+        l2_tick->buy_price_1000x_3(),
         l2_tick->buy_quantity_3(),
-        l2_tick->buy_price_4(),
+        l2_tick->buy_price_1000x_4(),
         l2_tick->buy_quantity_4(),
-        l2_tick->buy_price_5(),
+        l2_tick->buy_price_1000x_5(),
         l2_tick->buy_quantity_5(),
-        l2_tick->buy_price_6(),
+        l2_tick->buy_price_1000x_6(),
         l2_tick->buy_quantity_6(),
-        l2_tick->buy_price_7(),
+        l2_tick->buy_price_1000x_7(),
         l2_tick->buy_quantity_7(),
-        l2_tick->buy_price_8(),
+        l2_tick->buy_price_1000x_8(),
         l2_tick->buy_quantity_8(),
-        l2_tick->buy_price_9(),
+        l2_tick->buy_price_1000x_9(),
         l2_tick->buy_quantity_9(),
-        l2_tick->buy_price_10(),
+        l2_tick->buy_price_1000x_10(),
         l2_tick->buy_quantity_10(),
         /// Time.
         l2_tick->exchange_time(),
@@ -81,49 +81,49 @@ void trade::reporter::CSVReporter::new_l2_tick_writer(const std::string& symbol)
 
         m_l2_tick_writers[symbol]
             << "symbol,"
-            << "price,"
+            << "price_1000x,"
             << "quantity,"
             << "ask_unique_id,"
             << "bid_unique_id,"
-            << "sell_price_10,"
+            << "sell_price_1000x_10,"
             << "sell_quantity_10,"
-            << "sell_price_9,"
+            << "sell_price_1000x_9,"
             << "sell_quantity_9,"
-            << "sell_price_8,"
+            << "sell_price_1000x_8,"
             << "sell_quantity_8,"
-            << "sell_price_7,"
+            << "sell_price_1000x_7,"
             << "sell_quantity_7,"
-            << "sell_price_6,"
+            << "sell_price_1000x_6,"
             << "sell_quantity_6,"
-            << "sell_price_5,"
+            << "sell_price_1000x_5,"
             << "sell_quantity_5,"
-            << "sell_price_4,"
+            << "sell_price_1000x_4,"
             << "sell_quantity_4,"
-            << "sell_price_3,"
+            << "sell_price_1000x_3,"
             << "sell_quantity_3,"
-            << "sell_price_2,"
+            << "sell_price_1000x_2,"
             << "sell_quantity_2,"
-            << "sell_price_1,"
+            << "sell_price_1000x_1,"
             << "sell_quantity_1,"
-            << "buy_price_1,"
+            << "buy_price_1000x_1,"
             << "buy_quantity_1,"
-            << "buy_price_2,"
+            << "buy_price_1000x_2,"
             << "buy_quantity_2,"
-            << "buy_price_3,"
+            << "buy_price_1000x_3,"
             << "buy_quantity_3,"
-            << "buy_price_4,"
+            << "buy_price_1000x_4,"
             << "buy_quantity_4,"
-            << "buy_price_5,"
+            << "buy_price_1000x_5,"
             << "buy_quantity_5,"
-            << "buy_price_6,"
+            << "buy_price_1000x_6,"
             << "buy_quantity_6,"
-            << "buy_price_7,"
+            << "buy_price_1000x_7,"
             << "buy_quantity_7,"
-            << "buy_price_8,"
+            << "buy_price_1000x_8,"
             << "buy_quantity_8,"
-            << "buy_price_9,"
+            << "buy_price_1000x_9,"
             << "buy_quantity_9,"
-            << "buy_price_10,"
+            << "buy_price_1000x_10,"
             << "buy_quantity10,"
             /// Time.
             << "exchange_time,"

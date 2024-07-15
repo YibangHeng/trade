@@ -25,7 +25,7 @@ public:
     /// @note A best price order acts like a limit order that automatically
     /// fills with the latest best market price with side matching the order's
     /// side.
-    void to_limit_order(double price) const;
+    void to_limit_order(int64_t price) const;
 
     /// Implement the liquibook::book::order concept.
 public:

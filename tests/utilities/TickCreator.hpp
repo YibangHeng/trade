@@ -1,16 +1,14 @@
 #pragma once
 
-#include "networks.pb.h"
-
-class OrderCreator
+class TickCreator
 {
 public:
-    static std::shared_ptr<trade::types::OrderTick> ororder_tick(
+    static std::shared_ptr<trade::types::OrderTick> order_tick(
         const int64_t unique_id,
         const trade::types::OrderType order_type = trade::types::OrderType::invalid_order_type,
         std::string symbol                       = "",
         const trade::types::SideType side        = trade::types::SideType::invalid_side,
-        const double price                       = 0.0,
+        const int64_t price_1000x                = 0,
         const int64_t quantity                   = 0,
         const int64_t exchange_time              = 100000000 /// 10:00.000 AM.
     )
@@ -21,7 +19,7 @@ public:
         order_tick->set_order_type(order_type);
         order_tick->set_symbol(symbol);
         order_tick->set_side(side);
-        order_tick->set_price(price);
+        order_tick->set_price_1000x(price_1000x);
         order_tick->set_quantity(quantity);
         order_tick->set_exchange_time(exchange_time);
 
@@ -32,7 +30,7 @@ public:
         const int64_t ask_unique_id,
         const int64_t bid_unique_id,
         std::string symbol,
-        const double exec_price,
+        const int64_t exec_price_1000x,
         const int64_t exec_quantity,
         const int64_t exchange_time
     )
@@ -42,7 +40,7 @@ public:
         trade_tick->set_ask_unique_id(ask_unique_id);
         trade_tick->set_bid_unique_id(bid_unique_id);
         trade_tick->set_symbol(symbol);
-        trade_tick->set_exec_price(exec_price);
+        trade_tick->set_exec_price_1000x(exec_price_1000x);
         trade_tick->set_exec_quantity(exec_quantity);
         trade_tick->set_exchange_time(exchange_time);
 
@@ -54,17 +52,17 @@ public:
         const trade::types::OrderType order_type = trade::types::OrderType::invalid_order_type,
         const std::string& symbol                = "",
         const trade::types::SideType side        = trade::types::SideType::invalid_side,
-        const double price                       = 0.0,
+        const int64_t price_1000x                = 0,
         const int64_t quantity                   = 0,
         const int64_t exchange_time              = 100000000 /// 10:00.000 AM.
     )
     {
-        return std::make_shared<trade::booker::OrderWrapper>(ororder_tick(
+        return std::make_shared<trade::booker::OrderWrapper>(order_tick(
             unique_id,
             order_type,
             symbol,
             side,
-            price,
+            price_1000x,
             quantity,
             exchange_time
         ));
@@ -80,7 +78,3 @@ public:
 #define INV_SIDE trade::types::SideType::invalid_side
 #define BUY trade::types::SideType::buy
 #define SELL trade::types::SideType::sell
-
-/// TODO: Not enabled yet for .clang-format reasons.
-#define T(symbol, price, quantity) #symbol ":" #price ":" #quantity "\n"
-#define M(symbol, price) #symbol ":" #price "\n"

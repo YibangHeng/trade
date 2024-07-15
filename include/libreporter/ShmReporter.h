@@ -61,8 +61,8 @@ struct PUBLIC_API SML2TickMateInfo {
 static_assert(sizeof(SML2TickMateInfo) == 512, "MateInfo for l2 tick should be 512 bytes");
 
 struct PriceQuantityPair {
-    double price     = 0;
-    int64_t quantity = 0;
+    int64_t price_1000x = 0;
+    int64_t quantity    = 0;
 };
 
 static_assert(sizeof(PriceQuantityPair) == 16, "PriceQuantityPair should be 16 bytes");
@@ -87,7 +87,7 @@ struct PUBLIC_API OrderTick {
     OrderType order_type = OrderType::invalid_side;
     SymbolType symbol    = {};
     /// Side info stored in @order_type.
-    double price              = 0;
+    int64_t price_1000x       = 0;
     int64_t quantity          = 0;
 
     int64_t exhange_time      = 0;
@@ -105,7 +105,7 @@ struct PUBLIC_API TradeTick {
     int64_t ask_unique_id     = 0;
     int64_t bid_unique_id     = 0;
     SymbolType symbol         = {};
-    double exec_price         = 0;
+    int64_t exec_price_1000x  = 0;
     int64_t exec_quantity     = 0;
 
     int64_t exchange_time     = 0;
@@ -119,9 +119,9 @@ static_assert(sizeof(TradeTick) == 512, "Tick should be 512 bytes");
 struct PUBLIC_API L2Tick {
     ShmUnionType shm_union_type;
 
-    SymbolType symbol = {};
-    double price      = 0;
-    int64_t quantity  = 0;
+    SymbolType symbol   = {};
+    int64_t price_1000x = 0;
+    int64_t quantity    = 0;
 
     PriceQuantityPair sell_10;
     PriceQuantityPair sell_9;

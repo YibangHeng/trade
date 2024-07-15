@@ -18,14 +18,14 @@ trade::types::SideType trade::booker::BookerCommonData::to_side(const char side)
     }
 }
 
-liquibook::book::Price trade::booker::BookerCommonData::to_price(const double price)
+liquibook::book::Price trade::booker::BookerCommonData::to_price(const int64_t price)
 {
     return static_cast<liquibook::book::Price>(price * scale);
 }
 
-double trade::booker::BookerCommonData::to_price(const liquibook::book::Price price)
+int64_t trade::booker::BookerCommonData::to_price(const liquibook::book::Price price)
 {
-    return static_cast<double>(price) / scale;
+    return static_cast<int64_t>(price) / scale;
 }
 
 liquibook::book::Quantity trade::booker::BookerCommonData::to_quantity(const int64_t quantity)

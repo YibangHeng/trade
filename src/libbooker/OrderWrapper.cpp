@@ -12,12 +12,12 @@ int64_t trade::booker::OrderWrapper::unique_id() const
     return m_order->unique_id();
 }
 
-void trade::booker::OrderWrapper::to_limit_order(const double price) const
+void trade::booker::OrderWrapper::to_limit_order(const int64_t price) const
 {
     assert(m_order->order_type() == types::OrderType::market || m_order->order_type() == types::OrderType::best_price);
 
     m_order->set_order_type(types::OrderType::limit);
-    m_order->set_price(price);
+    m_order->set_price_1000x(price);
 }
 
 std::string trade::booker::OrderWrapper::symbol() const
@@ -32,7 +32,7 @@ bool trade::booker::OrderWrapper::is_buy() const
 
 liquibook::book::Price trade::booker::OrderWrapper::price() const
 {
-    return BookerCommonData::to_price(m_order->price());
+    return BookerCommonData::to_price(m_order->price_1000x());
 }
 
 liquibook::book::Quantity trade::booker::OrderWrapper::order_qty() const

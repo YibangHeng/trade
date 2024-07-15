@@ -185,8 +185,7 @@ void trade::OfflineBooker::load_tick(const std::string& path)
             time
         );
 
-        while (!m_pairs.push(std_tick))
-            ;
+        while (!m_pairs.push(std_tick));
     }
 }
 
@@ -247,7 +246,7 @@ trade::booker::OrderTickPtr trade::OfflineBooker::to_order_tick(StdTick* std_tic
     order_tick->set_order_type(std_tick->order_type);
     order_tick->set_symbol(std_tick->symbol);
     order_tick->set_side(to_side(std_tick->ask_unique_id, std_tick->bid_unique_id));
-    order_tick->set_price(std_tick->price);
+    order_tick->set_price_1000x(static_cast<int64_t>(std_tick->price * 1000));
     order_tick->set_quantity(std_tick->quantity);
     order_tick->set_exchange_time(to_exchange_time(std_tick->time));
 
@@ -264,7 +263,7 @@ trade::booker::TradeTickPtr trade::OfflineBooker::to_trade_tick(StdTick* std_tic
     trade_tick->set_ask_unique_id(std_tick->ask_unique_id);
     trade_tick->set_bid_unique_id(std_tick->bid_unique_id);
     trade_tick->set_symbol(std_tick->symbol);
-    trade_tick->set_exec_price(std_tick->price);
+    trade_tick->set_exec_price_1000x(static_cast<int64_t>(std_tick->price * 1000));
     trade_tick->set_exec_quantity(std_tick->quantity);
     trade_tick->set_exchange_time(to_exchange_time(std_tick->time));
 

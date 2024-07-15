@@ -90,7 +90,7 @@ void trade::reporter::ShmReporter::do_exchange_order_tick_report(const std::shar
         else
             m_order_tick_current->order_type = static_cast<OrderType>(order_tick->side());
         M_A {m_order_tick_current->symbol}      = order_tick->symbol();
-        m_order_tick_current->price             = order_tick->price();
+        m_order_tick_current->price_1000x       = order_tick->price_1000x();
         m_order_tick_current->quantity          = order_tick->quantity();
 
         m_order_tick_current->exhange_time      = REMOVE_DATE(order_tick->exchange_time());
@@ -119,7 +119,7 @@ void trade::reporter::ShmReporter::do_exchange_trade_tick_report(const std::shar
         m_trade_tick_current->ask_unique_id     = trade_tick->ask_unique_id();
         m_trade_tick_current->bid_unique_id     = trade_tick->bid_unique_id();
         M_A {m_trade_tick_current->symbol}      = trade_tick->symbol();
-        m_trade_tick_current->exec_price        = trade_tick->exec_price();
+        m_trade_tick_current->exec_price_1000x  = trade_tick->exec_price_1000x();
         m_trade_tick_current->exec_quantity     = trade_tick->exec_quantity();
 
         m_trade_tick_current->exchange_time     = REMOVE_DATE(trade_tick->exchange_time());
@@ -143,55 +143,55 @@ void trade::reporter::ShmReporter::do_l2_tick_report(const std::shared_ptr<types
     {
         boost::interprocess::scoped_lock lock(m_named_mutex);
 
-        m_l2_tick_current->shm_union_type    = shm_union_type;
+        m_l2_tick_current->shm_union_type      = shm_union_type;
 
-        M_A {m_l2_tick_current->symbol}      = l2_tick->symbol();
-        m_l2_tick_current->price             = l2_tick->price();
-        m_l2_tick_current->quantity          = static_cast<int32_t>(l2_tick->quantity());
+        M_A {m_l2_tick_current->symbol}        = l2_tick->symbol();
+        m_l2_tick_current->price_1000x         = l2_tick->price_1000x();
+        m_l2_tick_current->quantity            = static_cast<int32_t>(l2_tick->quantity());
 
-        m_l2_tick_current->sell_10.price     = l2_tick->sell_price_10();
-        m_l2_tick_current->sell_10.quantity  = l2_tick->sell_quantity_10();
-        m_l2_tick_current->sell_9.price      = l2_tick->sell_price_9();
-        m_l2_tick_current->sell_9.quantity   = l2_tick->sell_quantity_9();
-        m_l2_tick_current->sell_8.price      = l2_tick->sell_price_8();
-        m_l2_tick_current->sell_8.quantity   = l2_tick->sell_quantity_8();
-        m_l2_tick_current->sell_7.price      = l2_tick->sell_price_7();
-        m_l2_tick_current->sell_7.quantity   = l2_tick->sell_quantity_7();
-        m_l2_tick_current->sell_6.price      = l2_tick->sell_price_6();
-        m_l2_tick_current->sell_6.quantity   = l2_tick->sell_quantity_6();
-        m_l2_tick_current->sell_5.price      = l2_tick->sell_price_5();
-        m_l2_tick_current->sell_5.quantity   = l2_tick->sell_quantity_5();
-        m_l2_tick_current->sell_4.price      = l2_tick->sell_price_4();
-        m_l2_tick_current->sell_4.quantity   = l2_tick->sell_quantity_4();
-        m_l2_tick_current->sell_3.price      = l2_tick->sell_price_3();
-        m_l2_tick_current->sell_3.quantity   = l2_tick->sell_quantity_3();
-        m_l2_tick_current->sell_2.price      = l2_tick->sell_price_2();
-        m_l2_tick_current->sell_2.quantity   = l2_tick->sell_quantity_2();
-        m_l2_tick_current->sell_1.price      = l2_tick->sell_price_1();
-        m_l2_tick_current->sell_1.quantity   = l2_tick->sell_quantity_1();
-        m_l2_tick_current->buy_1.price       = l2_tick->buy_price_1();
-        m_l2_tick_current->buy_1.quantity    = l2_tick->buy_quantity_1();
-        m_l2_tick_current->buy_2.price       = l2_tick->buy_price_2();
-        m_l2_tick_current->buy_2.quantity    = l2_tick->buy_quantity_2();
-        m_l2_tick_current->buy_3.price       = l2_tick->buy_price_3();
-        m_l2_tick_current->buy_3.quantity    = l2_tick->buy_quantity_3();
-        m_l2_tick_current->buy_4.price       = l2_tick->buy_price_4();
-        m_l2_tick_current->buy_4.quantity    = l2_tick->buy_quantity_4();
-        m_l2_tick_current->buy_5.price       = l2_tick->buy_price_5();
-        m_l2_tick_current->buy_5.quantity    = l2_tick->buy_quantity_5();
-        m_l2_tick_current->buy_6.price       = l2_tick->buy_price_6();
-        m_l2_tick_current->buy_6.quantity    = l2_tick->buy_quantity_6();
-        m_l2_tick_current->buy_7.price       = l2_tick->buy_price_7();
-        m_l2_tick_current->buy_7.quantity    = l2_tick->buy_quantity_7();
-        m_l2_tick_current->buy_8.price       = l2_tick->buy_price_8();
-        m_l2_tick_current->buy_8.quantity    = l2_tick->buy_quantity_8();
-        m_l2_tick_current->buy_9.price       = l2_tick->buy_price_9();
-        m_l2_tick_current->buy_9.quantity    = l2_tick->buy_quantity_9();
-        m_l2_tick_current->buy_10.price      = l2_tick->buy_price_10();
-        m_l2_tick_current->buy_10.quantity   = l2_tick->buy_quantity_10();
+        m_l2_tick_current->sell_10.price_1000x = l2_tick->sell_price_1000x_10();
+        m_l2_tick_current->sell_10.quantity    = l2_tick->sell_quantity_10();
+        m_l2_tick_current->sell_9.price_1000x  = l2_tick->sell_price_1000x_9();
+        m_l2_tick_current->sell_9.quantity     = l2_tick->sell_quantity_9();
+        m_l2_tick_current->sell_8.price_1000x  = l2_tick->sell_price_1000x_8();
+        m_l2_tick_current->sell_8.quantity     = l2_tick->sell_quantity_8();
+        m_l2_tick_current->sell_7.price_1000x  = l2_tick->sell_price_1000x_7();
+        m_l2_tick_current->sell_7.quantity     = l2_tick->sell_quantity_7();
+        m_l2_tick_current->sell_6.price_1000x  = l2_tick->sell_price_1000x_6();
+        m_l2_tick_current->sell_6.quantity     = l2_tick->sell_quantity_6();
+        m_l2_tick_current->sell_5.price_1000x  = l2_tick->sell_price_1000x_5();
+        m_l2_tick_current->sell_5.quantity     = l2_tick->sell_quantity_5();
+        m_l2_tick_current->sell_4.price_1000x  = l2_tick->sell_price_1000x_4();
+        m_l2_tick_current->sell_4.quantity     = l2_tick->sell_quantity_4();
+        m_l2_tick_current->sell_3.price_1000x  = l2_tick->sell_price_1000x_3();
+        m_l2_tick_current->sell_3.quantity     = l2_tick->sell_quantity_3();
+        m_l2_tick_current->sell_2.price_1000x  = l2_tick->sell_price_1000x_2();
+        m_l2_tick_current->sell_2.quantity     = l2_tick->sell_quantity_2();
+        m_l2_tick_current->sell_1.price_1000x  = l2_tick->sell_price_1000x_1();
+        m_l2_tick_current->sell_1.quantity     = l2_tick->sell_quantity_1();
+        m_l2_tick_current->buy_1.price_1000x   = l2_tick->buy_price_1000x_1();
+        m_l2_tick_current->buy_1.quantity      = l2_tick->buy_quantity_1();
+        m_l2_tick_current->buy_2.price_1000x   = l2_tick->buy_price_1000x_2();
+        m_l2_tick_current->buy_2.quantity      = l2_tick->buy_quantity_2();
+        m_l2_tick_current->buy_3.price_1000x   = l2_tick->buy_price_1000x_3();
+        m_l2_tick_current->buy_3.quantity      = l2_tick->buy_quantity_3();
+        m_l2_tick_current->buy_4.price_1000x   = l2_tick->buy_price_1000x_4();
+        m_l2_tick_current->buy_4.quantity      = l2_tick->buy_quantity_4();
+        m_l2_tick_current->buy_5.price_1000x   = l2_tick->buy_price_1000x_5();
+        m_l2_tick_current->buy_5.quantity      = l2_tick->buy_quantity_5();
+        m_l2_tick_current->buy_6.price_1000x   = l2_tick->buy_price_1000x_6();
+        m_l2_tick_current->buy_6.quantity      = l2_tick->buy_quantity_6();
+        m_l2_tick_current->buy_7.price_1000x   = l2_tick->buy_price_1000x_7();
+        m_l2_tick_current->buy_7.quantity      = l2_tick->buy_quantity_7();
+        m_l2_tick_current->buy_8.price_1000x   = l2_tick->buy_price_1000x_8();
+        m_l2_tick_current->buy_8.quantity      = l2_tick->buy_quantity_8();
+        m_l2_tick_current->buy_9.price_1000x   = l2_tick->buy_price_1000x_9();
+        m_l2_tick_current->buy_9.quantity      = l2_tick->buy_quantity_9();
+        m_l2_tick_current->buy_10.price_1000x  = l2_tick->buy_price_1000x_10();
+        m_l2_tick_current->buy_10.quantity     = l2_tick->buy_quantity_10();
 
-        m_l2_tick_current->exchange_time      = REMOVE_DATE(l2_tick->exchange_time());
-        m_l2_tick_current->local_system_time = REMOVE_DATE(utilities::Now<int64_t>()());
+        m_l2_tick_current->exchange_time       = REMOVE_DATE(l2_tick->exchange_time());
+        m_l2_tick_current->local_system_time   = REMOVE_DATE(utilities::Now<int64_t>()());
 
         m_l2_tick_current++;
         m_l2_tick_mate_info->l2_tick_count++;
