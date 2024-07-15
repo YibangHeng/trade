@@ -63,6 +63,9 @@ private:
     void on_replace_reject(const OrderWrapperPtr& order, const char* reason) override;
 
 private:
+    OrderTickPtr create_virtual_order_tick(const TradeTickPtr& trade_tick);
+
+private:
     void generate_level_price();
 
 private:
@@ -81,6 +84,10 @@ private:
     /// Indicates if the book is in call auction stage or in continuous trade stage.
     bool m_in_continuous_stage;
     std::optional<MdValidator> m_md_validator;
+
+private:
+    /// Symbol -> remaining quantity of market order.
+    std::unordered_map<std::string, OrderTickPtr> m_market_order;
 
 private:
     std::shared_ptr<reporter::IReporter> m_reporter;
