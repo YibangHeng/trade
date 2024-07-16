@@ -208,7 +208,7 @@ trade::booker::TradeTickPtr trade::broker::CUTCommonData::x_ost_forward_to_trade
     trade_tick->set_ask_unique_id(order_tick->x_ost_sse_ask_unique_id());
     trade_tick->set_bid_unique_id(order_tick->x_ost_sse_bid_unique_id());
     trade_tick->set_symbol(order_tick->symbol());
-    trade_tick->set_exec_price(order_tick->price());
+    trade_tick->set_exec_price_1000x(order_tick->price_1000x());
     trade_tick->set_exec_quantity(order_tick->quantity());
     trade_tick->set_exchange_time(order_tick->exchange_time());
 
@@ -226,7 +226,7 @@ trade::booker::OrderTickPtr trade::broker::CUTCommonData::x_ost_forward_to_order
     order_tick->set_order_type(trade_tick->x_ost_szse_exe_type());
     order_tick->set_symbol(trade_tick->symbol());
     order_tick->set_side(types::SideType::invalid_side);
-    order_tick->set_price(trade_tick->exec_price());
+    order_tick->set_price_1000x(trade_tick->exec_price_1000x());
     order_tick->set_quantity(trade_tick->exec_quantity());
     order_tick->set_exchange_time(trade_tick->exchange_time());
 
@@ -236,14 +236,14 @@ trade::booker::OrderTickPtr trade::broker::CUTCommonData::x_ost_forward_to_order
     return order_tick;
 }
 
-double trade::broker::CUTCommonData::to_price_from_sse(const uint32_t order_price)
+int64_t trade::broker::CUTCommonData::to_price_from_sse(const uint32_t order_price)
 {
-    return order_price / 1000.;
+    return order_price / 1000;
 }
 
-double trade::broker::CUTCommonData::to_price_from_szse(const uint32_t exe_px)
+int64_t trade::broker::CUTCommonData::to_price_from_szse(const uint32_t exe_px)
 {
-    return exe_px / 10000.;
+    return exe_px / 10000;
 }
 
 int64_t trade::broker::CUTCommonData::to_quantity_from_sse(const uint32_t qty)
