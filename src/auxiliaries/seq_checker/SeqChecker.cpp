@@ -37,7 +37,7 @@ int trade::SeqChecker::run()
     const auto future = std::async(std::launch::async, [this, &folder] {
         /// Load all seq per channel.
         for (const auto& file : std::filesystem::directory_iterator(folder)) {
-            if (file.is_regular_file() && file.path().extension() == ".csv") {
+            if (file.is_regular_file() && file.path().filename() == "sse-tick.csv") {
                 load_seq(file.path().string());
                 logger->info("Loaded file {}", file.path().string());
 
