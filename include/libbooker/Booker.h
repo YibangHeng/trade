@@ -62,7 +62,8 @@ private:
     void on_replace_reject(const OrderWrapperPtr& order, const char* reason) override;
 
 private:
-    OrderTickPtr create_virtual_order_tick(const TradeTickPtr& trade_tick);
+    static OrderTickPtr create_virtual_sse_order_tick(const TradeTickPtr& trade_tick, types::SideType side);
+    OrderTickPtr create_virtual_szse_order_tick(const TradeTickPtr& trade_tick);
 
 private:
     void generate_level_price();

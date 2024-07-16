@@ -215,6 +215,9 @@ void trade::OfflineBooker::booker(StdTick* std_tick)
     }
 
     if (trade_tick != nullptr) {
+        if (trade_tick->exchange_time() >= 93000000) [[likely]]
+            m_booker->switch_to_continuous_stage();
+
         const auto verification_passed = m_booker->trade(trade_tick);
 
         if (!verification_passed) {

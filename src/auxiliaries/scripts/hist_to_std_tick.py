@@ -101,7 +101,6 @@ class ErrorType(Enum):
     NoFile = 1
     NoData = 2
     BadData = 3
-    IDMissing = 4
 
 
 def list_symbols(input_folder):
@@ -122,7 +121,6 @@ def convert(input_folder, output_folder, skip_converted = False):
     converted_list = []
     no_data_list = []
     bad_data_list = []
-    id_missing_list = []
 
     with ProcessPoolExecutor() as executor:
         future_to_symbol = {
@@ -141,12 +139,10 @@ def convert(input_folder, output_folder, skip_converted = False):
                     no_data_list.append(symbol_folder)
                 case ErrorType.BadData:
                     bad_data_list.append(symbol_folder)
-                case ErrorType.IDMissing:
-                    id_missing_list.append(symbol_folder)
                 case _:
                     pass
 
-    return converted_list, no_data_list, bad_data_list, id_missing_list
+    return converted_list, no_data_list, bad_data_list
 
 
 def do_convert(input_folder, symbol_folder, output_folder, skip_converted):
@@ -179,18 +175,11 @@ def convert_sse(input_folder, symbol_folder, output_folder):
         logging.warning(f"No data for symbol {symbol_folder}, skipped")
         return ErrorType.NoData
 
-    ask_unique_id_diff, bid_unique_id_diff = check_sse_id(od, td)
+    check_sse_id(od, td)
 
     std_tick = join_to_std_tick(od, td)
 
     std_tick.to_csv(os.path.join(output_folder, f"{symbol_folder}-std-tick.csv"), index = False)
-
-    if len(ask_unique_id_diff) > 0:
-        logging.error(f"For {symbol_folder}, ask_unique_id in td but not in od: {ask_unique_id_diff}")
-        return ErrorType.IDMissing
-    if len(bid_unique_id_diff) > 0:
-        logging.error(f"For {symbol_folder}, bid_unique_id in td but not in od: {bid_unique_id_diff}")
-        return ErrorType.IDMissing
 
     logging.info(f"Saved {symbol_folder}'s std tick in file {os.path.join(output_folder, symbol_folder)}-std-tick.csv")
 
@@ -261,7 +250,6 @@ def convert_sse_td(input_file):
 
     td.rename(
         columns = {
-            "成交编号"  : "index",
             "交易所代码": "symbol",
             "叫卖序号"  : "ask_unique_id",
             "叫买序号"  : "bid_unique_id",
@@ -273,6 +261,7 @@ def convert_sse_td(input_file):
         inplace = True,
     )
 
+    td["index"] = td.apply(lambda x: max(x["ask_unique_id"], x["bid_unique_id"]), axis = 1)
     td["symbol"] = td["symbol"].apply(lambda x: f"{x:06d}")
     td["order_type"] = "T"
     td["price"] = td["price"].apply(lambda x: float(x) / 10000)
@@ -306,18 +295,11 @@ def convert_szse(input_folder, symbol_folder, output_folder):
         logging.warning(f"No data for symbol {symbol_folder}, skipped")
         return False
 
-    ask_unique_id_diff, bid_unique_id_diff = check_sse_id(od, td)
+    check_sse_id(od, td)
 
     std_tick = join_to_std_tick(od, td)
 
     std_tick.to_csv(os.path.join(output_folder, f"{symbol_folder}-std-tick.csv"), index = False)
-
-    if len(ask_unique_id_diff) > 0:
-        logging.error(f"For {symbol_folder}, ask_unique_id in td but not in od: {ask_unique_id_diff}")
-        return ErrorType.IDMissing
-    if len(bid_unique_id_diff) > 0:
-        logging.error(f"For {symbol_folder}, bid_unique_id in td but not in od: {bid_unique_id_diff}")
-        return ErrorType.IDMissing
 
     logging.info(f"Saved {symbol_folder}'s std tick in file {os.path.join(output_folder, symbol_folder)}-std-tick.csv")
 
@@ -439,8 +421,23 @@ def check_sse_id(od, td):
 def join_to_std_tick(od, td):
     std_tick = pd.concat([od, td])
 
-    # Sort by time.
-    std_tick = std_tick.sort_values(by = "index", ascending = True, kind = "mergesort")
+    # Trade -> Limit -> Cancel.
+    custom_order = {'T': 1, 'L': 2, 'C': 3}
+
+    def order_type_sorter(order_type):
+        return order_type.map(custom_order)
+
+    # Sort by time, index, and order_type.
+    std_tick = std_tick.sort_values(
+        by = "order_type",
+        key = order_type_sorter,
+        kind = "mergesort"
+    )
+    std_tick = std_tick.sort_values(
+        by = ["time", "index"],
+        ascending = [True, True],
+        kind = "mergesort"
+    )
 
     logging.debug(f"\n{std_tick}")
 
@@ -508,18 +505,12 @@ if __name__ == "__main__":
     if not os.path.exists(args.output_folder):
         os.mkdir(os.path.join(args.output_folder))
 
-    (converted_list,
-     no_data_list,
-     bad_data_list,
-     id_missing_list) = convert(args.input_folder, args.output_folder, args.skip_converted)
+    (converted_list, no_data_list, bad_data_list) = convert(args.input_folder, args.output_folder, args.skip_converted)
 
     if len(no_data_list) > 0:
         logging.warning(f"{len(no_data_list)} symbols are not converted because of no data: {no_data_list}")
 
     if len(bad_data_list) > 0:
         logging.warning(f"{len(bad_data_list)} symbols are not converted because of bad data: {bad_data_list}")
-
-    if len(id_missing_list) > 0:
-        logging.warning(f"{len(id_missing_list)} symbols are not converted because of missing unique id: {id_missing_list}")
 
     logging.info(f"Converted {len(converted_list)} symbols in {datetime.datetime.now() - now}")

@@ -77,10 +77,13 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
 
 bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
 {
-    /// If trade arrived while a remained market order exists.
+    /// If trade arrived while a remained market order exists (for SZSE).
     if (m_market_order.contains(trade_tick->symbol())) {
-        /// Create a vritaul limit order for this market order.
-        const auto order_tick = create_virtual_order_tick(trade_tick);
+        /// Create a virtual limit order for this market order.
+        const auto order_tick = create_virtual_szse_order_tick(trade_tick);
+
+        if (order_tick == nullptr)
+            return false;
 
         logger->debug("Created virtual limit order {} for trade tick: {}", utilities::ToJSON()(*order_tick), utilities::ToJSON()(*trade_tick));
 
@@ -119,6 +122,40 @@ bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         return true;
     }
 
+    /// If trade arrived while no order for this trade exists (for SSE).
+    if (!m_orders.contains(trade_tick->ask_unique_id())) {
+        /// Create a virtual limit order for this trade.
+        const auto order_tick = create_virtual_sse_order_tick(trade_tick, types::SideType::sell);
+
+        if (order_tick == nullptr)
+            return false;
+
+        logger->debug("Created virtual limit order {} for trade tick: {}", utilities::ToJSON()(*order_tick), utilities::ToJSON()(*trade_tick));
+
+        add(order_tick);
+
+        m_orders.erase(trade_tick->ask_unique_id());
+
+        return true;
+    }
+
+    /// If trade arrived while no order for this trade exists (for SSE).
+    if (!m_orders.contains(trade_tick->bid_unique_id())) {
+        /// Create a virtual limit order for this trade.
+        const auto order_tick = create_virtual_sse_order_tick(trade_tick, types::SideType::buy);
+
+        if (order_tick == nullptr)
+            return false;
+
+        logger->debug("Created virtual limit order {} for trade tick: {}", utilities::ToJSON()(*order_tick), utilities::ToJSON()(*trade_tick));
+
+        add(order_tick);
+
+        m_orders.erase(trade_tick->bid_unique_id());
+
+        return true;
+    }
+
     if (m_md_validator.has_value() && !m_md_validator.value().check(trade_tick)) {
         logger->error("Verification failed for trade tick: {}", utilities::ToJSON()(*trade_tick));
         return false;
@@ -131,6 +168,8 @@ void trade::booker::Booker::switch_to_continuous_stage()
 {
     if (m_in_continuous_stage) [[likely]]
         return;
+
+    logger->info("Switching to continuous trade stage at {}", utilities::Now<std::string>()());
 
     /// Move all unfinished orders from call auction stage to continuous trade stage.
     for (auto& [symbol, call_auction_holder] : m_call_auction_holders) {
@@ -241,6 +280,7 @@ void trade::booker::Booker::on_fill(
 void trade::booker::Booker::on_cancel_reject(const OrderWrapperPtr& order, const char* reason)
 {
     logger->error("Cancel for {} was rejected: {}", order->unique_id(), reason);
+    return;
 }
 
 void trade::booker::Booker::on_replace_reject(const OrderWrapperPtr& order, const char* reason)
@@ -248,8 +288,39 @@ void trade::booker::Booker::on_replace_reject(const OrderWrapperPtr& order, cons
     logger->error("Replace for {} was rejected: {}", order->unique_id(), reason);
 }
 
-trade::booker::OrderTickPtr trade::booker::Booker::create_virtual_order_tick(const TradeTickPtr& trade_tick)
+trade::booker::OrderTickPtr trade::booker::Booker::create_virtual_sse_order_tick(const TradeTickPtr& trade_tick, const types::SideType side)
 {
+    auto order_tick = std::make_shared<types::OrderTick>();
+
+    switch (side) {
+    case types::SideType::buy: {
+        order_tick->set_unique_id(trade_tick->bid_unique_id());
+        break;
+    }
+    case types::SideType::sell: {
+        order_tick->set_unique_id(trade_tick->ask_unique_id());
+        break;
+    }
+    default: {
+        return nullptr;
+    }
+    }
+
+    order_tick->set_order_type(types::OrderType::limit);
+    order_tick->set_symbol(trade_tick->symbol());
+    order_tick->set_side(side);
+    order_tick->set_price_1000x(trade_tick->exec_price_1000x());
+    order_tick->set_quantity(trade_tick->exec_quantity());
+    order_tick->set_exchange_time(trade_tick->exchange_time());
+
+    return order_tick;
+}
+
+trade::booker::OrderTickPtr trade::booker::Booker::create_virtual_szse_order_tick(const TradeTickPtr& trade_tick)
+{
+    if (!m_market_order.contains(trade_tick->symbol()))
+        return nullptr;
+
     auto order_tick = std::make_shared<types::OrderTick>();
 
     order_tick->set_unique_id(m_market_order[trade_tick->symbol()]->unique_id());

@@ -2,7 +2,7 @@
 
 #include "libbooker/Booker.h"
 #include "libreporter/NopReporter.hpp"
-#include "utilities/OrderCreator.hpp"
+#include "utilities/TickCreator.hpp"
 
 class SeqChecker final: public trade::reporter::NopReporter
 {
