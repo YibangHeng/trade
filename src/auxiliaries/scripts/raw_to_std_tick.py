@@ -113,7 +113,7 @@ def convert_sse(tick_file, output_folder):
                         + std_tick["time"].astype(str).str.zfill(8))
     std_tick["price"] = std_tick["price"].apply(lambda x: float(x) / 1000)
     std_tick["quantity"] = std_tick["quantity"].apply(lambda x: int(int(x) / 1000))
-    
+
     std_tick.dropna(subset = ["order_type"], inplace = True)
 
     std_tick = std_tick[
@@ -134,6 +134,8 @@ def convert_sse(tick_file, output_folder):
     for symbol, group in grouped:
         group.to_csv(os.path.join(output_folder, f"{symbol}-std-tick.csv"), index = False)
         logging.info(f"Saved sse's std tick in file {os.path.join(output_folder, f'{symbol}-std-tick.csv')}")
+
+    calculate_quantity(std_tick, output_folder)
 
     return True
 
@@ -157,6 +159,8 @@ def convert_szse(order_file, trade_file, output_folder):
         group.to_csv(os.path.join(output_folder, f"{symbol}-std-tick.csv"), index = False)
         logging.info(f"Saved szse's std tick in file {os.path.join(output_folder, f'{symbol}-std-tick.csv')}")
 
+    calculate_quantity(std_tick, output_folder)
+
     return True
 
 
@@ -171,7 +175,6 @@ def convert_szse_od(order_file):
     od.rename(
         columns = {
             "sequence"         : "index",
-            "order_type"       : "order_type",
             "px"               : "price",
             "qty"              : "quantity",
             "quote_update_time": "time",
@@ -182,7 +185,7 @@ def convert_szse_od(order_file):
     od["symbol"] = od["symbol"].apply(lambda x: f"{x:06d}")
     od["ask_unique_id"] = np.where(od["side"] == 2, od["index"], 0)
     od["bid_unique_id"] = np.where(od["side"] == 1, od["index"], 0)
-    od["order_type"] = od["order_type"].map({2: "L", 1: "M", "U": "B"})
+    od["order_type"] = od["order_type"].map({"2": "L", "1": "M", "U": "B"})
     od["price"] = od["price"].apply(lambda x: float(x) / 10000)
     od["quantity"] = od["quantity"].apply(lambda x: int(int(x) / 100))
 
@@ -226,7 +229,7 @@ def convert_szse_td(trade_file):
     )
 
     td["symbol"] = td["symbol"].apply(lambda x: f"{x:06d}")
-    td["order_type"] = td["order_type"].map({"F": "T", 4: "C"})
+    td["order_type"] = td["order_type"].map({"F": "T", "4": "C"})
     td["price"] = td["price"].apply(lambda x: float(x) / 10000)
     td["quantity"] = td["quantity"].apply(lambda x: int(int(x) / 100))
 
@@ -261,6 +264,19 @@ def join_to_std_tick(od, td):
     logging.debug(f"\n{std_tick}")
 
     return std_tick
+
+
+def calculate_quantity(std_tick, output_folder):
+    traded_tick = std_tick[std_tick["order_type"] == "T"]
+
+    traded_tick.loc[:, "quantity"] = traded_tick.groupby(["symbol"])["quantity"].transform(lambda x: x.cumsum())
+
+    traded_tick = traded_tick.groupby("symbol").first().reset_index()
+
+    traded_tick = traded_tick[["symbol", "quantity"]]
+
+    output_path = os.path.join(output_folder, "quantity.csv")
+    traded_tick.to_csv(output_path, index = False, mode = 'a', header = not os.path.exists(output_path))
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ def connect_to_sql(host, user, password, database):
 
 def traded_volume_from_wind(date, engine):
     return pd.read_sql(
-        f"SELECT S_INFO_WINDCODE, S_DQ_VOLUME FROM `AShareEODPrices` WHERE TRADE_DT = '{date}'",
+        f"SELECT S_INFO_WINDCODE, S_DQ_VOLUME FROM `AShareEODPrices` WHERE S_DQ_VOLUME > 0 AND TRADE_DT = '{date}'",
         engine
     )
 
@@ -74,7 +74,6 @@ if __name__ == "__main__":
     )
 
     engine = connect_to_sql(args.host, args.user, args.password, args.database)
-
 
     if args.date:
         df = traded_volume_from_wind(args.date, engine)
