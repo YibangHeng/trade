@@ -73,8 +73,8 @@ void trade::reporter::ShmReporter::do_exchange_order_tick_report(const std::shar
 {
     /// Check if shared memory is full.
     if (m_order_tick_current - m_order_tick_start > m_order_tick_region->get_size() / sizeof(OrderTick)) {
-        logger->error("Shared memory of tick is full");
-        return;
+        logger->warn("Shared memory of tick is full");
+        m_order_tick_current = m_order_tick_start;
     }
 
     /// Writing scope.
@@ -106,8 +106,8 @@ void trade::reporter::ShmReporter::do_exchange_trade_tick_report(const std::shar
 {
     /// Check if shared memory is full.
     if (m_trade_tick_current - m_trade_tick_start > m_trade_tick_region->get_size() / sizeof(TradeTick)) {
-        logger->error("Shared memory of tick is full");
-        return;
+        logger->warn("Shared memory of tick is full");
+        m_trade_tick_current = m_trade_tick_start;
     }
 
     /// Writing scope.
@@ -135,8 +135,8 @@ void trade::reporter::ShmReporter::do_l2_tick_report(const std::shared_ptr<types
 {
     /// Check if shared memory is full.
     if (m_l2_tick_current - m_l2_tick_start > m_l2_tick_region->get_size() / sizeof(L2Tick)) {
-        logger->error("Shared memory of l2 tick is full");
-        return;
+        logger->warn("Shared memory of tick is full");
+        m_l2_tick_current = m_l2_tick_start;
     }
 
     /// Writing scope.
