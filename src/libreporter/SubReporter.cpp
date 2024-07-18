@@ -39,7 +39,7 @@ trade::reporter::SubReporter::~SubReporter()
     m_event_loop_future.wait();
 }
 
-void trade::reporter::SubReporter::l2_tick_generated(const std::shared_ptr<types::L2Tick> l2_tick)
+void trade::reporter::SubReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::L2Tick> l2_tick)
 {
     for (const auto& [conn, symbols] : m_app_id_to_symbols) {
         if (symbols.contains(l2_tick->symbol())) {

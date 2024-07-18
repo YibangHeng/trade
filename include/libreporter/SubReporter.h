@@ -25,7 +25,7 @@ public:
 
     /// Market data.
 public:
-    void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick) override;
+    void exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick) override;
 
 private:
     void on_connected(const muduo::net::TcpConnectionPtr& conn);
