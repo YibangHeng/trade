@@ -1,7 +1,6 @@
 #pragma once
 
 #include <atomic>
-#include <boost/lockfree/spsc_queue.hpp>
 #include <boost/program_options.hpp>
 #include <fast-cpp-csv-parser/csv.h>
 
@@ -26,16 +25,12 @@ private:
     bool argv_parse(int argc, char* argv[]);
 
 private:
-    /// TODO: Make it configurable.
-    using MessageBufferType = boost::lockfree::spsc_queue<std::vector<u_char>*, boost::lockfree::capacity<10000000>>;
-
     void tick_receiver(
         const std::string& address,
-        const std::string& interface_address,
-        MessageBufferType& message_buffer
-    ) const;
+        const std::string& interface_address
+    );
 
-    void writer(MessageBufferType& message_buffer);
+    void writer(const std::vector<u_char>& message);
 
     void write_sse_tick(const std::vector<u_char>& message);
     void write_sse_l2_snap(const std::vector<u_char>& message);
@@ -60,8 +55,6 @@ private:
 
     /// Symbol -> ofstream.
 private:
-    std::vector<std::unique_ptr<MessageBufferType>> m_message_buffers;
-
     std::ofstream m_sse_tick_writer;
     std::ofstream m_sse_l2_snap_writer;
 

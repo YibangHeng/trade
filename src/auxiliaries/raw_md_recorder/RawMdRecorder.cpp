@@ -69,15 +69,8 @@ int trade::RawMdRecorder::run()
 
     std::vector<std::thread> threads;
 
-    /// Ensure that m_message_buffers does not undergo resizing.
-    /// TODO: Is it necessary?
-    m_message_buffers.reserve(addresses.size());
-
     for (const auto& address : addresses) {
-        auto& message_buffer = m_message_buffers.emplace_back(new MessageBufferType);
-
-        threads.emplace_back(&RawMdRecorder::writer, this, std::ref(*message_buffer));
-        threads.emplace_back(&RawMdRecorder::tick_receiver, this, address, m_arguments["interface-address"].as<std::string>(), std::ref(*message_buffer));
+        threads.emplace_back(&RawMdRecorder::tick_receiver, this, address, m_arguments["interface-address"].as<std::string>());
     }
 
     for (auto& thread : threads)
@@ -172,60 +165,38 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
 
 void trade::RawMdRecorder::tick_receiver(
     const std::string& address,
-    const std::string& interface_address,
-    MessageBufferType& message_buffer
-) const
+    const std::string& interface_address
+)
 {
     const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
     utilities::MCClient<broker::max_udp_size> client(multicast_ip, multicast_port, interface_address);
 
     logger->info("Joined multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
 
-    /// Use raw pointer for acceleration.
-    /// The message will be deleted in @writer.
-    /// TODO: Use memory pool to implement this.
-    auto message = new std::vector<u_char>(broker::max_udp_size);
+    std::vector<u_char> message(broker::max_udp_size);
 
     while (m_is_running) {
-        if (!message->empty()) /// For reducing usage of new.
-            message = new std::vector<u_char>(broker::max_udp_size);
-
-        client.receive(*message);
+        client.receive(message);
 
         /// Non-blocking receiver may return empty data.
-        if (message->empty())
+        if (message.empty())
             continue;
 
-        while (!message_buffer.push(message)) {
-            if (!m_is_running) [[unlikely]]
-                break;
-
-            logger->warn("Message buffer is full, which may cause data dropping");
-        }
+        writer(message);
     }
 
     logger->info("Left multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
 }
 
-void trade::RawMdRecorder::writer(MessageBufferType& message_buffer)
+void trade::RawMdRecorder::writer(const std::vector<u_char>& message)
 {
-    while (m_is_running) {
-        std::vector<u_char>* message;
-
-        if (!message_buffer.pop(message))
-            continue;
-
-        switch (message->size()) {
-        case sizeof(broker::SSEHpfTick): write_sse_tick(*message); break;
-        case sizeof(broker::SSEHpfL2Snap): write_sse_l2_snap(*message); break;
-        case sizeof(broker::SZSEHpfOrderTick): write_szse_order_tick(*message); break;
-        case sizeof(broker::SZSEHpfTradeTick): write_szse_trade_tick(*message); break;
-        case sizeof(broker::SZSEHpfL2Snap): write_szse_l2_snap(*message); break;
-        default: break;
-        }
-
-        /// We need delete message manually.
-        delete message;
+    switch (message.size()) {
+    case sizeof(broker::SSEHpfTick): write_sse_tick(message); break;
+    case sizeof(broker::SSEHpfL2Snap): write_sse_l2_snap(message); break;
+    case sizeof(broker::SZSEHpfOrderTick): write_szse_order_tick(message); break;
+    case sizeof(broker::SZSEHpfTradeTick): write_szse_trade_tick(message); break;
+    case sizeof(broker::SZSEHpfL2Snap): write_szse_l2_snap(message); break;
+    default: break;
     }
 }
 
