@@ -269,9 +269,7 @@ def join_to_std_tick(od, td):
 def calculate_quantity(std_tick, output_folder):
     traded_tick = std_tick[std_tick["order_type"] == "T"]
 
-    traded_tick.loc[:, "quantity"] = traded_tick.groupby(["symbol"])["quantity"].transform(lambda x: x.cumsum())
-
-    traded_tick = traded_tick.groupby("symbol").first().reset_index()
+    traded_tick = traded_tick.groupby("symbol")["quantity"].sum().reset_index()
 
     traded_tick = traded_tick[["symbol", "quantity"]]
 
