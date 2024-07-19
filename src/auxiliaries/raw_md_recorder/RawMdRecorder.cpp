@@ -6,7 +6,6 @@
 #include "info.h"
 #include "libbooker/BookerCommonData.h"
 #include "libbroker/CUTImpl/CUTCommonData.h"
-#include "libbroker/CUTImpl/RawStructure.h"
 #include "utilities/AddressHelper.hpp"
 #include "utilities/MakeAssignable.hpp"
 #include "utilities/NetworkHelper.hpp"
@@ -69,12 +68,7 @@ int trade::RawMdRecorder::run()
 
     std::vector<std::thread> threads;
 
-    for (const auto& address : addresses) {
-        threads.emplace_back(&RawMdRecorder::tick_receiver, this, address, m_arguments["interface-address"].as<std::string>());
-    }
-
-    for (auto& thread : threads)
-        thread.join();
+    tick_receiver();
 
     logger->info("App exited with code {}", m_exit_code.load());
 
@@ -87,7 +81,7 @@ int trade::RawMdRecorder::stop(int signal)
 
     m_is_running = false;
 
-    return 0;
+    exit(0);
 }
 
 void trade::RawMdRecorder::signal(const int signal)
@@ -116,11 +110,6 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
     desc.add_options()("version,v", "print version string and exit");
 
     desc.add_options()("debug,d", "enable debug output");
-
-    /// Multicast addresses.
-    const std::vector<std::string> default_addresses = {"239.255.255.255:5555"};
-    desc.add_options()("addresses,a", boost::program_options::value<std::vector<std::string>>()->default_value(default_addresses, "239.255.255.255:5555")->multitoken(), "multicast addresses");
-    desc.add_options()("interface-address,i", boost::program_options::value<std::string>()->default_value("0.0.0.0"), "local interface address");
 
     /// Output folder.
     desc.add_options()("output-folder,o", boost::program_options::value<std::string>()->default_value("./output"), "folder to store output files");
@@ -163,49 +152,54 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
     return true;
 }
 
-void trade::RawMdRecorder::tick_receiver(
-    const std::string& address,
-    const std::string& interface_address
-)
+void trade::RawMdRecorder::tick_receiver()
 {
-    const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
-    utilities::MCClient<broker::max_udp_size> client(multicast_ip, multicast_port, interface_address);
+    std::ignore = std::freopen(nullptr, "rb", stdin);
 
-    logger->info("Joined multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
-
-    std::vector<u_char> message(broker::max_udp_size);
+    std::array<char, broker::max_udp_size> message {};
+    std::streamsize bytes_read = 0;
 
     while (m_is_running) {
-        client.receive(message);
+        /// Read header for message type first.
+        std::cin.read(message.data(), broker::message_type_viewer_size);
+        bytes_read = std::cin.gcount();
 
-        /// Non-blocking receiver may return empty data.
-        if (message.empty())
-            continue;
+        if (bytes_read != broker::message_type_viewer_size)
+            return;
 
-        writer(message);
+        const auto sse_hpf_package_head = reinterpret_cast<const broker::MessageTypeViewer*>(message.data());
+
+        switch (sse_hpf_package_head->m_message_type) {
+        case broker::sse_hpf_tick_type: std::cin.read(message.data() + broker::message_type_viewer_size, broker::sse_hpf_tick_size - broker::message_type_viewer_size); break;
+        case broker::sse_hpf_l2_snap_type: std::cin.read(message.data() + broker::message_type_viewer_size, broker::sse_hpf_l2_snap_size - broker::message_type_viewer_size); break;
+        case broker::szse_hpf_order_tick_type: std::cin.read(message.data() + broker::message_type_viewer_size, broker::szse_hpf_order_tick_size - broker::message_type_viewer_size); break;
+        case broker::szse_hpf_trade_tick_type: std::cin.read(message.data() + broker::message_type_viewer_size, broker::szse_hpf_trade_tick_size - broker::message_type_viewer_size); break;
+        case broker::szse_hpf_l2_snap_type: std::cin.read(message.data() + broker::message_type_viewer_size, broker::szse_hpf_l2_snap_size - broker::message_type_viewer_size); break;
+        default: break;
+        }
+
+        writer(message, sse_hpf_package_head->m_message_type);
     }
-
-    logger->info("Left multicast group {}:{} at {}", multicast_ip, multicast_port, interface_address);
 }
 
-void trade::RawMdRecorder::writer(const std::vector<u_char>& message)
+void trade::RawMdRecorder::writer(const std::array<char, broker::max_udp_size>& message, const uint8_t message_type)
 {
-    switch (message.size()) {
-    case sizeof(broker::SSEHpfTick): write_sse_tick(message); break;
-    case sizeof(broker::SSEHpfL2Snap): write_sse_l2_snap(message); break;
-    case sizeof(broker::SZSEHpfOrderTick): write_szse_order_tick(message); break;
-    case sizeof(broker::SZSEHpfTradeTick): write_szse_trade_tick(message); break;
-    case sizeof(broker::SZSEHpfL2Snap): write_szse_l2_snap(message); break;
+    switch (message_type) {
+    case broker::sse_hpf_tick_type: write_sse_tick(message); break;
+    case broker::sse_hpf_l2_snap_type: write_sse_l2_snap(message); break;
+    case broker::szse_hpf_order_tick_type: write_szse_order_tick(message); break;
+    case broker::szse_hpf_trade_tick_type: write_szse_trade_tick(message); break;
+    case broker::szse_hpf_l2_snap_type: write_szse_l2_snap(message); break;
     default: break;
     }
 }
 
-void trade::RawMdRecorder::write_sse_tick(const std::vector<u_char>& message)
+void trade::RawMdRecorder::write_sse_tick(const std::array<char, broker::max_udp_size>& message)
 {
     const auto sse_tick = reinterpret_cast<const broker::SSEHpfTick*>(message.data());
 
     m_sse_tick_writer << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         /// SSEHpfPackageHead.
         sse_tick->m_head.m_seq_num,
         sse_tick->m_head.m_msg_type,
@@ -232,18 +226,16 @@ void trade::RawMdRecorder::write_sse_tick(const std::vector<u_char>& message)
         sse_tick->m_qty,
         sse_tick->m_trade_money,
         sse_tick->m_side_flag,
-        sse_tick->m_instrument_status,
-        /// Time.
-        utilities::Now<std::string>()()
+        sse_tick->m_instrument_status
     );
 }
 
-void trade::RawMdRecorder::write_sse_l2_snap(const std::vector<u_char>& message)
+void trade::RawMdRecorder::write_sse_l2_snap(const std::array<char, broker::max_udp_size>& message)
 {
     const auto sse_l2_snap = reinterpret_cast<const broker::SSEHpfL2Snap*>(message.data());
 
     m_sse_l2_snap_writer << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         /// SSEHpfPackageHead.
         sse_l2_snap->m_head.m_seq_num,
         sse_l2_snap->m_head.m_msg_type,
@@ -318,18 +310,16 @@ void trade::RawMdRecorder::write_sse_l2_snap(const std::vector<u_char>& message)
         sse_l2_snap->m_ask_px[8].m_px,
         sse_l2_snap->m_ask_px[8].m_qty,
         sse_l2_snap->m_ask_px[9].m_px,
-        sse_l2_snap->m_ask_px[9].m_qty,
-        /// Time.
-        utilities::Now<std::string>()()
+        sse_l2_snap->m_ask_px[9].m_qty
     );
 }
 
-void trade::RawMdRecorder::write_szse_order_tick(const std::vector<u_char>& message)
+void trade::RawMdRecorder::write_szse_order_tick(const std::array<char, broker::max_udp_size>& message)
 {
     const auto szse_order_tick = reinterpret_cast<const broker::SZSEHpfOrderTick*>(message.data());
 
     m_szse_order_writer << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         /// SZSEHpfPackageHead.
         szse_order_tick->m_header.m_sequence,
         szse_order_tick->m_header.m_tick1,
@@ -347,18 +337,16 @@ void trade::RawMdRecorder::write_szse_order_tick(const std::vector<u_char>& mess
         szse_order_tick->m_px,
         szse_order_tick->m_qty,
         szse_order_tick->m_side,
-        szse_order_tick->m_order_type,
-        /// Time.
-        utilities::Now<std::string>()()
+        szse_order_tick->m_order_type
     );
 }
 
-void trade::RawMdRecorder::write_szse_trade_tick(const std::vector<u_char>& message)
+void trade::RawMdRecorder::write_szse_trade_tick(const std::array<char, broker::max_udp_size>& message)
 {
     const auto szse_trade_tick = reinterpret_cast<const broker::SZSEHpfTradeTick*>(message.data());
 
     m_szse_trade_writer << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         /// SZSEHpfPackageHead.
         szse_trade_tick->m_header.m_sequence,
         szse_trade_tick->m_header.m_tick1,
@@ -377,18 +365,16 @@ void trade::RawMdRecorder::write_szse_trade_tick(const std::vector<u_char>& mess
         szse_trade_tick->m_ask_app_seq_num,
         szse_trade_tick->m_exe_px,
         szse_trade_tick->m_exe_qty,
-        szse_trade_tick->m_exe_type,
-        /// Time.
-        utilities::Now<std::string>()()
+        szse_trade_tick->m_exe_type
     );
 }
 
-void trade::RawMdRecorder::write_szse_l2_snap(const std::vector<u_char>& message)
+void trade::RawMdRecorder::write_szse_l2_snap(const std::array<char, broker::max_udp_size>& message)
 {
     const auto szse_l2_snap = reinterpret_cast<const broker::SZSEHpfL2Snap*>(message.data());
 
     m_szse_l2_snap_writer << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         /// SZSEHpfPackageHead.
         szse_l2_snap->m_header.m_sequence,
         szse_l2_snap->m_header.m_tick1,
@@ -461,9 +447,7 @@ void trade::RawMdRecorder::write_szse_l2_snap(const std::vector<u_char>& message
         szse_l2_snap->m_ask_unit[8].m_price,
         szse_l2_snap->m_ask_unit[8].m_qty,
         szse_l2_snap->m_ask_unit[9].m_price,
-        szse_l2_snap->m_ask_unit[9].m_qty,
-        /// Time.
-        utilities::Now<std::string>()()
+        szse_l2_snap->m_ask_unit[9].m_qty
     );
 }
 
@@ -504,9 +488,7 @@ void trade::RawMdRecorder::new_sse_tick_writer()
         << "qty,"
         << "trade_money,"
         << "side_flag,"
-        << "instrument_status,"
-        /// Time.
-        << "time"
+        << "instrument_status"
         << std::endl;
 }
 
@@ -595,9 +577,7 @@ void trade::RawMdRecorder::new_sse_l2_snap_writer()
         << "ask_px_9,"
         << "ask_volume_9,"
         << "ask_px_10,"
-        << "ask_volume_10,"
-        /// Time.
-        << "time"
+        << "ask_volume_10"
         << std::endl;
 }
 
@@ -629,9 +609,7 @@ void trade::RawMdRecorder::new_szse_order_writer()
         << "px,"
         << "qty,"
         << "side,"
-        << "order_type,"
-        /// Time.
-        << "time"
+        << "order_type"
         << std::endl;
 }
 
@@ -664,7 +642,7 @@ void trade::RawMdRecorder::new_szse_trade_writer()
         << "ask_app_seq_num,"
         << "exe_px,"
         << "exe_qty,"
-        << "exe_type,"
+        << "exe_type"
         /// Time.
         << "time"
         << std::endl;
@@ -753,9 +731,7 @@ void trade::RawMdRecorder::new_szse_l2_snap_writer()
         << "ask_9_px,"
         << "ask_9_qty,"
         << "ask_10_px,"
-        << "ask_10_qty,"
-        /// Time.
-        << "time"
+        << "ask_10_qty"
         << std::endl;
 }
 

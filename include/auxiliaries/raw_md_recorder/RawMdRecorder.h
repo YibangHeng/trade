@@ -6,6 +6,7 @@
 
 #include "AppBase.hpp"
 #include "visibility.h"
+#include "libbroker/CUTImpl/RawStructure.h"
 
 namespace trade
 {
@@ -25,19 +26,16 @@ private:
     bool argv_parse(int argc, char* argv[]);
 
 private:
-    void tick_receiver(
-        const std::string& address,
-        const std::string& interface_address
-    );
+    void tick_receiver();
 
-    void writer(const std::vector<u_char>& message);
+    void writer(const std::array<char, broker::max_udp_size>& message, uint8_t message_type);
 
-    void write_sse_tick(const std::vector<u_char>& message);
-    void write_sse_l2_snap(const std::vector<u_char>& message);
+    void write_sse_tick(const std::array<char, broker::max_udp_size>& message);
+    void write_sse_l2_snap(const std::array<char, broker::max_udp_size>& message);
 
-    void write_szse_order_tick(const std::vector<u_char>& message);
-    void write_szse_trade_tick(const std::vector<u_char>& message);
-    void write_szse_l2_snap(const std::vector<u_char>& message);
+    void write_szse_order_tick(const std::array<char, broker::max_udp_size>& message);
+    void write_szse_trade_tick(const std::array<char, broker::max_udp_size>& message);
+    void write_szse_l2_snap(const std::array<char, broker::max_udp_size>& message);
 
     void new_sse_tick_writer();
     void new_sse_l2_snap_writer();
