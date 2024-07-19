@@ -57,8 +57,6 @@ int trade::RawMdRecorder::run()
         return m_exit_code;
     }
 
-    const auto addresses = m_arguments["addresses"].as<std::vector<std::string>>();
-
     new_sse_tick_writer();
     new_sse_l2_snap_writer();
 
