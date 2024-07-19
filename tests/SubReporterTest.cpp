@@ -18,7 +18,7 @@ public:
     {
         muduo::Logger::setLogLevel(muduo::Logger::NUM_LOG_LEVELS);
 
-        m_dispatcher.register_message_callback<trade::types::NewSubscribeRsp>([this](const muduo::net::TcpConnectionPtr& conn, const trade::utilities::MessagePtr& message, muduo::Timestamp timestamp) { on_new_subscribe_rsp(conn, message, timestamp); });
+        m_dispatcher.register_message_callback<trade::types::NewSubscribeRsp>([this](const muduo::net::TcpConnectionPtr& conn, const trade::utilities::MessagePtr& message, const muduo::Timestamp timestamp) { on_new_subscribe_rsp(conn, message, timestamp); });
 
         /// Start event loop.
         m_event_loop_future = std::async(std::launch::async, [this, server_addr] {

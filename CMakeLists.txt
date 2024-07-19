@@ -61,6 +61,7 @@ add_subdirectory(src/libholder)
 add_subdirectory(src/auxiliaries/mds)
 add_subdirectory(src/auxiliaries/offline_booker)
 add_subdirectory(src/auxiliaries/raw_md_recorder)
+add_subdirectory(src/auxiliaries/sub_reporter_client)
 add_subdirectory(src/auxiliaries/seq_checker)
 add_subdirectory(src/trade)
 
