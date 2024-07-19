@@ -22,6 +22,14 @@ static_assert(std::endian::native == std::endian::little, "Endian check failed. 
 /// For using memcpy().
 #pragma pack(push, 1)
 
+struct MessageTypeViewer {
+    uint8_t m_reserved[8];
+    uint8_t m_message_type;
+};
+
+static_assert(offsetof(MessageTypeViewer, m_message_type) == 8);
+static_assert(sizeof(MessageTypeViewer) == 9, "MessageTypeViewer should be 9 bytes");
+
 /// All structures below come from OST example code without any modification.
 
 struct SSEHpfPackageHead {
@@ -315,9 +323,25 @@ static_assert(offsetof(SZSEHpfL2Snap, m_bid_unit) == 136);
 static_assert(offsetof(SZSEHpfL2Snap, m_ask_unit) == 256);
 static_assert(sizeof(SZSEHpfL2Snap) == 376, "SZSEL2Snap should be 376 bytes");
 
-constexpr size_t max_sse_udp_size  = std::max({sizeof(SSEHpfTick), sizeof(SSEHpfL2Snap) /*, sizeof(SSEHpfOrderTick), sizeof(SSEHpfTradeTick) */});
-constexpr size_t max_szse_udp_size = std::max({sizeof(SZSEHpfOrderTick), sizeof(SZSEHpfTradeTick), sizeof(SZSEHpfL2Snap)});
-constexpr size_t max_udp_size      = std::max(max_sse_udp_size, max_szse_udp_size);
+/// See 东方证券极速行情输出协议.
+constexpr uint8_t sse_hpf_tick_type        = 36;
+constexpr uint8_t sse_hpf_l2_snap_type     = 39;
+constexpr uint8_t szse_hpf_order_tick_type = 23;
+constexpr uint8_t szse_hpf_trade_tick_type = 24;
+constexpr uint8_t szse_hpf_l2_snap_type    = 21;
+
+constexpr size_t message_type_viewer_size  = sizeof(MessageTypeViewer);
+
+constexpr size_t sse_hpf_tick_size         = sizeof(SSEHpfTick);
+constexpr size_t sse_hpf_l2_snap_size      = sizeof(SSEHpfL2Snap);
+
+constexpr size_t szse_hpf_order_tick_size  = sizeof(SZSEHpfOrderTick);
+constexpr size_t szse_hpf_trade_tick_size  = sizeof(SZSEHpfTradeTick);
+constexpr size_t szse_hpf_l2_snap_size     = sizeof(SZSEHpfL2Snap);
+
+constexpr size_t max_sse_udp_size          = std::max({sse_hpf_tick_size, sse_hpf_l2_snap_size});
+constexpr size_t max_szse_udp_size         = std::max({szse_hpf_order_tick_size, szse_hpf_trade_tick_size, szse_hpf_l2_snap_size});
+constexpr size_t max_udp_size              = std::max(max_sse_udp_size, max_szse_udp_size);
 
 #pragma pack(pop)
 
