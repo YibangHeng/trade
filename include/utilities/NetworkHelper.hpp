@@ -299,7 +299,7 @@ private:
     int m_sender_fd;
 };
 
-/// Encapsulate raw UDP multicast socke.
+/// Encapsulate raw UDP multicast socket.
 ///
 /// This class manages the lifecycle of a raw socket, handling the
 /// initialization, and cleanup. It provides methods to receive messages using
@@ -316,23 +316,24 @@ public:
     )
         : m_receive_addr(),
           m_mreq(),
-          m_addr_len(sizeof(m_receive_addr))
+          m_addr_len(sizeof(m_receive_addr)),
+          m_receiver_fd(-1) // Initialize to an invalid value.
     {
         /// Create what looks like an ordinary UDP socket.
-        auto code = m_receiver_fd = socket(AF_INET, SOCK_DGRAM, 0);
+        m_receiver_fd = socket(AF_INET, SOCK_DGRAM, 0);
 
-        if (code < 0) {
-            close(m_receiver_fd);
+        if (m_receiver_fd < 0) {
             throw std::runtime_error(fmt::format("Failed to create receiving socket for {}: {}", address, strerror(errno)));
         }
 
-        constexpr u_int yes = 1;
+        constexpr int yes = 1;
 
         /// Allow multiple sockets to use the same port number.
-        code = setsockopt(m_receiver_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+        auto code = setsockopt(m_receiver_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
         if (code < 0) {
-            throw std::runtime_error(fmt::format("Failed to resue address {}: {}", address, strerror(errno)));
+            close(m_receiver_fd);
+            throw std::runtime_error(fmt::format("Failed to reuse address {}: {}", address, strerror(errno)));
         }
 
         /// Set up destination address.
@@ -379,7 +380,9 @@ public:
     }
     ~MCClient()
     {
-        close(m_receiver_fd);
+        if (m_receiver_fd >= 0) {
+            close(m_receiver_fd);
+        }
     }
 
 public:
