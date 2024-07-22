@@ -6,24 +6,16 @@
 #include "auxiliaries/sub_reporter_client/SubReporterClient.h"
 #include "info.h"
 #include "libbooker/BookerCommonData.h"
-#include "libbroker/CUTImpl/RawStructure.h"
 #include "utilities/AddressHelper.hpp"
 #include "utilities/NetworkHelper.hpp"
 #include "utilities/TimeHelper.hpp"
+#include "utilities/ToJSON.hpp"
 
 trade::SubReporterClient::SubReporterClient(const int argc, char* argv[])
-    : AppBase("raw_md_recorder"),
-      m_codec([this]<typename ConnType, typename MessageType, typename TimestampType>(ConnType&& conn, MessageType&& message, TimestampType&& receive_time) { m_dispatcher.on_protobuf_message(std::forward<ConnType>(conn), std::forward<MessageType>(message), std::forward<TimestampType>(receive_time)); }),
-      m_dispatcher([this]<typename ConnType, typename MessageType, typename TimestampType>(ConnType&& conn, MessageType&& message, TimestampType&& timestamp) { on_invalied_message(std::forward<ConnType>(conn), std::forward<MessageType>(message), std::forward<TimestampType>(timestamp)); })
+    : AppBase("raw_md_recorder")
 {
     m_instances.emplace(this);
     m_is_running = argv_parse(argc, argv);
-}
-
-trade::SubReporterClient::~SubReporterClient()
-{
-    m_loop->quit();
-    m_event_loop_future.wait();
 }
 
 int trade::SubReporterClient::run()
@@ -32,33 +24,14 @@ int trade::SubReporterClient::run()
         return m_exit_code;
     }
 
-    muduo::net::InetAddress address(
+    m_sub_reporter_client_impl = std::make_shared<SubReporterClientImpl>(
         m_arguments["address"].as<std::string>(),
-        m_arguments["port"].as<uint16_t>()
+        m_arguments["port"].as<uint16_t>(),
+        [this](const muduo::net::TcpConnectionPtr& conn, const types::L2Tick& l2_tick, muduo::Timestamp timestamp) { on_l2_snap_arrived(conn, l2_tick, timestamp); },
+        [this](const muduo::net::TcpConnectionPtr& conn, const types::NewSubscribeRsp& new_subscribe_rsp, muduo::Timestamp timestamp) { on_new_subscribe_rsp(conn, new_subscribe_rsp, timestamp); },
+        [this](const muduo::net::TcpConnectionPtr& conn) { on_connected(conn); },
+        [this](const muduo::net::TcpConnectionPtr& conn) { on_disconnected(conn); }
     );
-
-    muduo::Logger::setLogLevel(muduo::Logger::NUM_LOG_LEVELS);
-
-    m_dispatcher.register_message_callback<types::NewSubscribeRsp>([this](const muduo::net::TcpConnectionPtr& conn, const utilities::MessagePtr& message, const muduo::Timestamp timestamp) { on_new_subscribe_rsp(conn, message, timestamp); });
-
-    /// Start event loop.
-    m_event_loop_future = std::async(std::launch::async, [this, address] {
-        m_loop   = std::make_shared<muduo::net::EventLoop>();
-        m_client = std::make_shared<muduo::net::TcpClient>(m_loop.get(), address, "SubReporterClient");
-
-        m_client->setConnectionCallback([this](const muduo::net::TcpConnectionPtr& conn) { on_connected(conn); });
-        m_client->setMessageCallback([this](const muduo::net::TcpConnectionPtr& conn, muduo::net::Buffer* buf, const muduo::Timestamp receive_time) { m_codec.on_message(conn, buf, receive_time); });
-
-        m_client->connect();
-
-        /// Enter event loop until quit.
-        m_loop->loop();
-
-        m_client.reset();
-        m_loop.reset();
-    });
-
-    m_mutex.lock();
 
     logger->info("App exited with code {}", m_exit_code.load());
 
@@ -141,6 +114,47 @@ bool trade::SubReporterClient::argv_parse(const int argc, char* argv[])
 #endif
 
     return true;
+}
+
+void trade::SubReporterClient::on_l2_snap_arrived(
+    const muduo::net::TcpConnectionPtr& conn,
+    const types::L2Tick& l2_tick,
+    muduo::Timestamp timestamp
+) const
+{
+    logger->info("Received L2 tick {}", utilities::ToJSON()(l2_tick));
+}
+
+void trade::SubReporterClient::on_new_subscribe_rsp(
+    const muduo::net::TcpConnectionPtr& conn,
+    const types::NewSubscribeRsp& new_subscribe_rsp,
+    muduo::Timestamp timestamp
+) const
+{
+    logger->info("Subscribed to {}", fmt::join(new_subscribe_rsp.subscribed_symbol(), ", "));
+}
+
+void trade::SubReporterClient::on_connected(const muduo::net::TcpConnectionPtr& conn)
+{
+    if (conn->connected()) {
+        logger->info("Connected to {}({})", conn->name(), conn->peerAddress().toIpPort());
+
+        types::NewSubscribeReq req;
+
+        req.set_request_id(ticker_taper());
+        req.set_app_name(app_name());
+        req.add_symbols_subscribe("*");
+
+        utilities::ProtobufCodec::send(conn, req);
+    }
+    else {
+        logger->error("Failed to connect to {}({})", conn->name(), conn->peerAddress().toIpPort());
+    }
+}
+
+void trade::SubReporterClient::on_disconnected(const muduo::net::TcpConnectionPtr& conn) const
+{
+    logger->info("Disconnected from {}({})", conn->name(), conn->peerAddress().toIpPort());
 }
 
 std::set<trade::SubReporterClient*> trade::SubReporterClient::m_instances;

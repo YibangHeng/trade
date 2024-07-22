@@ -67,6 +67,7 @@ void trade::reporter::SubReporter::on_new_subscribe_req(
 )
 {
     const auto new_subscribe_req = std::dynamic_pointer_cast<types::NewSubscribeReq>(message);
+
     if (new_subscribe_req == nullptr) {
         logger->warn("Invalid message received from {}", conn->peerAddress().toIpPort());
         return;

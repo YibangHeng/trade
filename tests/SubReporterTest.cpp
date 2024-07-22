@@ -1,121 +1,121 @@
+#include <array>
+#include <atomic>
 #include <catch.hpp>
-#include <muduo/base/Logging.h>
-#include <muduo/net/TcpClient.h>
+#include <condition_variable>
+#include <mutex>
 #include <thread>
 
 #include "AppBase.hpp"
+#include "auxiliaries/sub_reporter_client/SubReporterClientImpl.hpp"
 #include "libreporter/SubReporter.h"
 
 constexpr size_t num_threads = 1;
 
-class SubReporterClient final: private trade::AppBase<>
+TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "[SubReporterClientImpl]")
 {
-public:
-    explicit SubReporterClient(const muduo::net::InetAddress& server_addr)
-        : AppBase("SubReporterClient"),
-          m_codec([this]<typename ConnType, typename MessageType, typename TimestampType>(ConnType&& conn, MessageType&& message, TimestampType&& receive_time) { m_dispatcher.on_protobuf_message(std::forward<ConnType>(conn), std::forward<MessageType>(message), std::forward<TimestampType>(receive_time)); }),
-          m_dispatcher([this]<typename ConnType, typename MessageType, typename TimestampType>(ConnType&& conn, MessageType&& message, TimestampType&& timestamp) { on_invalied_message(std::forward<ConnType>(conn), std::forward<MessageType>(message), std::forward<TimestampType>(timestamp)); })
-    {
-        muduo::Logger::setLogLevel(muduo::Logger::NUM_LOG_LEVELS);
+    const auto sse_l2_snap_0 = std::make_shared<trade::types::L2Tick>();
 
-        m_dispatcher.register_message_callback<trade::types::NewSubscribeRsp>([this](const muduo::net::TcpConnectionPtr& conn, const trade::utilities::MessagePtr& message, const muduo::Timestamp timestamp) { on_new_subscribe_rsp(conn, message, timestamp); });
+    sse_l2_snap_0->set_symbol("600875.SH");
+    sse_l2_snap_0->set_price_1000x(2233);
+    sse_l2_snap_0->set_quantity(1000);
+    sse_l2_snap_0->set_ask_unique_id(10001);
+    sse_l2_snap_0->set_bid_unique_id(10002);
+    sse_l2_snap_0->set_exchange_time(925000);
 
-        /// Start event loop.
-        m_event_loop_future = std::async(std::launch::async, [this, server_addr] {
-            m_loop   = std::make_shared<muduo::net::EventLoop>();
-            m_client = std::make_shared<muduo::net::TcpClient>(m_loop.get(), server_addr, "SubReporterClient");
+    const auto sse_l2_snap_1 = std::make_shared<trade::types::L2Tick>();
 
-            m_client->setConnectionCallback([this](const muduo::net::TcpConnectionPtr& conn) { on_connected(conn); });
-            m_client->setMessageCallback([this](const muduo::net::TcpConnectionPtr& conn, muduo::net::Buffer* buf, const muduo::Timestamp receive_time) { m_codec.on_message(conn, buf, receive_time); });
+    sse_l2_snap_1->set_symbol("600875.SH");
+    sse_l2_snap_1->set_price_1000x(2233);
+    sse_l2_snap_1->set_quantity(2000);
+    sse_l2_snap_1->set_ask_unique_id(20001);
+    sse_l2_snap_1->set_bid_unique_id(20002);
+    sse_l2_snap_1->set_exchange_time(925000);
 
-            m_client->connect();
+    const auto sse_l2_snap_2 = std::make_shared<trade::types::L2Tick>();
 
-            /// Enter event loop until quit.
-            m_loop->loop();
+    sse_l2_snap_2->set_symbol("600875.SH");
+    sse_l2_snap_2->set_price_1000x(2233);
+    sse_l2_snap_2->set_quantity(3000);
+    sse_l2_snap_2->set_ask_unique_id(30001);
+    sse_l2_snap_2->set_bid_unique_id(30002);
+    sse_l2_snap_2->set_exchange_time(925000);
 
-            m_client.reset();
-            m_loop.reset();
-        });
+    const auto szse_l2_snap_0 = std::make_shared<trade::types::L2Tick>();
 
-        m_mutex.lock();
-    }
+    szse_l2_snap_0->set_symbol("000001.SZ");
+    szse_l2_snap_0->set_price_1000x(3322);
+    szse_l2_snap_0->set_quantity(1000);
+    szse_l2_snap_0->set_ask_unique_id(10001);
+    szse_l2_snap_0->set_bid_unique_id(10002);
+    szse_l2_snap_0->set_exchange_time(925000);
 
-    ~SubReporterClient() override
-    {
-        m_loop->quit();
-        m_event_loop_future.wait();
-    }
+    const auto szse_l2_snap_1 = std::make_shared<trade::types::L2Tick>();
 
-public:
-    /// Wait until the response is received.
-    void wait()
-    {
-        std::unique_lock lock(m_mutex);
-        m_cv.wait(lock, [this] { return true; });
-    }
+    szse_l2_snap_1->set_symbol("000001.SZ");
+    szse_l2_snap_1->set_price_1000x(3322);
+    szse_l2_snap_1->set_quantity(2000);
+    szse_l2_snap_1->set_ask_unique_id(20001);
+    szse_l2_snap_1->set_bid_unique_id(20002);
+    szse_l2_snap_1->set_exchange_time(925000);
 
-private:
-    void on_connected(const muduo::net::TcpConnectionPtr& conn)
-    {
-        if (conn->connected()) {
-            trade::types::NewSubscribeReq req;
+    const auto szse_l2_snap_2 = std::make_shared<trade::types::L2Tick>();
 
-            req.set_request_id(ticker_taper());
-            req.set_app_name(app_name());
-            req.add_symbols_subscribe("600875");
-            req.add_symbol_unsubscribe("000001");
+    szse_l2_snap_2->set_symbol("000001.SZ");
+    szse_l2_snap_2->set_price_1000x(3322);
+    szse_l2_snap_2->set_quantity(3000);
+    szse_l2_snap_2->set_ask_unique_id(30001);
+    szse_l2_snap_2->set_bid_unique_id(30002);
+    szse_l2_snap_2->set_exchange_time(925000);
 
-            trade::utilities::ProtobufCodec::send(conn, req);
-        }
-        else {
-            CHECK(false);
-        }
-    }
-
-    void on_new_subscribe_rsp(
-        const muduo::net::TcpConnectionPtr& conn,
-        const trade::utilities::MessagePtr& message,
-        muduo::Timestamp
-    )
-    {
-        CHECK(message->GetDescriptor() == trade::types::NewSubscribeRsp::descriptor());
-        const auto new_subscribe_rsp = std::dynamic_pointer_cast<trade::types::NewSubscribeRsp>(message);
-
-        CHECK(new_subscribe_rsp->subscribed_symbol_size() == 1);
-        CHECK(new_subscribe_rsp->subscribed_symbol(0) == "600875");
-
-        m_mutex.unlock();
-        m_cv.notify_one();
-    }
-
-    void on_invalied_message(const muduo::net::TcpConnectionPtr& conn, const trade::utilities::MessagePtr&, muduo::Timestamp) const
-    {
-        logger->warn("Invalid message received from {}", conn->peerAddress().toIpPort());
-    }
-
-private:
-    trade::utilities::ProtobufCodec m_codec;
-    trade::utilities::ProtobufDispatcher m_dispatcher;
-    std::shared_ptr<muduo::net::EventLoop> m_loop;
-    std::shared_ptr<muduo::net::TcpClient> m_client;
-    std::future<void> m_event_loop_future;
-
-private:
-    std::mutex m_mutex;
-    std::condition_variable m_cv;
-};
-
-TEST_CASE("Communication between SubReporterServer and SubReporterClient", "[SubReporter]")
-{
     SECTION("Sending and receiving messages with M:1 connections")
     {
+        std::mutex mutex;
+        std::condition_variable cv;
+        bool new_subscribe_req_acknowledged = false;
+
         /// Server side.
         trade::reporter::SubReporter sub_reporter(10000);
 
         /// Client side.
-        auto client_worker = [] {
-            SubReporterClient client(muduo::net::InetAddress("127.0.0.1", 10000));
-            client.wait();
+        auto client_worker = [&mutex, &cv, &new_subscribe_req_acknowledged] {
+            std::atomic<size_t> l2_snap_counter = 0;
+
+            trade::SubReporterClientImpl client(
+                "127.0.0.1",
+                10000,
+                [&l2_snap_counter](const muduo::net::TcpConnectionPtr&, const trade::types::L2Tick& l2_tick, muduo::Timestamp) {
+                    l2_snap_counter++;
+
+                    CHECK(l2_tick.symbol() == "600875.SH");
+                    CHECK(l2_tick.price_1000x() == 2233);
+                    CHECK(l2_tick.quantity() == 1000 * l2_snap_counter);
+                    CHECK(l2_tick.ask_unique_id() == l2_snap_counter * 10000 + 1);
+                    CHECK(l2_tick.bid_unique_id() == l2_snap_counter * 10000 + 2);
+                    CHECK(l2_tick.exchange_time() == 925000);
+                },
+                [&new_subscribe_req_acknowledged, &mutex, &cv](const muduo::net::TcpConnectionPtr&, const trade::types::NewSubscribeRsp& new_subscribe_rsp, muduo::Timestamp) {
+                    CHECK(new_subscribe_rsp.subscribed_symbol().size() == 1);
+                    CHECK(new_subscribe_rsp.subscribed_symbol().at(0) == "600875.SH");
+
+                    std::lock_guard lock(mutex);
+                    new_subscribe_req_acknowledged = true;
+                    cv.notify_one();
+                },
+                [](const muduo::net::TcpConnectionPtr& conn) {
+                    CHECK(conn != nullptr);
+                },
+                [](const muduo::net::TcpConnectionPtr& conn) {
+                    CHECK(conn == nullptr);
+                }
+            );
+
+            client.wait_login();
+
+            client.subscribe<std::initializer_list<std::string>>({"600875.SH"}, {"000001.SZ"});
+
+            while (l2_snap_counter != 3) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
         };
 
         std::array<std::thread, num_threads> client_threads;
@@ -123,6 +123,19 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClient", "[Sub
         for (auto& client_thread : client_threads) {
             client_thread = std::thread(client_worker);
         }
+
+        /// Wait for subscription acknowledgement.
+        std::unique_lock lock(mutex);
+        cv.wait(lock, [&new_subscribe_req_acknowledged] { return new_subscribe_req_acknowledged; });
+
+        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_0);
+        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_1);
+        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_2);
+
+        /// This l2 snap will not be sent to the client since it is not subscribed.
+        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_0);
+        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_1);
+        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_2);
 
         for (auto& client_thread : client_threads)
             client_thread.join();

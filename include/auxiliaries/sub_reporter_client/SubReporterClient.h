@@ -3,11 +3,10 @@
 #include <atomic>
 #include <boost/program_options.hpp>
 #include <fast-cpp-csv-parser/csv.h>
-#include <future>
-#include <muduo/net/EventLoop.h>
-#include <muduo/net/TcpClient.h>
 
 #include "AppBase.hpp"
+#include "SubReporterClientImpl.hpp"
+#include "auxiliaries/sub_reporter_client/SubReporterClient.h"
 #include "networks.pb.h"
 #include "utilities/ProtobufDispatcher.hpp"
 #include "visibility.h"
@@ -19,7 +18,7 @@ class PUBLIC_API SubReporterClient final: private AppBase<uint32_t>
 {
 public:
     SubReporterClient(int argc, char* argv[]);
-    ~SubReporterClient() override;
+    ~SubReporterClient() override = default;
 
 public:
     int run();
@@ -30,49 +29,27 @@ private:
     bool argv_parse(int argc, char* argv[]);
 
 private:
-    void on_connected(const muduo::net::TcpConnectionPtr& conn)
-    {
-        if (conn->connected()) {
-            types::NewSubscribeReq req;
-
-            req.set_request_id(ticker_taper());
-            req.set_app_name(app_name());
-            req.add_symbols_subscribe("600875");
-            req.add_symbol_unsubscribe("000001");
-
-            utilities::ProtobufCodec::send(conn, req);
-        }
-        else {
-            logger->error("Connection lost");
-        }
-    }
+    void on_l2_snap_arrived(
+        const muduo::net::TcpConnectionPtr& conn,
+        const types::L2Tick& l2_tick,
+        muduo::Timestamp timestamp
+    ) const;
 
     void on_new_subscribe_rsp(
         const muduo::net::TcpConnectionPtr& conn,
-        const utilities::MessagePtr& message,
-        muduo::Timestamp
-    )
-    {
-    }
+        const types::NewSubscribeRsp& new_subscribe_rsp,
+        muduo::Timestamp timestamp
+    ) const;
 
-    void on_invalied_message(const muduo::net::TcpConnectionPtr& conn, const utilities::MessagePtr&, muduo::Timestamp) const
-    {
-        logger->warn("Invalid message received from {}", conn->peerAddress().toIpPort());
-    }
+    void on_connected(const muduo::net::TcpConnectionPtr& conn);
+
+    void on_disconnected(const muduo::net::TcpConnectionPtr& conn) const;
 
 private:
     boost::program_options::variables_map m_arguments;
 
 private:
-    utilities::ProtobufCodec m_codec;
-    utilities::ProtobufDispatcher m_dispatcher;
-    std::shared_ptr<muduo::net::EventLoop> m_loop;
-    std::shared_ptr<muduo::net::TcpClient> m_client;
-    std::future<void> m_event_loop_future;
-
-private:
-    std::mutex m_mutex;
-    std::condition_variable m_cv;
+    std::shared_ptr<SubReporterClientImpl> m_sub_reporter_client_impl;
 
 private:
     std::atomic<bool> m_is_running;

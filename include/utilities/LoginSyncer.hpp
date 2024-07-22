@@ -46,7 +46,7 @@ public:
         });
 
         /// Throw exception if attempting failed.
-        if (!m_attempting.load()) {
+        if (!m_attempting) {
             throw std::runtime_error(m_message);
         }
 #else
@@ -62,10 +62,9 @@ public:
     void notify_success()
     {
 #ifdef CV_SUPPORT
-        m_attempting.store(boost::tribool::true_value);
+        m_attempting = boost::tribool::true_value;
         m_mutex.unlock();
         m_cv.notify_all();
-        m_attempting.store(boost::tribool::true_value);
 #endif
     }
 
@@ -73,8 +72,8 @@ public:
     void notify_failure(fmt::format_string<T...> fmt, T&&... args)
     {
 #ifdef CV_SUPPORT
-        m_attempting.store(boost::tribool::false_value);
-        m_message = fmt::format(fmt, std::forward<T>(args)...);
+        m_attempting = boost::tribool::false_value;
+        m_message    = fmt::format(fmt, std::forward<T>(args)...);
         m_mutex.unlock();
         m_cv.notify_all();
 #else
@@ -86,7 +85,7 @@ private:
 #ifdef CV_SUPPORT
     std::mutex m_mutex;
     std::condition_variable m_cv;
-    std::atomic<boost::tribool> m_attempting;
+    boost::tribool m_attempting;
 #endif
     /// Store message about failure reason (if the caller could provide it).
     std::string m_message;
