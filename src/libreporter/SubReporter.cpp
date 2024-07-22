@@ -41,6 +41,8 @@ trade::reporter::SubReporter::~SubReporter()
 
 void trade::reporter::SubReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::L2Tick> l2_tick)
 {
+    std::lock_guard lock(m_app_id_to_symbols_mutex);
+
     for (const auto& [conn, symbols] : m_app_id_to_symbols) {
         if (symbols.contains(l2_tick->symbol())) {
             utilities::ProtobufCodec::send(conn, *l2_tick);
@@ -52,12 +54,16 @@ void trade::reporter::SubReporter::exchange_l2_tick_arrived(const std::shared_pt
 
 void trade::reporter::SubReporter::on_connected(const muduo::net::TcpConnectionPtr& conn)
 {
-    logger->info("New connection from {}", conn->peerAddress().toIpPort());
+    std::lock_guard lock(m_app_id_to_symbols_mutex);
 
-    if (conn->connected())
+    if (conn->connected()) {
         m_app_id_to_symbols.emplace(conn, std::unordered_set<std::string> {});
-    else
+        logger->info("{}({}) connected. Now we have {} subscriptions", conn->name(), conn->peerAddress().toIpPort(), m_app_id_to_symbols.size());
+    }
+    else {
         m_app_id_to_symbols.erase(conn);
+        logger->info("{}({}) disconnected. Now we have {} subscriptions", conn->name(), conn->peerAddress().toIpPort(), m_app_id_to_symbols.size());
+    }
 }
 
 void trade::reporter::SubReporter::on_new_subscribe_req(
@@ -79,8 +85,12 @@ void trade::reporter::SubReporter::on_new_subscribe_req(
 
     new_subscribe_rsp.set_request_id(new_subscribe_req->has_request_id() ? new_subscribe_req->request_id() : ticker_taper());
 
-    for (const auto& symbol : m_app_id_to_symbols[conn])
-        new_subscribe_rsp.add_subscribed_symbol(symbol);
+    {
+        std::lock_guard lock(m_app_id_to_symbols_mutex);
+
+        for (const auto& symbol : m_app_id_to_symbols[conn])
+            new_subscribe_rsp.add_subscribed_symbol(symbol);
+    }
 
     utilities::ProtobufCodec::send(conn, new_subscribe_rsp);
 }
@@ -99,6 +109,8 @@ void trade::reporter::SubReporter::update_subscripted_symbols(
     const types::NewSubscribeReq& new_subscribe_req
 )
 {
+    std::lock_guard lock(m_app_id_to_symbols_mutex);
+
     auto& subscripted_symbol_set = m_app_id_to_symbols[conn];
 
     for (const auto& symbol : new_subscribe_req.symbols_subscribe()) {

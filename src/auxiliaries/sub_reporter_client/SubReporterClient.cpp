@@ -33,6 +33,10 @@ int trade::SubReporterClient::run()
         [this](const muduo::net::TcpConnectionPtr& conn) { on_disconnected(conn); }
     );
 
+    m_sub_reporter_client_impl->start_logout();
+
+    m_sub_reporter_client_impl->wait_logout();
+
     logger->info("App exited with code {}", m_exit_code.load());
 
     return m_exit_code;
@@ -43,6 +47,8 @@ int trade::SubReporterClient::stop(int signal)
     spdlog::info("App exiting since received signal {}", signal);
 
     m_is_running = false;
+
+    m_sub_reporter_client_impl->notify_logout_success();
 
     return 0;
 }

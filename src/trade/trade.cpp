@@ -10,6 +10,7 @@
 #include "libreporter/CSVReporter.h"
 #include "libreporter/LogReporter.h"
 #include "libreporter/ShmReporter.h"
+#include "libreporter/SubReporter.h"
 #include "trade/trade.h"
 #include "utilities/NetworkHelper.hpp"
 
@@ -39,11 +40,12 @@ int trade::Trade::run()
 
     const auto log_reporter = std::make_shared<reporter::LogReporter>();
     const auto csv_reporter = std::make_shared<reporter::CSVReporter>(config->get<std::string>("Output.CSVOutputFolder"), log_reporter);
+    const auto sub_reporter = std::make_shared<reporter::SubReporter>(10000, csv_reporter);
     const auto shm_reporter = std::make_shared<reporter::ShmReporter>(
         config->get<std::string>("Output.ShmName"),
         config->get<std::string>("Output.ShmMutexName"),
         config->get<size_t>("Output.ShmSize"),
-        csv_reporter
+        sub_reporter
     );
     const auto async_reporter = std::make_shared<reporter::AsyncReporter>(shm_reporter);
 

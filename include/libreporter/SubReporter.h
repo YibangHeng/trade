@@ -56,6 +56,7 @@ private:
 private:
     /// Conn -> set of subscribed symbols (not including what subscribed to all symbols).
     std::unordered_map<muduo::net::TcpConnectionPtr, std::unordered_set<std::string>> m_app_id_to_symbols;
+    std::mutex m_app_id_to_symbols_mutex;
 
 private:
     std::shared_ptr<IReporter> m_outside;
