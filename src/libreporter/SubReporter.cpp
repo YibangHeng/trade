@@ -1,9 +1,9 @@
+#include <future>
+#include <ranges>
 #include <third/muduo/muduo/base/Logging.h>
 #include <third/muduo/muduo/net/InetAddress.h>
 
 #include "libreporter/SubReporter.h"
-
-#include <future>
 
 trade::reporter::SubReporter::SubReporter(const int64_t port, const std::shared_ptr<IReporter>& outside)
     : AppBase("SubReporter"),
@@ -45,10 +45,12 @@ void trade::reporter::SubReporter::exchange_l2_tick_arrived(const std::shared_pt
     std::lock_guard lock(m_app_id_to_symbols_mutex);
 
     for (const auto& [conn, symbols] : m_app_id_to_symbols) {
-        if (symbols.contains(l2_tick->symbol())) {
+        if (symbols.contains(l2_tick->symbol()) || symbols.contains("*")) {
             utilities::ProtobufCodec::send(conn, *l2_tick);
         }
     }
+
+    m_last_data[l2_tick->symbol()] = l2_tick;
 
     m_outside->l2_tick_generated(l2_tick);
 }
@@ -94,6 +96,18 @@ void trade::reporter::SubReporter::on_new_subscribe_req(
     }
 
     utilities::ProtobufCodec::send(conn, new_subscribe_rsp);
+
+    if (new_subscribe_req->request_last_data()) {
+        std::lock_guard lock(m_app_id_to_symbols_mutex);
+
+        for (const auto& symbol : m_app_id_to_symbols[conn]) {
+            if (symbol == "*")
+                for (const auto& l2_tick : m_last_data | std::views::values)
+                    utilities::ProtobufCodec::send(conn, *l2_tick);
+            else if (m_last_data.contains(symbol))
+                utilities::ProtobufCodec::send(conn, *m_last_data[symbol]);
+        }
+    }
 }
 
 void trade::reporter::SubReporter::on_invalid_message(

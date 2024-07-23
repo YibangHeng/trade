@@ -79,7 +79,11 @@ public:
 
 public:
     template<std::ranges::range SymbolListType>
-    void subscribe(const SymbolListType& subscribes, const SymbolListType& unsubscribes)
+    void subscribe(
+        const SymbolListType& subscribes,
+        const SymbolListType& unsubscribes = {},
+        const bool request_last_data       = false
+    )
     {
         types::NewSubscribeReq new_subscribe_req;
 
@@ -87,6 +91,7 @@ public:
         new_subscribe_req.set_app_name(app_name);
         std::ranges::for_each(subscribes, [&new_subscribe_req](const auto& symbol) { new_subscribe_req.add_symbols_subscribe(symbol); });
         std::ranges::for_each(unsubscribes, [&new_subscribe_req](const auto& symbol) { new_subscribe_req.add_symbol_unsubscribe(symbol); });
+        new_subscribe_req.set_request_last_data(request_last_data);
 
         utilities::ProtobufCodec::send(m_conn, new_subscribe_req);
     }

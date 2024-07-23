@@ -47,6 +47,9 @@ private:
     );
 
 private:
+    std::unordered_map<std::string, std::shared_ptr<types::L2Tick>> m_last_data;
+
+private:
     utilities::ProtobufCodec m_codec;
     utilities::ProtobufDispatcher m_dispatcher;
     std::shared_ptr<muduo::net::EventLoop> m_loop;
