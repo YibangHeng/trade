@@ -236,14 +236,14 @@ trade::booker::OrderTickPtr trade::broker::CUTCommonData::x_ost_forward_to_order
     return order_tick;
 }
 
-int64_t trade::broker::CUTCommonData::to_price_from_sse(const uint32_t order_price)
+int64_t trade::broker::CUTCommonData::to_price_1000x_from_sse(const uint32_t order_price)
 {
-    return order_price / 1000;
+    return order_price;
 }
 
-int64_t trade::broker::CUTCommonData::to_price_from_szse(const uint32_t exe_px)
+int64_t trade::broker::CUTCommonData::to_price_1000x_from_szse(const uint32_t exe_px)
 {
-    return exe_px / 10000;
+    return exe_px / 10;
 }
 
 int64_t trade::broker::CUTCommonData::to_quantity_from_sse(const uint32_t qty)

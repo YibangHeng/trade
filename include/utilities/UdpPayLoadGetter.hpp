@@ -24,6 +24,17 @@ public:
 
         return std::make_tuple(udp_payload, length);
     }
+
+    /// Faster version without checking.
+    const u_char* operator()(
+        const u_char* packet,
+        const size_t& packet_caplen,
+        size_t& udp_payload_length
+    ) const
+    {
+        udp_payload_length = packet_caplen - 42;
+        return packet + 42;
+    }
 };
 
 } // namespace trade::utilities

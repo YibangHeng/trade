@@ -15,11 +15,12 @@ class PUBLIC_API CSVReporter final: private AppBase<>, public NopReporter
 public:
     explicit CSVReporter(
         std::string output_folder,
-        std::shared_ptr<IReporter> outside = std::make_shared<NopReporter>()
+        const std::shared_ptr<IReporter>& outside = std::make_shared<NopReporter>()
     )
         : AppBase("CSVReporter"),
+          NopReporter(outside),
           m_output_folder(std::move(output_folder)),
-          m_outside(std::move(outside))
+          m_outside(outside)
     {
     }
     ~CSVReporter() override;

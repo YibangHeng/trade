@@ -5,11 +5,12 @@
 
 #include <future>
 
-trade::reporter::SubReporter::SubReporter(const int64_t port, std::shared_ptr<IReporter> outside)
+trade::reporter::SubReporter::SubReporter(const int64_t port, const std::shared_ptr<IReporter>& outside)
     : AppBase("SubReporter"),
+      NopReporter(outside),
       m_codec([this]<typename ConnType, typename MessageType, typename TimestampType>(ConnType&& conn, MessageType&& message, TimestampType&& receive_time) { m_dispatcher.on_protobuf_message(std::forward<ConnType>(conn), std::forward<MessageType>(message), std::forward<TimestampType>(receive_time)); }),
       m_dispatcher([this]<typename ConnType, typename MessageType, typename TimestampType>(ConnType&& conn, MessageType&& message, TimestampType&& timestamp) { on_invalid_message(std::forward<ConnType>(conn), std::forward<MessageType>(message), std::forward<TimestampType>(timestamp)); }),
-      m_outside(std::move(outside))
+      m_outside(outside)
 {
     muduo::Logger::setLogLevel(muduo::Logger::NUM_LOG_LEVELS);
 

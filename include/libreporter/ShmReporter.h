@@ -168,10 +168,10 @@ class PUBLIC_API ShmReporter final: private AppBase<>, public NopReporter
 {
 public:
     explicit ShmReporter(
-        const std::string& shm_name        = "trade_data",
-        const std::string& shm_mutex_name  = "trade_data_mutex",
-        int shm_size                       = 1,
-        std::shared_ptr<IReporter> outside = std::make_shared<NopReporter>()
+        const std::string& shm_name               = "trade_data",
+        const std::string& shm_mutex_name         = "trade_data_mutex",
+        int shm_size                              = 1,
+        const std::shared_ptr<IReporter>& outside = std::make_shared<NopReporter>()
     );
     ~ShmReporter() override = default;
 

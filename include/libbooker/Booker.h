@@ -22,7 +22,7 @@ class PUBLIC_API Booker final: AppBase<>,
                                private OrderBook::TypedOrderListener
 {
 public:
-    explicit Booker(
+    Booker(
         const std::vector<std::string>& symbols,
         const std::shared_ptr<reporter::IReporter>& reporter,
         bool enable_validation = false

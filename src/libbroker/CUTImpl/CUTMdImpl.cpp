@@ -1,3 +1,5 @@
+#include <cmath>
+#include <pcap.h>
 #include <utility>
 
 #include "libbroker/CUTImpl/CUTCommonData.h"
@@ -6,6 +8,7 @@
 #include "utilities/AddressHelper.hpp"
 #include "utilities/NetworkHelper.hpp"
 #include "utilities/ToJSON.hpp"
+#include "utilities/UdpPayLoadGetter.hpp"
 
 trade::broker::CUTMdImpl::CUTMdImpl(
     std::shared_ptr<ConfigType> config,
@@ -26,20 +29,6 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
 
     m_is_running = true;
 
-    /// Split multicast addresses and start receiving in separate threads.
-    auto addresses = config->get<std::string>("Server.MdAddresses");
-    std::erase_if(addresses, [](const char c) { return std::isblank(c); });
-    auto addresses_view = addresses | std::views::split(',');
-
-    /// Create tick receiver threads.
-    for (auto&& address_part : addresses_view) {
-        std::string address(&*address_part.begin(), std::ranges::distance(address_part));
-
-        m_tick_receiver_threads.emplace_back(&CUTMdImpl::tick_receiver, this, address, config->get<std::string>("Server.InterfaceAddress"));
-
-        logger->info("Subscribed to ODTD multicast address: {} at {}", address, config->get<std::string>("Server.InterfaceAddress"));
-    }
-
     /// Create booker threads.
     /// Ensure that m_message_buffers does not undergo resizing.
     /// TODO: Is it necessary?
@@ -52,6 +41,9 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
 
         logger->info("Booker thread {} started", i);
     }
+
+    /// Create tick receiver threads.
+    m_tick_receiver_threads.emplace_back(&CUTMdImpl::tick_receiver, this, "", config->get<std::string>("Server.InterfaceAddress"));
 }
 
 void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>& symbols)
@@ -80,34 +72,49 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
 
 void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const std::string& interface_address) const
 {
-    const auto [multicast_ip, multicast_port] = utilities::AddressHelper::extract_address(address);
-    utilities::MCClient<max_udp_size> client(multicast_ip, multicast_port, interface_address);
+    char errbuf[PCAP_ERRBUF_SIZE];
+    const auto handle = pcap_fopen_offline(stdin, errbuf);
 
-    /// boost::freelock::queue imposes a constraint that its elements
-    /// must have trivial destructors. Consequently, usage of
-    /// std::unique_ptr/std::shared_ptr is not viable here.
-    /// The message will be deleted in @booker.
-    /// TODO: Use memory pool to implement this.
-    auto message = new std::vector<u_char>(max_udp_size);
+    if (handle == nullptr) {
+        logger->error("Failed to read PCAP stream: {}", errbuf);
+        return;
+    }
+
+    pcap_pkthdr header {};
+    size_t udp_payload_length;
 
     while (m_is_running) {
-        if (!message->empty()) /// For reducing usage of new.
-            message = new std::vector<u_char>(max_udp_size);
+        const u_char* packet = pcap_next(handle, &header);
 
-        client.receive(*message);
-
-        /// Non-blocking receiver may return empty data.
-        if (message->empty())
+        if (packet == nullptr)
             continue;
 
+        /// boost::freelock::queue imposes a constraint that its elements
+        /// must have trivial destructors. Consequently, usage of
+        /// std::unique_ptr/std::shared_ptr is not viable here.
+        /// The message will be deleted in @booker.
+        /// TODO: Use memory pool to implement this.
+        const auto message = new std::vector<u_char>(max_udp_size);
+
+        const auto payload = utilities::UdpPayLoadGetter()(packet, header.caplen, udp_payload_length);
+
+        message->resize(udp_payload_length);
+        std::copy_n(payload, udp_payload_length, message->begin());
+
         const int64_t symbol = CUTCommonData::get_symbol_from_message(*message);
+
+        /// For gradual sleep time.
+        static size_t full_counter = 0;
 
         while (!m_message_buffers[symbol % m_message_buffers.size()]->push(message)) {
             if (!m_is_running) [[unlikely]]
                 break;
 
-            logger->warn("Message buffer is full, which may cause data dropping");
+            logger->warn("Message buffer is full, which may cause data dropping. Sleeping {}ms", std::pow(2, full_counter));
+            std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int64_t>(std::pow(2, full_counter++))));
         }
+
+        full_counter = 0;
     }
 }
 

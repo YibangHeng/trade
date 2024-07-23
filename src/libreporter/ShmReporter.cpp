@@ -8,12 +8,13 @@ trade::reporter::ShmReporter::ShmReporter(
     const std::string& shm_name,
     const std::string& shm_mutex_name,
     const int shm_size,
-    std::shared_ptr<IReporter> outside
+    const std::shared_ptr<IReporter>& outside
 )
     : AppBase("ShmReporter"),
+      NopReporter(outside),
       m_shm(boost::interprocess::open_or_create, shm_name.c_str(), boost::interprocess::read_write),
       m_named_mutex(boost::interprocess::open_or_create, shm_mutex_name.c_str()),
-      m_outside(std::move(outside))
+      m_outside(outside)
 {
     m_shm.truncate(shm_size * GB);
 

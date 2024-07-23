@@ -23,8 +23,6 @@ trade::booker::Booker::Booker(
 
 void trade::booker::Booker::add(const OrderTickPtr& order_tick)
 {
-    logger->debug("Fed order: {}", utilities::ToJSON()(*order_tick));
-
     new_booker(order_tick->symbol());
 
     OrderWrapperPtr order_wrapper;

@@ -20,7 +20,10 @@ trade::reporter::AsyncReporter::AsyncReporter(std::shared_ptr<IReporter> outside
     m_trade_thread = std::thread(&AsyncReporter::do_trade_accepted, this);
 
     /// Market data.
-    m_l2_tick_thread = std::thread(&AsyncReporter::do_l2_tick_generated, this);
+    m_exchange_order_tick_thread = std::thread(&AsyncReporter::do_exchange_order_tick_arrived, this);
+    m_exchange_trade_tick_thread = std::thread(&AsyncReporter::do_exchange_trade_tick_arrived, this);
+    m_exchange_l2_tick_thread    = std::thread(&AsyncReporter::do_exchange_l2_tick_arrived, this);
+    m_l2_tick_thread             = std::thread(&AsyncReporter::do_l2_tick_generated, this);
 }
 
 trade::reporter::AsyncReporter::~AsyncReporter()
@@ -42,6 +45,9 @@ trade::reporter::AsyncReporter::~AsyncReporter()
     m_trade_thread.join();
 
     /// Market data.
+    m_exchange_order_tick_thread.join();
+    m_exchange_trade_tick_thread.join();
+    m_exchange_l2_tick_thread.join();
     m_l2_tick_thread.join();
 }
 
@@ -202,8 +208,9 @@ void trade::reporter::AsyncReporter::do_exchange_order_tick_arrived()
     while (m_is_running || !m_exchange_order_tick_buffer.empty()) {
         std::shared_ptr<types::OrderTick> exchange_order_tick;
 
-        if (m_exchange_order_tick_buffer.pop(exchange_order_tick))
+        if (m_exchange_order_tick_buffer.pop(exchange_order_tick)) {
             m_outside->exchange_order_tick_arrived(exchange_order_tick);
+        }
     }
 }
 

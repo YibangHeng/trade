@@ -19,7 +19,7 @@ class PUBLIC_API SubReporter final: private AppBase<>, public NopReporter
 public:
     explicit SubReporter(
         int64_t port,
-        std::shared_ptr<IReporter> outside = std::make_shared<NopReporter>()
+        const std::shared_ptr<IReporter>& outside = std::make_shared<NopReporter>()
     );
     ~SubReporter() override;
 
