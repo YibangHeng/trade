@@ -9,6 +9,7 @@ target_link_libraries(
         PRIVATE
         ${Boost_LIBRARIES}
         fmt::fmt
+        pcap
         PRIVATE
         broker
 )

@@ -1,15 +1,16 @@
 #include <csignal>
 #include <filesystem>
 #include <iostream>
+#include <pcap.h>
 
 #include "auxiliaries/raw_md_recorder/RawMdRecorder.h"
 #include "info.h"
 #include "libbooker/BookerCommonData.h"
 #include "libbroker/CUTImpl/CUTCommonData.h"
 #include "utilities/AddressHelper.hpp"
-#include "utilities/MakeAssignable.hpp"
 #include "utilities/NetworkHelper.hpp"
 #include "utilities/TimeHelper.hpp"
+#include "utilities/UdpPayLoadGetter.hpp"
 
 trade::RawMdRecorder::RawMdRecorder(const int argc, char* argv[])
     : AppBase("raw_md_recorder")
@@ -152,49 +153,49 @@ bool trade::RawMdRecorder::argv_parse(const int argc, char* argv[])
 
 void trade::RawMdRecorder::tick_receiver()
 {
-    std::ignore = std::freopen(nullptr, "rb", stdin);
+    char errbuf[PCAP_ERRBUF_SIZE];
+    const auto handle = pcap_fopen_offline(stdin, errbuf);
 
-    std::array<char, broker::max_udp_size> message {};
-    std::streamsize bytes_read = 0;
+    if (handle == nullptr) {
+        logger->error("Failed to read PCAP stream: {}", errbuf);
+        return;
+    }
 
-    while (m_is_running) {
-        /// Read header for message type first.
-        std::cin.read(message.data(), broker::message_type_viewer_size);
-        bytes_read = std::cin.gcount();
+    const u_char* packet;
+    pcap_pkthdr header {};
 
-        if (bytes_read != broker::message_type_viewer_size)
-            return;
+    while (m_is_running && (packet = pcap_next(handle, &header)) != nullptr) {
+        const auto [payload, length] = utilities::UdpPayLoadGetter()(packet);
 
-        const auto sse_hpf_package_head = reinterpret_cast<const broker::MessageTypeViewer*>(message.data());
-
-        switch (sse_hpf_package_head->m_message_type) {
-        case broker::sse_hpf_tick_type: std::cin.read(message.data() + broker::message_type_viewer_size, broker::sse_hpf_tick_size - broker::message_type_viewer_size); break;
-        case broker::sse_hpf_l2_snap_type: std::cin.read(message.data() + broker::message_type_viewer_size, broker::sse_hpf_l2_snap_size - broker::message_type_viewer_size); break;
-        case broker::szse_hpf_order_tick_type: std::cin.read(message.data() + broker::message_type_viewer_size, broker::szse_hpf_order_tick_size - broker::message_type_viewer_size); break;
-        case broker::szse_hpf_trade_tick_type: std::cin.read(message.data() + broker::message_type_viewer_size, broker::szse_hpf_trade_tick_size - broker::message_type_viewer_size); break;
-        case broker::szse_hpf_l2_snap_type: std::cin.read(message.data() + broker::message_type_viewer_size, broker::szse_hpf_l2_snap_size - broker::message_type_viewer_size); break;
-        default: break;
+        switch (length) {
+        case broker::sse_hpf_tick_size: writer(payload, broker::sse_hpf_tick_type); break;
+        case broker::sse_hpf_l2_snap_size: writer(payload, broker::sse_hpf_l2_snap_type); break;
+        case broker::szse_hpf_order_tick_size: writer(payload, broker::szse_hpf_order_tick_type); break;
+        case broker::szse_hpf_trade_tick_size: writer(payload, broker::szse_hpf_trade_tick_type); break;
+        case broker::szse_hpf_l2_snap_size: writer(payload, broker::szse_hpf_l2_snap_type); break;
+        default: {
+            logger->warn("Unexpected packet length: {}", header.len - 42);
+            break;
         }
-
-        writer(message, sse_hpf_package_head->m_message_type);
+        }
     }
 }
 
-void trade::RawMdRecorder::writer(const std::array<char, broker::max_udp_size>& message, const uint8_t message_type)
+void trade::RawMdRecorder::writer(const u_char* packet, const uint8_t message_type)
 {
     switch (message_type) {
-    case broker::sse_hpf_tick_type: write_sse_tick(message); break;
-    case broker::sse_hpf_l2_snap_type: write_sse_l2_snap(message); break;
-    case broker::szse_hpf_order_tick_type: write_szse_order_tick(message); break;
-    case broker::szse_hpf_trade_tick_type: write_szse_trade_tick(message); break;
-    case broker::szse_hpf_l2_snap_type: write_szse_l2_snap(message); break;
+    case broker::sse_hpf_tick_type: write_sse_tick(packet); break;
+    case broker::sse_hpf_l2_snap_type: write_sse_l2_snap(packet); break;
+    case broker::szse_hpf_order_tick_type: write_szse_order_tick(packet); break;
+    case broker::szse_hpf_trade_tick_type: write_szse_trade_tick(packet); break;
+    case broker::szse_hpf_l2_snap_type: write_szse_l2_snap(packet); break;
     default: break;
     }
 }
 
-void trade::RawMdRecorder::write_sse_tick(const std::array<char, broker::max_udp_size>& message)
+void trade::RawMdRecorder::write_sse_tick(const u_char* packet)
 {
-    const auto sse_tick = reinterpret_cast<const broker::SSEHpfTick*>(message.data());
+    const auto sse_tick = reinterpret_cast<const broker::SSEHpfTick*>(packet);
 
     m_sse_tick_writer << fmt::format(
         "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
@@ -228,9 +229,9 @@ void trade::RawMdRecorder::write_sse_tick(const std::array<char, broker::max_udp
     );
 }
 
-void trade::RawMdRecorder::write_sse_l2_snap(const std::array<char, broker::max_udp_size>& message)
+void trade::RawMdRecorder::write_sse_l2_snap(const u_char* packet)
 {
-    const auto sse_l2_snap = reinterpret_cast<const broker::SSEHpfL2Snap*>(message.data());
+    const auto sse_l2_snap = reinterpret_cast<const broker::SSEHpfL2Snap*>(packet);
 
     m_sse_l2_snap_writer << fmt::format(
         "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
@@ -312,9 +313,9 @@ void trade::RawMdRecorder::write_sse_l2_snap(const std::array<char, broker::max_
     );
 }
 
-void trade::RawMdRecorder::write_szse_order_tick(const std::array<char, broker::max_udp_size>& message)
+void trade::RawMdRecorder::write_szse_order_tick(const u_char* packet)
 {
-    const auto szse_order_tick = reinterpret_cast<const broker::SZSEHpfOrderTick*>(message.data());
+    const auto szse_order_tick = reinterpret_cast<const broker::SZSEHpfOrderTick*>(packet);
 
     m_szse_order_writer << fmt::format(
         "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
@@ -339,9 +340,9 @@ void trade::RawMdRecorder::write_szse_order_tick(const std::array<char, broker::
     );
 }
 
-void trade::RawMdRecorder::write_szse_trade_tick(const std::array<char, broker::max_udp_size>& message)
+void trade::RawMdRecorder::write_szse_trade_tick(const u_char* packet)
 {
-    const auto szse_trade_tick = reinterpret_cast<const broker::SZSEHpfTradeTick*>(message.data());
+    const auto szse_trade_tick = reinterpret_cast<const broker::SZSEHpfTradeTick*>(packet);
 
     m_szse_trade_writer << fmt::format(
         "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
@@ -367,9 +368,9 @@ void trade::RawMdRecorder::write_szse_trade_tick(const std::array<char, broker::
     );
 }
 
-void trade::RawMdRecorder::write_szse_l2_snap(const std::array<char, broker::max_udp_size>& message)
+void trade::RawMdRecorder::write_szse_l2_snap(const u_char* packet)
 {
-    const auto szse_l2_snap = reinterpret_cast<const broker::SZSEHpfL2Snap*>(message.data());
+    const auto szse_l2_snap = reinterpret_cast<const broker::SZSEHpfL2Snap*>(packet);
 
     m_szse_l2_snap_writer << fmt::format(
         "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",

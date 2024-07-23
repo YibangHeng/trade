@@ -48,6 +48,10 @@
       "version>=": "10.2.1#1"
     },
     {
+      "name": "libpcap",
+      "version>=": "1.10.4#1"
+    },
+    {
       "name": "nlohmann-json",
       "version>=": "3.11.3"
     },
