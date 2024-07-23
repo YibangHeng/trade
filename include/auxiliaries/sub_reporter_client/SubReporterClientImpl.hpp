@@ -32,7 +32,7 @@ class PUBLIC_API SubReporterClientImpl final: public utilities::LoginSyncer
 public:
     explicit SubReporterClientImpl(
         const std::string& host                                  = "127.0.0.1",
-        const uint16_t port                                      = 10000,
+        const uint16_t port                                      = 10100,
         L2SnapCallBackType&& l2_snap_callback                    = [](const muduo::net::TcpConnectionPtr&, const types::L2Tick&, muduo::Timestamp) {},
         NewSubscribeRspCallBackType&& new_subscribe_rsp_callback = [](const muduo::net::TcpConnectionPtr&, const types::NewSubscribeRsp&, muduo::Timestamp) {},
         ConnectCallBackType&& connect_callback                   = [](const muduo::net::TcpConnectionPtr&) {},

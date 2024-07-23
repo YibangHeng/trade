@@ -27,8 +27,8 @@ int trade::SubReporterClient::run()
     m_sub_reporter_client_impl = std::make_shared<SubReporterClientImpl>(
         m_arguments["address"].as<std::string>(),
         m_arguments["port"].as<uint16_t>(),
-        [this](const muduo::net::TcpConnectionPtr& conn, const types::L2Tick& l2_tick, muduo::Timestamp timestamp) { on_l2_snap_arrived(conn, l2_tick, timestamp); },
-        [this](const muduo::net::TcpConnectionPtr& conn, const types::NewSubscribeRsp& new_subscribe_rsp, muduo::Timestamp timestamp) { on_new_subscribe_rsp(conn, new_subscribe_rsp, timestamp); },
+        [this](const muduo::net::TcpConnectionPtr& conn, const types::L2Tick& l2_tick, const muduo::Timestamp timestamp) { on_l2_snap_arrived(conn, l2_tick, timestamp); },
+        [this](const muduo::net::TcpConnectionPtr& conn, const types::NewSubscribeRsp& new_subscribe_rsp, const muduo::Timestamp timestamp) { on_new_subscribe_rsp(conn, new_subscribe_rsp, timestamp); },
         [this](const muduo::net::TcpConnectionPtr& conn) { on_connected(conn); },
         [this](const muduo::net::TcpConnectionPtr& conn) { on_disconnected(conn); }
     );
@@ -82,7 +82,7 @@ bool trade::SubReporterClient::argv_parse(const int argc, char* argv[])
 
     /// Remote address.
     desc.add_options()("address,a", boost::program_options::value<std::string>()->default_value("127.0.0.1"), "remote server address");
-    desc.add_options()("port,p", boost::program_options::value<uint16_t>()->default_value(10000), "remote server port");
+    desc.add_options()("port,p", boost::program_options::value<uint16_t>()->default_value(10100), "remote server port");
 
     try {
         store(parse_command_line(argc, argv, desc), m_arguments);
