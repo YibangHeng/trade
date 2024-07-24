@@ -52,7 +52,7 @@ void trade::reporter::SubReporter::exchange_l2_tick_arrived(const std::shared_pt
 
     m_last_data[l2_tick->symbol()] = l2_tick;
 
-    m_outside->l2_tick_generated(l2_tick);
+    m_outside->exchange_l2_tick_arrived(l2_tick);
 }
 
 void trade::reporter::SubReporter::on_connected(const muduo::net::TcpConnectionPtr& conn)
