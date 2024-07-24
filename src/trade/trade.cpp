@@ -39,10 +39,18 @@ int trade::Trade::run()
     }
 
     const auto log_reporter = std::make_shared<reporter::LogReporter>();
-    const auto sub_reporter = std::make_shared<reporter::SubReporter>(10100, log_reporter);
+    const auto csv_reporter = std::make_shared<reporter::CSVReporter>(config->get<std::string>("Output.CSVOutputFolder"), log_reporter);
+    const auto sub_reporter = std::make_shared<reporter::SubReporter>(10100, csv_reporter);
+    const auto shm_reporter = std::make_shared<reporter::ShmReporter>(
+        config->get<std::string>("Output.ShmName"),
+        config->get<std::string>("Output.ShmMutexName"),
+        config->get<size_t>("Output.ShmSize"),
+        sub_reporter
+    );
+    const auto async_reporter = std::make_shared<reporter::AsyncReporter>(sub_reporter);
 
     /// Reporter.
-    m_reporter = sub_reporter;
+    m_reporter = async_reporter;
 
     /// Holder.
     m_holder = std::make_shared<holder::SQLiteHolder>();

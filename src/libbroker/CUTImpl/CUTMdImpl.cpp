@@ -113,9 +113,6 @@ void trade::broker::CUTMdImpl::tick_receiver() const
         }
 
         full_counter = 0;
-
-        /// Simulate l2 snap tick interval.
-        std::this_thread::sleep_for(std::chrono::milliseconds(config->get<int>("Mock.L2SnapTickInterval", 3000)));
     }
 }
 

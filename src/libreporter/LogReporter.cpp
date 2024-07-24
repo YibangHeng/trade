@@ -75,7 +75,7 @@ void trade::reporter::LogReporter::exchange_trade_tick_arrived(std::shared_ptr<t
 
 void trade::reporter::LogReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::L2Tick> l2_tick)
 {
-    md_logger->info("Exchange L2 tick arrived: {}", utilities::ToJSON()(*l2_tick));
+    md_logger->debug("Exchange L2 tick arrived: {}", utilities::ToJSON()(*l2_tick));
 
     m_outside->exchange_l2_tick_arrived(l2_tick);
 }
