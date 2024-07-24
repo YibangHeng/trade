@@ -116,10 +116,10 @@ private:
             m_conn.reset();
             disconnect_callback(conn);
 
-            notify_login_failure("connection failed");
-
             if (m_is_running) /// Try to reconnect.
                 m_client->connect();
+            else
+                notify_login_failure("connection failed");
         }
     }
 
