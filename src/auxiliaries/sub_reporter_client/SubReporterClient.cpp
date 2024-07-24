@@ -137,7 +137,7 @@ void trade::SubReporterClient::on_new_subscribe_rsp(
     muduo::Timestamp timestamp
 ) const
 {
-    logger->info("Subscribed to {}", fmt::join(new_subscribe_rsp.subscribed_symbol(), ", "));
+    logger->info("Subscribed to {}", fmt::join(new_subscribe_rsp.subscribed_symbols(), ", "));
 }
 
 void trade::SubReporterClient::on_connected(const muduo::net::TcpConnectionPtr& conn)
@@ -149,7 +149,7 @@ void trade::SubReporterClient::on_connected(const muduo::net::TcpConnectionPtr& 
 
         req.set_request_id(ticker_taper());
         req.set_app_name(app_name());
-        req.add_symbols_subscribe("*");
+        req.add_symbols_to_subscribe("*");
 
         utilities::ProtobufCodec::send(conn, req);
     }

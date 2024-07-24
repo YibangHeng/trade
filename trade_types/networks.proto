@@ -108,18 +108,18 @@ message NewCancelAllRsp
 /// 新订阅请求
 message NewSubscribeReq
 {
-    optional int64 request_id          = 1; /// 请求 ID
-    optional string app_name           = 2; /// 客户端应用名
-    repeated string symbols_subscribe  = 3; /// 新增订阅合约
-    repeated string symbol_unsubscribe = 4; /// 取消订阅合约
-    bool request_last_data             = 5; /// 是否发送当前的行情
+    optional int64 request_id              = 1; /// 请求 ID
+    optional string app_name               = 2; /// 客户端应用名
+    repeated string symbols_to_subscribe   = 3; /// 新增订阅合约
+    repeated string symbols_to_unsubscribe = 4; /// 取消订阅合约
+    bool request_last_data                 = 5; /// 是否发送当前最新的行情
 }
 
 /// 新订阅响应
 message NewSubscribeRsp
 {
-    int64 request_id                  = 1; /// 请求 ID
-    repeated string subscribed_symbol = 2; /// 当前订阅的合约
+    int64 request_id                   = 1; /// 请求 ID
+    repeated string subscribed_symbols = 2; /// 当前订阅的合约
 }
 
 ///

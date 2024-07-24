@@ -92,7 +92,7 @@ void trade::reporter::SubReporter::on_new_subscribe_req(
         std::lock_guard lock(m_app_id_to_symbols_mutex);
 
         for (const auto& symbol : m_app_id_to_symbols[conn])
-            new_subscribe_rsp.add_subscribed_symbol(symbol);
+            new_subscribe_rsp.add_subscribed_symbols(symbol);
     }
 
     utilities::ProtobufCodec::send(conn, new_subscribe_rsp);
@@ -128,7 +128,7 @@ void trade::reporter::SubReporter::update_subscripted_symbols(
 
     auto& subscripted_symbol_set = m_app_id_to_symbols[conn];
 
-    for (const auto& symbol : new_subscribe_req.symbols_subscribe()) {
+    for (const auto& symbol : new_subscribe_req.symbols_to_subscribe()) {
         if (symbol == "*") {
             subscripted_symbol_set.clear();
             subscripted_symbol_set.insert("*");
@@ -138,7 +138,7 @@ void trade::reporter::SubReporter::update_subscripted_symbols(
         subscripted_symbol_set.insert(symbol);
     }
 
-    for (const auto& symbol : new_subscribe_req.symbol_unsubscribe()) {
+    for (const auto& symbol : new_subscribe_req.symbols_to_unsubscribe()) {
         if (symbol == "*") {
             subscripted_symbol_set.clear();
             break;
