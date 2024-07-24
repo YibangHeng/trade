@@ -73,6 +73,8 @@ public:
     }
     ~SubReporterClientImpl() override
     {
+        m_is_running = false;
+
         m_loop->quit();
         m_event_loop_future.wait();
     }
@@ -100,8 +102,12 @@ private:
     void on_connected(const muduo::net::TcpConnectionPtr& conn)
     {
         if (conn->connected()) {
+            m_is_running = true;
+
+            /// Set connection.
             m_conn = conn;
             connect_callback(conn);
+
             notify_login_success();
 
             subscribe(m_subscribed_symbols);
@@ -109,7 +115,11 @@ private:
         else {
             m_conn.reset();
             disconnect_callback(conn);
+
             notify_login_failure("connection failed");
+
+            if (m_is_running) /// Try to reconnect.
+                m_client->connect();
         }
     }
 
@@ -168,6 +178,9 @@ private:
     std::future<void> m_event_loop_future;
     utilities::TickerTaper<int64_t> ticker_taper;
     std::string app_name;
+
+private:
+    std::atomic<bool> m_is_running;
 };
 
 } // namespace trade
