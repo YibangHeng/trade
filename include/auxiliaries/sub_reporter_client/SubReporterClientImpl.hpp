@@ -89,8 +89,8 @@ public:
 
         new_subscribe_req.set_request_id(ticker_taper());
         new_subscribe_req.set_app_name(app_name);
-        std::ranges::for_each(subscribes, [&new_subscribe_req](const auto& symbol) { new_subscribe_req.add_symbols_subscribe(symbol); });
-        std::ranges::for_each(unsubscribes, [&new_subscribe_req](const auto& symbol) { new_subscribe_req.add_symbol_unsubscribe(symbol); });
+        std::ranges::for_each(subscribes, [&new_subscribe_req](const auto& symbol) { new_subscribe_req.add_symbols_to_subscribe(symbol); });
+        std::ranges::for_each(unsubscribes, [&new_subscribe_req](const auto& symbol) { new_subscribe_req.add_symbols_to_unsubscribe(symbol); });
         new_subscribe_req.set_request_last_data(request_last_data);
 
         utilities::ProtobufCodec::send(m_conn, new_subscribe_req);
@@ -126,11 +126,17 @@ private:
         const muduo::net::TcpConnectionPtr& conn,
         const utilities::MessagePtr& message,
         const muduo::Timestamp timestamp
-    ) const
+    )
     {
         const auto& new_subscribe_rsp = std::dynamic_pointer_cast<types::NewSubscribeRsp>(message);
-        if (new_subscribe_rsp != nullptr)
+        if (new_subscribe_rsp != nullptr) {
             new_subscribe_rsp_callback(conn, *new_subscribe_rsp, timestamp);
+
+            m_subscribed_symbols.clear();
+
+            for (const auto& symbol : new_subscribe_rsp->subscribed_symbols())
+                m_subscribed_symbols.insert(symbol);
+        }
     }
 
     static void on_invalied_message(
@@ -147,6 +153,9 @@ private:
     NewSubscribeRspCallBackType new_subscribe_rsp_callback;
     ConnectCallBackType connect_callback;
     DisconnectCallBackType disconnect_callback;
+
+private:
+    std::unordered_set<std::string> m_subscribed_symbols;
 
 private:
     muduo::net::TcpConnectionPtr m_conn;

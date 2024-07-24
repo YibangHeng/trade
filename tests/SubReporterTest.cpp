@@ -94,8 +94,8 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
                     CHECK(l2_tick.exchange_time() == 925000);
                 },
                 [&new_subscribe_req_acknowledged, &mutex, &cv](const muduo::net::TcpConnectionPtr&, const trade::types::NewSubscribeRsp& new_subscribe_rsp, muduo::Timestamp) {
-                    CHECK(new_subscribe_rsp.subscribed_symbol().size() == 1);
-                    CHECK(new_subscribe_rsp.subscribed_symbol().at(0) == "600875.SH");
+                    CHECK(new_subscribe_rsp.subscribed_symbols().size() == 1);
+                    CHECK(new_subscribe_rsp.subscribed_symbols().at(0) == "600875.SH");
 
                     std::lock_guard lock(mutex);
                     new_subscribe_req_acknowledged = true;
@@ -178,8 +178,8 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
                     }
                 },
                 [&new_subscribe_req_acknowledged, &mutex, &cv](const muduo::net::TcpConnectionPtr&, const trade::types::NewSubscribeRsp& new_subscribe_rsp, muduo::Timestamp) {
-                    CHECK(new_subscribe_rsp.subscribed_symbol().size() == 1);
-                    CHECK(new_subscribe_rsp.subscribed_symbol().at(0) == "*");
+                    CHECK(new_subscribe_rsp.subscribed_symbols().size() == 1);
+                    CHECK(new_subscribe_rsp.subscribed_symbols().at(0) == "*");
 
                     std::lock_guard lock(mutex);
                     new_subscribe_req_acknowledged = true;
@@ -266,8 +266,8 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
                     }
                 },
                 [](const muduo::net::TcpConnectionPtr&, const trade::types::NewSubscribeRsp& new_subscribe_rsp, muduo::Timestamp) {
-                    CHECK(new_subscribe_rsp.subscribed_symbol().size() == 1);
-                    CHECK(new_subscribe_rsp.subscribed_symbol().at(0) == "*");
+                    CHECK(new_subscribe_rsp.subscribed_symbols().size() == 1);
+                    CHECK(new_subscribe_rsp.subscribed_symbols().at(0) == "*");
                 },
                 [](const muduo::net::TcpConnectionPtr& conn) {
                     CHECK(conn != nullptr);
