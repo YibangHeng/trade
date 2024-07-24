@@ -15,7 +15,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
 {
     const auto sse_l2_snap_0 = std::make_shared<trade::types::L2Tick>();
 
-    sse_l2_snap_0->set_symbol("600875.SH");
+    sse_l2_snap_0->set_symbol("600875");
     sse_l2_snap_0->set_price_1000x(2233);
     sse_l2_snap_0->set_quantity(1000);
     sse_l2_snap_0->set_ask_unique_id(10001);
@@ -24,7 +24,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
 
     const auto sse_l2_snap_1 = std::make_shared<trade::types::L2Tick>();
 
-    sse_l2_snap_1->set_symbol("600875.SH");
+    sse_l2_snap_1->set_symbol("600875");
     sse_l2_snap_1->set_price_1000x(2233);
     sse_l2_snap_1->set_quantity(2000);
     sse_l2_snap_1->set_ask_unique_id(20001);
@@ -33,7 +33,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
 
     const auto sse_l2_snap_2 = std::make_shared<trade::types::L2Tick>();
 
-    sse_l2_snap_2->set_symbol("600875.SH");
+    sse_l2_snap_2->set_symbol("600875");
     sse_l2_snap_2->set_price_1000x(2233);
     sse_l2_snap_2->set_quantity(3000);
     sse_l2_snap_2->set_ask_unique_id(30001);
@@ -42,7 +42,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
 
     const auto szse_l2_snap_0 = std::make_shared<trade::types::L2Tick>();
 
-    szse_l2_snap_0->set_symbol("000001.SZ");
+    szse_l2_snap_0->set_symbol("000001");
     szse_l2_snap_0->set_price_1000x(3322);
     szse_l2_snap_0->set_quantity(4000);
     szse_l2_snap_0->set_ask_unique_id(40001);
@@ -51,7 +51,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
 
     const auto szse_l2_snap_1 = std::make_shared<trade::types::L2Tick>();
 
-    szse_l2_snap_1->set_symbol("000001.SZ");
+    szse_l2_snap_1->set_symbol("000001");
     szse_l2_snap_1->set_price_1000x(3322);
     szse_l2_snap_1->set_quantity(5000);
     szse_l2_snap_1->set_ask_unique_id(50001);
@@ -60,7 +60,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
 
     const auto szse_l2_snap_2 = std::make_shared<trade::types::L2Tick>();
 
-    szse_l2_snap_2->set_symbol("000001.SZ");
+    szse_l2_snap_2->set_symbol("000001");
     szse_l2_snap_2->set_price_1000x(3322);
     szse_l2_snap_2->set_quantity(6000);
     szse_l2_snap_2->set_ask_unique_id(60001);
@@ -86,7 +86,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
                 [&l2_snap_counter](const muduo::net::TcpConnectionPtr&, const trade::types::L2Tick& l2_tick, muduo::Timestamp) {
                     l2_snap_counter++;
 
-                    CHECK(l2_tick.symbol() == "600875.SH");
+                    CHECK(l2_tick.symbol() == "600875");
                     CHECK(l2_tick.price_1000x() == 2233);
                     CHECK(l2_tick.quantity() == 1000 * l2_snap_counter);
                     CHECK(l2_tick.ask_unique_id() == l2_snap_counter * 10000 + 1);
@@ -95,7 +95,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
                 },
                 [&new_subscribe_req_acknowledged, &mutex, &cv](const muduo::net::TcpConnectionPtr&, const trade::types::NewSubscribeRsp& new_subscribe_rsp, muduo::Timestamp) {
                     CHECK(new_subscribe_rsp.subscribed_symbols().size() == 1);
-                    CHECK(new_subscribe_rsp.subscribed_symbols().at(0) == "600875.SH");
+                    CHECK(new_subscribe_rsp.subscribed_symbols().at(0) == "600875");
 
                     std::lock_guard lock(mutex);
                     new_subscribe_req_acknowledged = true;
@@ -111,7 +111,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
 
             client.wait_login();
 
-            client.subscribe<std::initializer_list<std::string>>({"600875.SH"}, {"000001.SZ"});
+            client.subscribe<std::initializer_list<std::string>>({"600875"}, {"000001"});
 
             while (l2_snap_counter < 3) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -161,7 +161,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
                     l2_snap_counter++;
 
                     if (l2_snap_counter < 4) {
-                        CHECK(l2_tick.symbol() == "600875.SH");
+                        CHECK(l2_tick.symbol() == "600875");
                         CHECK(l2_tick.price_1000x() == 2233);
                         CHECK(l2_tick.quantity() == 1000 * l2_snap_counter);
                         CHECK(l2_tick.ask_unique_id() == l2_snap_counter * 10000 + 1);
@@ -169,7 +169,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
                         CHECK(l2_tick.exchange_time() == 925000);
                     }
                     else {
-                        CHECK(l2_tick.symbol() == "000001.SZ");
+                        CHECK(l2_tick.symbol() == "000001");
                         CHECK(l2_tick.price_1000x() == 3322);
                         CHECK(l2_tick.quantity() == 1000 * l2_snap_counter);
                         CHECK(l2_tick.ask_unique_id() == l2_snap_counter * 10000 + 1);
@@ -249,7 +249,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
                     l2_snap_counter++;
 
                     if (l2_snap_counter == 1) {
-                        CHECK(l2_tick.symbol() == "000001.SZ");
+                        CHECK(l2_tick.symbol() == "000001");
                         CHECK(l2_tick.price_1000x() == 3322);
                         CHECK(l2_tick.quantity() == 6000);
                         CHECK(l2_tick.ask_unique_id() == 60001);
@@ -257,7 +257,7 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
                         CHECK(l2_tick.exchange_time() == 925000);
                     }
                     else {
-                        CHECK(l2_tick.symbol() == "600875.SH");
+                        CHECK(l2_tick.symbol() == "600875");
                         CHECK(l2_tick.price_1000x() == 2233);
                         CHECK(l2_tick.quantity() == 3000);
                         CHECK(l2_tick.ask_unique_id() == 30001);
