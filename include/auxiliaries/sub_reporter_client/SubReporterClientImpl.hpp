@@ -103,6 +103,8 @@ private:
             m_conn = conn;
             connect_callback(conn);
             notify_login_success();
+
+            subscribe(m_subscribed_symbols);
         }
         else {
             m_conn.reset();
