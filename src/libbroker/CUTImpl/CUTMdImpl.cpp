@@ -24,7 +24,7 @@ trade::broker::CUTMdImpl::CUTMdImpl(
 void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& symbols)
 {
     if (!symbols.empty()) {
-        throw std::runtime_error("Wrong usage of CUTMdImpl::subscribe: symbols treated as multicast address and must be specified in config");
+        throw std::runtime_error("Subscribing for specific symbols is not supported for CUTMdImpl yet");
     }
 
     m_is_running = true;
@@ -43,23 +43,20 @@ void trade::broker::CUTMdImpl::subscribe(const std::unordered_set<std::string>& 
     }
 
     /// Create tick receiver threads.
-    m_tick_receiver_threads.emplace_back(&CUTMdImpl::tick_receiver, this, "", config->get<std::string>("Server.InterfaceAddress"));
+    m_tick_receiver_thread = std::thread(&CUTMdImpl::tick_receiver, this);
 }
 
 void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>& symbols)
 {
     if (!symbols.empty()) {
-        throw std::runtime_error("Wrong usage of CUTMdImpl::unsubscribe: symbols treated as multicast address and must be specified in config");
+        throw std::runtime_error("Unsubscribing for specific symbols is not supported for CUTMdImpl yet");
     }
 
     m_is_running = false;
 
-    for (auto&& thread : m_tick_receiver_threads) {
-        thread.joinable() ? thread.join() : void();
+    m_tick_receiver_thread.joinable() ? m_tick_receiver_thread.join() : void();
 
-        /// TODO: Find a way to get multicast address here.
-        logger->info("Unsubscribed from ODTD multicast address: {} at {}", "unknown", config->get<std::string>("Server.InterfaceAddress"));
-    }
+    logger->info("Tick receiver thread exited");
 
     /// Waiting for all booker threads to exit.
     for (auto& booker_thread : m_booker_threads) {
@@ -70,7 +67,7 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
     }
 }
 
-void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const std::string& interface_address) const
+void trade::broker::CUTMdImpl::tick_receiver() const
 {
     char errbuf[PCAP_ERRBUF_SIZE];
     const auto handle = pcap_fopen_offline(stdin, errbuf);
@@ -98,6 +95,7 @@ void trade::broker::CUTMdImpl::tick_receiver(const std::string& address, const s
 
         const auto payload = utilities::UdpPayLoadGetter()(packet, header.caplen, udp_payload_length);
 
+        /// Copy udp payload to message.
         message->resize(udp_payload_length);
         std::copy_n(payload, udp_payload_length, message->begin());
 

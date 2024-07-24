@@ -30,13 +30,13 @@ public:
 private:
     using MessageBufferType = boost::lockfree::spsc_queue<std::vector<u_char>*, boost::lockfree::capacity<1000000>>;
 
-    void tick_receiver(const std::string& address, const std::string& interface_address) const;
+    void tick_receiver() const;
     void booker(MessageBufferType& message_buffer);
 
 private:
     std::atomic<bool> m_is_running;
+    std::thread m_tick_receiver_thread;
     size_t m_booker_thread_size;
-    std::vector<std::thread> m_tick_receiver_threads;
     std::vector<std::thread> m_booker_threads;
     std::vector<std::unique_ptr<MessageBufferType>> m_message_buffers;
 
