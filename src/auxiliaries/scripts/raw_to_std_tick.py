@@ -89,7 +89,7 @@ def convert_sse(tick_file, output_folder):
         logging.warning(f"No data for file {tick_file}, skipped")
         return ErrorType.NoData
 
-    del std_tick["time"]
+    # del std_tick["time"]
 
     std_tick.rename(
         columns = {
@@ -170,7 +170,7 @@ def convert_szse_od(order_file):
     if len(od) <= 2:
         return None
 
-    del od["time"]
+    # del od["time"]
 
     od.rename(
         columns = {
@@ -213,7 +213,7 @@ def convert_szse_td(trade_file):
     if len(td) <= 2:
         return None
 
-    del td["time"]
+    # del td["time"]
 
     td.rename(
         columns = {
@@ -273,7 +273,12 @@ def calculate_quantity(std_tick, output_folder):
 
     traded_tick = traded_tick[["symbol", "quantity"]]
 
-    output_path = os.path.join(output_folder, "quantity.csv")
+    traded_tick = traded_tick.sort_values(by = "symbol")
+
+    # Remove all symbols that start with "1", "2" or "5".
+    traded_tick = traded_tick[~traded_tick["symbol"].str.startswith(("1", "2", "5"))]
+
+    output_path = os.path.join(output_folder, "quantity_from_std_ticks.csv")
     traded_tick.to_csv(output_path, index = False, mode = 'a', header = not os.path.exists(output_path))
 
 

@@ -13,10 +13,12 @@ def connect_to_sql(host, user, password, database):
 
 
 def traded_volume_from_wind(date, engine):
-    return pd.read_sql(
-        f"SELECT S_INFO_WINDCODE, S_DQ_VOLUME FROM `AShareEODPrices` WHERE S_DQ_VOLUME > 0 AND TRADE_DT = '{date}'",
-        engine
-    )
+    return pd.read_sql(f"SELECT S_INFO_WINDCODE, S_DQ_VOLUME "
+                       f"FROM `AShareEODPrices` "
+                       f"WHERE S_DQ_VOLUME > 0 AND TRADE_DT = '{date}' "
+                       f"AND (S_INFO_WINDCODE LIKE '%%.SH' OR S_INFO_WINDCODE LIKE '%%.SZ') "
+                       f"ORDER BY S_INFO_WINDCODE",
+                       engine)
 
 
 if __name__ == "__main__":
@@ -77,8 +79,13 @@ if __name__ == "__main__":
 
     if args.date:
         df = traded_volume_from_wind(args.date, engine)
+
+        df['S_INFO_WINDCODE'] = df['S_INFO_WINDCODE'].str.replace(r'\.SH$', '', regex = True)
+        df['S_INFO_WINDCODE'] = df['S_INFO_WINDCODE'].str.replace(r'\.SZ$', '', regex = True)
+
         df["S_DQ_VOLUME"] = df["S_DQ_VOLUME"] * 100
         df["S_DQ_VOLUME"] = df["S_DQ_VOLUME"].astype(int)
+
         df.to_csv(args.output_file, index = False)
     else:
         logging.info("Please specify date")

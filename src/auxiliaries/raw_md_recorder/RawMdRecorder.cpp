@@ -9,7 +9,6 @@
 #include "libbroker/CUTImpl/CUTCommonData.h"
 #include "utilities/AddressHelper.hpp"
 #include "utilities/NetworkHelper.hpp"
-#include "utilities/TimeHelper.hpp"
 #include "utilities/UdpPayLoadGetter.hpp"
 
 trade::RawMdRecorder::RawMdRecorder(const int argc, char* argv[])
@@ -452,7 +451,7 @@ void trade::RawMdRecorder::write_szse_l2_snap(const u_char* packet)
 
 void trade::RawMdRecorder::new_sse_tick_writer()
 {
-    const std::filesystem::path file_path = fmt::format("{}/{}/sse-tick.csv", m_arguments["output-folder"].as<std::string>(), utilities::Date<std::string>()());
+    const std::filesystem::path file_path = fmt::format("{}/sse-tick.csv", m_arguments["output-folder"].as<std::string>());
 
     create_directories(std::filesystem::path(file_path).parent_path());
 
@@ -493,7 +492,7 @@ void trade::RawMdRecorder::new_sse_tick_writer()
 
 void trade::RawMdRecorder::new_sse_l2_snap_writer()
 {
-    const std::filesystem::path file_path = fmt::format("{}/{}/sse-l2-snap.csv", m_arguments["output-folder"].as<std::string>(), utilities::Date<std::string>()());
+    const std::filesystem::path file_path = fmt::format("{}/sse-l2-snap.csv", m_arguments["output-folder"].as<std::string>());
 
     create_directories(std::filesystem::path(file_path).parent_path());
 
@@ -582,7 +581,7 @@ void trade::RawMdRecorder::new_sse_l2_snap_writer()
 
 void trade::RawMdRecorder::new_szse_order_writer()
 {
-    const std::filesystem::path file_path = fmt::format("{}/{}/szse-order-tick.csv", m_arguments["output-folder"].as<std::string>(), utilities::Date<std::string>()());
+    const std::filesystem::path file_path = fmt::format("{}/szse-order-tick.csv", m_arguments["output-folder"].as<std::string>());
 
     create_directories(std::filesystem::path(file_path).parent_path());
 
@@ -614,7 +613,7 @@ void trade::RawMdRecorder::new_szse_order_writer()
 
 void trade::RawMdRecorder::new_szse_trade_writer()
 {
-    const std::filesystem::path file_path = fmt::format("{}/{}/szse-trade-tick.csv", m_arguments["output-folder"].as<std::string>(), utilities::Date<std::string>()());
+    const std::filesystem::path file_path = fmt::format("{}/szse-trade-tick.csv", m_arguments["output-folder"].as<std::string>());
 
     create_directories(std::filesystem::path(file_path).parent_path());
 
@@ -642,14 +641,12 @@ void trade::RawMdRecorder::new_szse_trade_writer()
         << "exe_px,"
         << "exe_qty,"
         << "exe_type"
-        /// Time.
-        << "time"
         << std::endl;
 }
 
 void trade::RawMdRecorder::new_szse_l2_snap_writer()
 {
-    const std::filesystem::path file_path = fmt::format("{}/{}/szse-l2-snap.csv", m_arguments["output-folder"].as<std::string>(), utilities::Date<std::string>()());
+    const std::filesystem::path file_path = fmt::format("{}/szse-l2-snap.csv", m_arguments["output-folder"].as<std::string>());
 
     create_directories(std::filesystem::path(file_path).parent_path());
 
@@ -720,7 +717,7 @@ void trade::RawMdRecorder::new_szse_l2_snap_writer()
         << "ask_4_px,"
         << "ask_4_qty,"
         << "ask_5_px,"
-        << "ask_5_qty"
+        << "ask_5_qty,"
         << "ask_6_px,"
         << "ask_6_qty,"
         << "ask_7_px,"
