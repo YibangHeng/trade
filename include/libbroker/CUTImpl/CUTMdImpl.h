@@ -28,7 +28,7 @@ public:
     void unsubscribe(const std::unordered_set<std::string>& symbols);
 
 private:
-    using MessageBufferType = boost::lockfree::spsc_queue<std::vector<u_char>*, boost::lockfree::capacity<1000000>>;
+    using MessageBufferType = boost::lockfree::spsc_queue<std::vector<u_char>*, boost::lockfree::capacity<100000000>>;
 
     void tick_receiver() const;
     void booker(MessageBufferType& message_buffer);

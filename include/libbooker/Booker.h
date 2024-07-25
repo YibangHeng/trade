@@ -73,6 +73,7 @@ private:
 
 private:
     L2TickPtr m_latest_l2_tick;
+    std::unordered_set<std::string> m_failed_symbols;
 
 private:
     /// Symbol -> OrderBook.

@@ -155,7 +155,10 @@ bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
     }
 
     if (m_md_validator.has_value() && !m_md_validator.value().check(trade_tick)) {
-        logger->error("Verification failed for trade tick: {}", utilities::ToJSON()(*trade_tick));
+        if (!m_failed_symbols.contains(trade_tick->symbol())) {
+            logger->error("Verification failed for trade tick: {}", utilities::ToJSON()(*trade_tick));
+            m_failed_symbols.insert(trade_tick->symbol());
+        }
         return false;
     }
 
