@@ -4,6 +4,7 @@
 #include <third/muduo/muduo/net/InetAddress.h>
 
 #include "libreporter/SubReporter.h"
+#include "utilities/ToJSON.hpp"
 
 trade::reporter::SubReporter::SubReporter(const int64_t port, const std::shared_ptr<IReporter>& outside)
     : AppBase("SubReporter"),
@@ -47,6 +48,7 @@ void trade::reporter::SubReporter::exchange_l2_tick_arrived(const std::shared_pt
     for (const auto& [conn, symbols] : m_app_id_to_symbols) {
         if (symbols.contains(l2_tick->symbol()) || symbols.contains("*")) {
             utilities::ProtobufCodec::send(conn, *l2_tick);
+            logger->info("Send l2 tick to {}({}): {}", conn->name(), conn->peerAddress().toIpPort(), utilities::ToJSON()(*l2_tick));
         }
     }
 
@@ -81,6 +83,8 @@ void trade::reporter::SubReporter::on_new_subscribe_req(
         logger->warn("Invalid message received from {}", conn->peerAddress().toIpPort());
         return;
     }
+
+    logger->info("New subscribe request received from {}({}): {}", conn->name(), conn->peerAddress().toIpPort(), utilities::ToJSON()(*new_subscribe_req));
 
     update_subscripted_symbols(conn, *new_subscribe_req);
 
