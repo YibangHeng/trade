@@ -73,8 +73,9 @@ def do_convert(input_folder, output_folder):
     szse_trade_file = os.path.join(input_folder, "szse-trade-tick.csv")
 
     try:
-        convert_sse(sse_tick_file, output_folder)
-        convert_szse(szse_order_file, szse_trade_file, output_folder)
+        sse_std_ticks = convert_sse(sse_tick_file, output_folder)
+        szse_std_ticks = convert_szse(szse_order_file, szse_trade_file, output_folder)
+        calculate_quantity(sse_std_ticks, szse_std_ticks, output_folder)
     except Exception as e:
         logging.error(f"Failed to convert: {e}")
         return ErrorType.BadData
@@ -87,7 +88,7 @@ def convert_sse(tick_file, output_folder):
 
     if std_tick is None:
         logging.warning(f"No data for file {tick_file}, skipped")
-        return ErrorType.NoData
+        return None
 
     # del std_tick["time"]
 
@@ -135,9 +136,7 @@ def convert_sse(tick_file, output_folder):
         group.to_csv(os.path.join(output_folder, f"{symbol}-std-tick.csv"), index = False)
         logging.info(f"Saved sse's std tick in file {os.path.join(output_folder, f'{symbol}-std-tick.csv')}")
 
-    calculate_quantity(std_tick, output_folder)
-
-    return True
+    return std_tick
 
 
 def convert_szse(order_file, trade_file, output_folder):
@@ -149,7 +148,7 @@ def convert_szse(order_file, trade_file, output_folder):
 
     if od is None or td is None:
         logging.warning(f"No data for file {order_file} or {trade_file}, skipped")
-        return False
+        return None
 
     std_tick = join_to_std_tick(od, td)
 
@@ -159,9 +158,7 @@ def convert_szse(order_file, trade_file, output_folder):
         group.to_csv(os.path.join(output_folder, f"{symbol}-std-tick.csv"), index = False)
         logging.info(f"Saved szse's std tick in file {os.path.join(output_folder, f'{symbol}-std-tick.csv')}")
 
-    calculate_quantity(std_tick, output_folder)
-
-    return True
+    return std_tick
 
 
 def convert_szse_od(order_file):
@@ -266,8 +263,11 @@ def join_to_std_tick(od, td):
     return std_tick
 
 
-def calculate_quantity(std_tick, output_folder):
-    traded_tick = std_tick[std_tick["order_type"] == "T"]
+def calculate_quantity(sse_std_tick, szse_std_tick, output_folder):
+    sse_traded_tick = sse_std_tick[sse_std_tick["order_type"] == "T"]
+    szse_traded_tick = szse_std_tick[szse_std_tick["order_type"] == "T"]
+
+    traded_tick = pd.concat([sse_traded_tick, szse_traded_tick], ignore_index = True)
 
     traded_tick = traded_tick.groupby("symbol")["quantity"].sum().reset_index()
 
@@ -279,7 +279,7 @@ def calculate_quantity(std_tick, output_folder):
     traded_tick = traded_tick[~traded_tick["symbol"].str.startswith(("1", "2", "5"))]
 
     output_path = os.path.join(output_folder, "quantity_from_std_ticks.csv")
-    traded_tick.to_csv(output_path, index = False, mode = 'a', header = not os.path.exists(output_path))
+    traded_tick.to_csv(output_path, index = False)
 
 
 if __name__ == "__main__":
