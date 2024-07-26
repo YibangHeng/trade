@@ -173,7 +173,7 @@ void trade::booker::Booker::switch_to_continuous_stage()
     logger->info("Switching to continuous trade stage at {}", utilities::Now<std::string>()());
 
     /// Move all unfinished orders from call auction stage to continuous trade stage.
-    for (auto& [symbol, call_auction_holder] : m_call_auction_holders) {
+    for (auto& call_auction_holder : m_call_auction_holders | std::views::values) {
         while (true) {
             const auto order_tick = call_auction_holder.pop();
             if (order_tick == nullptr)
@@ -281,7 +281,6 @@ void trade::booker::Booker::on_fill(
 void trade::booker::Booker::on_cancel_reject(const OrderWrapperPtr& order, const char* reason)
 {
     logger->error("Cancel for {} was rejected: {}", order->unique_id(), reason);
-    return;
 }
 
 void trade::booker::Booker::on_replace_reject(const OrderWrapperPtr& order, const char* reason)

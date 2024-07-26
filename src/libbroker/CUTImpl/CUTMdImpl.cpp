@@ -142,6 +142,7 @@ void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
         /// SSE has no raw trade tick. We tell it by order type.
         if (order_tick != nullptr && order_tick->order_type() == types::OrderType::fill) {
             trade_tick = CUTCommonData::x_ost_forward_to_trade_from_order(order_tick);
+            assert(order_tick == nullptr);
         }
 
         /// SZSE reports cancel orders as trade tick.
