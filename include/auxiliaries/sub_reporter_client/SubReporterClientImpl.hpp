@@ -110,7 +110,8 @@ private:
 
             notify_login_success();
 
-            subscribe(m_subscribed_symbols);
+            if (!m_subscribed_symbols.empty())
+                subscribe(m_subscribed_symbols);
         }
         else {
             m_conn.reset();
