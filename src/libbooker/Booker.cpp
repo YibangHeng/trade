@@ -133,8 +133,6 @@ bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         add(order_tick);
 
         m_orders.erase(trade_tick->ask_unique_id());
-
-        return true;
     }
 
     /// If trade arrived while no order for this trade exists (for SSE).
@@ -150,8 +148,6 @@ bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         add(order_tick);
 
         m_orders.erase(trade_tick->bid_unique_id());
-
-        return true;
     }
 
     if (m_md_validator.has_value() && !m_md_validator.value().check(trade_tick)) {

@@ -107,9 +107,7 @@ inline booker::OrderTickPtr CUTCommonData::to_order_tick<SSEHpfTick>(const std::
     order_tick->set_x_ost_sse_ask_unique_id(to_unique_id(raw_order->m_sell_order_no, raw_order->m_symbol_id));
     order_tick->set_x_ost_sse_bid_unique_id(to_unique_id(raw_order->m_buy_order_no, raw_order->m_symbol_id));
 
-    /// Just ignore fill tick.
-    if (order_tick->order_type() == types::OrderType::invalid_order_type
-        || order_tick->order_type() == types::OrderType::fill)
+    if (order_tick->order_type() == types::OrderType::invalid_order_type)
         return nullptr;
 
     return order_tick;

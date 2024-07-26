@@ -152,10 +152,10 @@ void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
         }
 
         if (order_tick != nullptr) {
-            logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
-
             if (order_tick->exchange_time() >= 93000000) [[likely]]
                 booker.switch_to_continuous_stage();
+
+            logger->debug("Received order tick: {}", utilities::ToJSON()(*order_tick));
 
             booker.add(order_tick);
 
@@ -163,6 +163,9 @@ void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
         }
 
         if (trade_tick != nullptr) {
+            if (trade_tick->exchange_time() >= 93000000) [[likely]]
+                booker.switch_to_continuous_stage();
+
             logger->debug("Received trade tick: {}", utilities::ToJSON()(*trade_tick));
 
             booker.trade(trade_tick);
