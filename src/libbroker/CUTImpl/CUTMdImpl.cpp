@@ -8,7 +8,7 @@
 #include "utilities/AddressHelper.hpp"
 #include "utilities/NetworkHelper.hpp"
 #include "utilities/ToJSON.hpp"
-#include "utilities/UdpPayLoadGetter.hpp"
+#include "utilities/UdpPayloadGetter.hpp"
 
 trade::broker::CUTMdImpl::CUTMdImpl(
     std::shared_ptr<ConfigType> config,
@@ -93,7 +93,7 @@ void trade::broker::CUTMdImpl::tick_receiver() const
         /// TODO: Use memory pool to implement this.
         const auto message = new std::vector<u_char>(max_udp_size);
 
-        const auto payload = utilities::UdpPayLoadGetter()(packet, header.caplen, udp_payload_length);
+        const auto payload = utilities::UdpPayloadGetter()(packet, header.caplen, udp_payload_length);
 
         /// Copy udp payload to message.
         message->resize(udp_payload_length);

@@ -9,7 +9,7 @@
 #include "libbroker/CUTImpl/CUTCommonData.h"
 #include "utilities/AddressHelper.hpp"
 #include "utilities/NetworkHelper.hpp"
-#include "utilities/UdpPayLoadGetter.hpp"
+#include "utilities/UdpPayloadGetter.hpp"
 
 trade::RawMdRecorder::RawMdRecorder(const int argc, char* argv[])
     : AppBase("raw_md_recorder")
@@ -164,7 +164,7 @@ void trade::RawMdRecorder::tick_receiver()
     pcap_pkthdr header {};
 
     while (m_is_running && (packet = pcap_next(handle, &header)) != nullptr) {
-        const auto [payload, length] = utilities::UdpPayLoadGetter()(packet);
+        const auto [payload, length] = utilities::UdpPayloadGetter()(packet);
 
         switch (length) {
         case broker::sse_hpf_tick_size: writer(payload, broker::sse_hpf_tick_type); break;

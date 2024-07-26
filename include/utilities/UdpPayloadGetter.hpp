@@ -6,7 +6,7 @@
 namespace trade::utilities
 {
 
-class UdpPayLoadGetter
+class UdpPayloadGetter
 {
 public:
     std::tuple<const u_char*, size_t> operator()(const u_char* packet) const
