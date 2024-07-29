@@ -149,6 +149,7 @@ void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
         /// In this case, forward it to order tick.
         if (trade_tick != nullptr && trade_tick->x_ost_szse_exe_type() == types::OrderType::cancel) {
             order_tick = CUTCommonData::x_ost_forward_to_order_from_trade(trade_tick);
+            assert(trade_tick == nullptr);
         }
 
         if (order_tick != nullptr) {

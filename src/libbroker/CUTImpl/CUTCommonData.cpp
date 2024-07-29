@@ -222,10 +222,10 @@ trade::booker::OrderTickPtr trade::broker::CUTCommonData::x_ost_forward_to_order
 {
     auto order_tick = std::make_shared<types::OrderTick>();
 
-    order_tick->set_unique_id(trade_tick->ask_unique_id() + trade_tick->bid_unique_id());
+    order_tick->set_unique_id(std::max(trade_tick->ask_unique_id(), trade_tick->bid_unique_id()));
     order_tick->set_order_type(trade_tick->x_ost_szse_exe_type());
     order_tick->set_symbol(trade_tick->symbol());
-    order_tick->set_side(types::SideType::invalid_side);
+    order_tick->set_side(trade_tick->ask_unique_id() > trade_tick->bid_unique_id() ? types::SideType::sell : types::SideType::buy);
     order_tick->set_price_1000x(trade_tick->exec_price_1000x());
     order_tick->set_quantity(trade_tick->exec_quantity());
     order_tick->set_exchange_time(trade_tick->exchange_time());
