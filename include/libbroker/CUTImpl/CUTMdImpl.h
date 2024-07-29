@@ -30,7 +30,7 @@ public:
 private:
     using MessageBufferType = boost::lockfree::spsc_queue<std::vector<u_char>*, boost::lockfree::capacity<100000000>>;
 
-    void tick_receiver() const;
+    void tick_receiver();
     void booker(MessageBufferType& message_buffer);
 
 private:

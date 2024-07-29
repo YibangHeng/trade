@@ -67,7 +67,7 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
     }
 }
 
-void trade::broker::CUTMdImpl::tick_receiver() const
+void trade::broker::CUTMdImpl::tick_receiver()
 {
     char errbuf[PCAP_ERRBUF_SIZE];
     const auto handle = pcap_fopen_offline(stdin, errbuf);
@@ -83,8 +83,10 @@ void trade::broker::CUTMdImpl::tick_receiver() const
     while (m_is_running) {
         const u_char* packet = pcap_next(handle, &header);
 
-        if (packet == nullptr)
-            continue;
+        if (packet == nullptr) {
+            m_is_running = false;
+            return;
+        }
 
         /// boost::freelock::queue imposes a constraint that its elements
         /// must have trivial destructors. Consequently, usage of

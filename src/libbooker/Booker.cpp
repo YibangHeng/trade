@@ -100,11 +100,12 @@ bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
     const auto exchange_time = trade_tick->exchange_time() / 1000;
 
     /// If trade made in open call auction stage.
-    if (exchange_time == 92500)
+    if (exchange_time >= 92500 && exchange_time < 93000)
         m_call_auction_holders[trade_tick->symbol()].trade(*trade_tick);
 
     /// If trade made in open/close continuous stage.
-    if (exchange_time == 92500 || exchange_time == 150000) [[unlikely]] {
+    if ((exchange_time >= 92500 && exchange_time < 93000)
+        || (exchange_time >= 145700 && exchange_time <= 151000)) [[unlikely]] {
         /// Report trade.
         const auto l2_tick = std::make_shared<types::L2Tick>();
 
