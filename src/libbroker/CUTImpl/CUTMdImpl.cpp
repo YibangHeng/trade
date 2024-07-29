@@ -135,10 +135,10 @@ void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
 
         switch (message->size()) {
         case sizeof(SSEHpfTick): order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(*message); break;
-        case sizeof(SSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SSEHpfL2Snap>(*message); break;
+        case sizeof(SSEHpfL2Snap): l2_tick = CUTCommonData::to_exchange_l2_tick<SSEHpfL2Snap>(*message); break;
         case sizeof(SZSEHpfOrderTick): order_tick = CUTCommonData::to_order_tick<SZSEHpfOrderTick>(*message); break;
         case sizeof(SZSEHpfTradeTick): trade_tick = CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(*message); break;
-        case sizeof(SZSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(*message); break;
+        case sizeof(SZSEHpfL2Snap): l2_tick = CUTCommonData::to_exchange_l2_tick<SZSEHpfL2Snap>(*message); break;
         default: break;
         }
 

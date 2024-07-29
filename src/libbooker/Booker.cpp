@@ -109,7 +109,7 @@ bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         const auto l2_tick = std::make_shared<types::L2Tick>();
 
         l2_tick->set_symbol(trade_tick->symbol());
-        l2_tick->set_price_1000x(trade_tick->exec_price_1000x());
+        l2_tick->set_price(trade_tick->exec_price_1000x());
         l2_tick->set_quantity(trade_tick->exec_quantity());
         l2_tick->set_ask_unique_id(trade_tick->ask_unique_id());
         l2_tick->set_bid_unique_id(trade_tick->bid_unique_id());
@@ -240,7 +240,7 @@ void trade::booker::Booker::on_trade(
     /// Booker::on_fill() is called before Booker::on_trade().
 
     m_latest_l2_tick->set_symbol(book->symbol());
-    m_latest_l2_tick->set_price_1000x(BookerCommonData::to_price(price));
+    m_latest_l2_tick->set_price(BookerCommonData::to_price(price));
     m_latest_l2_tick->set_quantity(BookerCommonData::to_quantity(qty));
 
     generate_level_price();
@@ -340,67 +340,27 @@ void trade::booker::Booker::generate_level_price()
     auto ask_it = m_books[m_latest_l2_tick->symbol()]->asks().begin();
     auto bid_it = m_books[m_latest_l2_tick->symbol()]->bids().begin();
 
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_unique_id_1(ask_it->second.ptr()->unique_id());
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_1000x_1(BookerCommonData::to_price(ask_it->first.price()));
+    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_1(BookerCommonData::to_price(ask_it->first.price()));
     if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_quantity_1(BookerCommonData::to_quantity(ask_it++->second.open_qty()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_unique_id_2(ask_it->second.ptr()->unique_id());
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_1000x_2(BookerCommonData::to_price(ask_it->first.price()));
+    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_2(BookerCommonData::to_price(ask_it->first.price()));
     if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_quantity_2(BookerCommonData::to_quantity(ask_it++->second.open_qty()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_unique_id_3(ask_it->second.ptr()->unique_id());
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_1000x_3(BookerCommonData::to_price(ask_it->first.price()));
+    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_3(BookerCommonData::to_price(ask_it->first.price()));
     if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_quantity_3(BookerCommonData::to_quantity(ask_it++->second.open_qty()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_unique_id_4(ask_it->second.ptr()->unique_id());
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_1000x_4(BookerCommonData::to_price(ask_it->first.price()));
+    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_4(BookerCommonData::to_price(ask_it->first.price()));
     if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_quantity_4(BookerCommonData::to_quantity(ask_it++->second.open_qty()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_unique_id_5(ask_it->second.ptr()->unique_id());
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_1000x_5(BookerCommonData::to_price(ask_it->first.price()));
+    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_5(BookerCommonData::to_price(ask_it->first.price()));
     if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_quantity_5(BookerCommonData::to_quantity(ask_it++->second.open_qty()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_unique_id_6(ask_it->second.ptr()->unique_id());
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_1000x_6(BookerCommonData::to_price(ask_it->first.price()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_quantity_6(BookerCommonData::to_quantity(ask_it++->second.open_qty()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_unique_id_7(ask_it->second.ptr()->unique_id());
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_1000x_7(BookerCommonData::to_price(ask_it->first.price()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_quantity_7(BookerCommonData::to_quantity(ask_it++->second.open_qty()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_unique_id_8(ask_it->second.ptr()->unique_id());
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_1000x_8(BookerCommonData::to_price(ask_it->first.price()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_quantity_8(BookerCommonData::to_quantity(ask_it++->second.open_qty()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_unique_id_9(ask_it->second.ptr()->unique_id());
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_1000x_9(BookerCommonData::to_price(ask_it->first.price()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_quantity_9(BookerCommonData::to_quantity(ask_it++->second.open_qty()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_unique_id_10(ask_it->second.ptr()->unique_id());
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_price_1000x_10(BookerCommonData::to_price(ask_it->first.price()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_quantity_10(BookerCommonData::to_quantity(ask_it++->second.open_qty()));
 
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_unique_id_1(bid_it->second.ptr()->unique_id());
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_1000x_1(BookerCommonData::to_price(bid_it->first.price()));
+    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_1(BookerCommonData::to_price(bid_it->first.price()));
     if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_quantity_1(BookerCommonData::to_quantity(bid_it++->second.open_qty()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_unique_id_2(bid_it->second.ptr()->unique_id());
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_1000x_2(BookerCommonData::to_price(bid_it->first.price()));
+    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_2(BookerCommonData::to_price(bid_it->first.price()));
     if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_quantity_2(BookerCommonData::to_quantity(bid_it++->second.open_qty()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_unique_id_3(bid_it->second.ptr()->unique_id());
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_1000x_3(BookerCommonData::to_price(bid_it->first.price()));
+    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_3(BookerCommonData::to_price(bid_it->first.price()));
     if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_quantity_3(BookerCommonData::to_quantity(bid_it++->second.open_qty()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_unique_id_4(bid_it->second.ptr()->unique_id());
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_1000x_4(BookerCommonData::to_price(bid_it->first.price()));
+    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_4(BookerCommonData::to_price(bid_it->first.price()));
     if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_quantity_4(BookerCommonData::to_quantity(bid_it++->second.open_qty()));
-    if (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) m_latest_l2_tick->set_sell_unique_id_5(ask_it->second.ptr()->unique_id());
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_1000x_5(BookerCommonData::to_price(bid_it->first.price()));
+    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_5(BookerCommonData::to_price(bid_it->first.price()));
     if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_quantity_5(BookerCommonData::to_quantity(bid_it++->second.open_qty()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_unique_id_6(bid_it->second.ptr()->unique_id());
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_1000x_6(BookerCommonData::to_price(bid_it->first.price()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_quantity_6(BookerCommonData::to_quantity(bid_it++->second.open_qty()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_unique_id_7(bid_it->second.ptr()->unique_id());
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_1000x_7(BookerCommonData::to_price(bid_it->first.price()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_quantity_7(BookerCommonData::to_quantity(bid_it++->second.open_qty()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_unique_id_8(bid_it->second.ptr()->unique_id());
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_1000x_8(BookerCommonData::to_price(bid_it->first.price()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_quantity_8(BookerCommonData::to_quantity(bid_it++->second.open_qty()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_unique_id_9(bid_it->second.ptr()->unique_id());
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_1000x_9(BookerCommonData::to_price(bid_it->first.price()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_quantity_9(BookerCommonData::to_quantity(bid_it++->second.open_qty()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_unique_id_10(bid_it->second.ptr()->unique_id());
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_price_1000x_10(BookerCommonData::to_price(bid_it->first.price()));
-    if (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) m_latest_l2_tick->set_buy_quantity_10(BookerCommonData::to_quantity(bid_it++->second.open_qty()));
 }
 
 void trade::booker::Booker::new_booker(const std::string& symbol)
