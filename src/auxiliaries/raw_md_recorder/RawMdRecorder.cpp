@@ -20,31 +20,31 @@ trade::RawMdRecorder::RawMdRecorder(const int argc, char* argv[])
 
 trade::RawMdRecorder::~RawMdRecorder()
 {
-    if (m_sse_tick_writer.is_open()) {
+    if (m_sse_tick_writer.is_open()) [[likely]] {
         m_sse_tick_writer.flush();
         m_sse_tick_writer.close();
         logger->info("Flushed and closed SSE tick writer");
     }
 
-    if (m_sse_l2_snap_writer.is_open()) {
+    if (m_sse_l2_snap_writer.is_open()) [[likely]] {
         m_sse_l2_snap_writer.flush();
         m_sse_l2_snap_writer.close();
         logger->info("Flushed and closed SSE l2 snap writer");
     }
 
-    if (m_szse_order_writer.is_open()) {
+    if (m_szse_order_writer.is_open()) [[likely]] {
         m_szse_order_writer.flush();
         m_szse_order_writer.close();
         logger->info("Flushed and closed SZSE order writer");
     }
 
-    if (m_szse_trade_writer.is_open()) {
+    if (m_szse_trade_writer.is_open()) [[likely]] {
         m_szse_trade_writer.flush();
         m_szse_trade_writer.close();
         logger->info("Flushed and closed SZSE trade writer");
     }
 
-    if (m_szse_l2_snap_writer.is_open()) {
+    if (m_szse_l2_snap_writer.is_open()) [[likely]] {
         m_szse_l2_snap_writer.flush();
         m_szse_l2_snap_writer.close();
         logger->info("Flushed and closed SZSE l2 snap writer");
@@ -56,13 +56,6 @@ int trade::RawMdRecorder::run()
     if (!m_is_running) {
         return m_exit_code;
     }
-
-    new_sse_tick_writer();
-    new_sse_l2_snap_writer();
-
-    new_szse_order_writer();
-    new_szse_trade_writer();
-    new_szse_l2_snap_writer();
 
     std::vector<std::thread> threads;
 
@@ -160,10 +153,14 @@ void trade::RawMdRecorder::tick_receiver()
         return;
     }
 
-    const u_char* packet;
     pcap_pkthdr header {};
 
-    while (m_is_running && (packet = pcap_next(handle, &header)) != nullptr) {
+    while (m_is_running && feof(stdin) == 0) {
+        const u_char* packet = pcap_next(handle, &header);
+
+        if (packet == nullptr)
+            continue;
+
         const auto [payload, length] = utilities::UdpPayloadGetter()(packet);
 
         switch (length) {
@@ -194,6 +191,8 @@ void trade::RawMdRecorder::writer(const u_char* packet, const uint8_t message_ty
 
 void trade::RawMdRecorder::write_sse_tick(const u_char* packet)
 {
+    new_sse_tick_writer();
+
     const auto sse_tick = reinterpret_cast<const broker::SSEHpfTick*>(packet);
 
     m_sse_tick_writer << fmt::format(
@@ -230,6 +229,8 @@ void trade::RawMdRecorder::write_sse_tick(const u_char* packet)
 
 void trade::RawMdRecorder::write_sse_l2_snap(const u_char* packet)
 {
+    new_sse_l2_snap_writer();
+
     const auto sse_l2_snap = reinterpret_cast<const broker::SSEHpfL2Snap*>(packet);
 
     m_sse_l2_snap_writer << fmt::format(
@@ -314,6 +315,8 @@ void trade::RawMdRecorder::write_sse_l2_snap(const u_char* packet)
 
 void trade::RawMdRecorder::write_szse_order_tick(const u_char* packet)
 {
+    new_szse_order_writer();
+
     const auto szse_order_tick = reinterpret_cast<const broker::SZSEHpfOrderTick*>(packet);
 
     m_szse_order_writer << fmt::format(
@@ -341,6 +344,8 @@ void trade::RawMdRecorder::write_szse_order_tick(const u_char* packet)
 
 void trade::RawMdRecorder::write_szse_trade_tick(const u_char* packet)
 {
+    new_szse_trade_writer();
+
     const auto szse_trade_tick = reinterpret_cast<const broker::SZSEHpfTradeTick*>(packet);
 
     m_szse_trade_writer << fmt::format(
@@ -369,6 +374,8 @@ void trade::RawMdRecorder::write_szse_trade_tick(const u_char* packet)
 
 void trade::RawMdRecorder::write_szse_l2_snap(const u_char* packet)
 {
+    new_szse_l2_snap_writer();
+
     const auto szse_l2_snap = reinterpret_cast<const broker::SZSEHpfL2Snap*>(packet);
 
     m_szse_l2_snap_writer << fmt::format(
@@ -451,6 +458,9 @@ void trade::RawMdRecorder::write_szse_l2_snap(const u_char* packet)
 
 void trade::RawMdRecorder::new_sse_tick_writer()
 {
+    if (m_sse_tick_writer.is_open()) [[likely]]
+        return;
+
     const std::filesystem::path file_path = fmt::format("{}/sse-tick.csv", m_arguments["output-folder"].as<std::string>());
 
     create_directories(std::filesystem::path(file_path).parent_path());
@@ -492,6 +502,9 @@ void trade::RawMdRecorder::new_sse_tick_writer()
 
 void trade::RawMdRecorder::new_sse_l2_snap_writer()
 {
+    if (m_sse_l2_snap_writer.is_open()) [[likely]]
+        return;
+
     const std::filesystem::path file_path = fmt::format("{}/sse-l2-snap.csv", m_arguments["output-folder"].as<std::string>());
 
     create_directories(std::filesystem::path(file_path).parent_path());
@@ -581,6 +594,9 @@ void trade::RawMdRecorder::new_sse_l2_snap_writer()
 
 void trade::RawMdRecorder::new_szse_order_writer()
 {
+    if (m_szse_order_writer.is_open()) [[likely]]
+        return;
+
     const std::filesystem::path file_path = fmt::format("{}/szse-order-tick.csv", m_arguments["output-folder"].as<std::string>());
 
     create_directories(std::filesystem::path(file_path).parent_path());
@@ -613,6 +629,9 @@ void trade::RawMdRecorder::new_szse_order_writer()
 
 void trade::RawMdRecorder::new_szse_trade_writer()
 {
+    if (m_szse_trade_writer.is_open()) [[likely]]
+        return;
+
     const std::filesystem::path file_path = fmt::format("{}/szse-trade-tick.csv", m_arguments["output-folder"].as<std::string>());
 
     create_directories(std::filesystem::path(file_path).parent_path());
@@ -646,6 +665,9 @@ void trade::RawMdRecorder::new_szse_trade_writer()
 
 void trade::RawMdRecorder::new_szse_l2_snap_writer()
 {
+    if (m_szse_l2_snap_writer.is_open()) [[likely]]
+        return;
+
     const std::filesystem::path file_path = fmt::format("{}/szse-l2-snap.csv", m_arguments["output-folder"].as<std::string>());
 
     create_directories(std::filesystem::path(file_path).parent_path());
