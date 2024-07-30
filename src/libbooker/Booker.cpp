@@ -337,30 +337,24 @@ trade::booker::OrderTickPtr trade::booker::Booker::create_virtual_szse_order_tic
 void trade::booker::Booker::generate_level_price()
 {
     auto ask_it = m_books[m_latest_l2_tick->symbol()]->asks().begin();
-    auto bid_it = m_books[m_latest_l2_tick->symbol()]->bids().begin();
 
     std::array<int64_t, 5> ask_price_level {};
     std::array<int64_t, 5> ask_quantity_level {};
-    auto ask_price_level_it    = ask_price_level.begin() - 1;
-    auto ask_quantity_level_it = ask_quantity_level.begin() - 1;
-
-    /// Generate ask level.
-    liquibook::book::Price last_ask_price = 0;
+    auto ask_price_level_it    = ask_price_level.begin();
+    auto ask_quantity_level_it = ask_quantity_level.begin();
 
     while (ask_it != m_books[m_latest_l2_tick->symbol()]->asks().end()) {
-        if (ask_it->first.price() > last_ask_price) {
+        if (*ask_price_level_it == 0)
+            *ask_price_level_it = BookerCommonData::to_price(ask_it->first.price());
+
+        if (*ask_price_level_it != BookerCommonData::to_price(ask_it->first.price())) {
             ask_price_level_it++;
             ask_quantity_level_it++;
-
-            if (ask_price_level_it == ask_price_level.end())
-                break;
-
-            *ask_price_level_it = BookerCommonData::to_price(ask_it->first.price());
         }
 
+        *ask_price_level_it = BookerCommonData::to_price(ask_it->first.price());
         *ask_quantity_level_it += BookerCommonData::to_quantity(ask_it->second.open_qty());
 
-        last_ask_price = ask_it->first.price();
         ask_it++;
     }
 
@@ -375,28 +369,25 @@ void trade::booker::Booker::generate_level_price()
     m_latest_l2_tick->set_sell_quantity_4(ask_quantity_level[3]);
     m_latest_l2_tick->set_sell_quantity_5(ask_quantity_level[4]);
 
+    auto bid_it = m_books[m_latest_l2_tick->symbol()]->bids().begin();
+
     std::array<int64_t, 5> bid_price_level {};
     std::array<int64_t, 5> bid_quantity_level {};
-    auto bid_price_level_it    = bid_price_level.begin() - 1;
-    auto bid_quantity_level_it = bid_quantity_level.begin() - 1;
-
-    /// Generate bid level.
-    liquibook::book::Price last_bid_price = 0;
+    auto bid_price_level_it    = bid_price_level.begin();
+    auto bid_quantity_level_it = bid_quantity_level.begin();
 
     while (bid_it != m_books[m_latest_l2_tick->symbol()]->bids().end()) {
-        if (bid_it->first.price() > last_bid_price) {
+        if (*bid_price_level_it == 0)
+            *bid_price_level_it = BookerCommonData::to_price(bid_it->first.price());
+
+        if (*bid_price_level_it != BookerCommonData::to_price(bid_it->first.price())) {
             bid_price_level_it++;
             bid_quantity_level_it++;
-
-            if (bid_price_level_it == bid_price_level.end())
-                break;
-
-            *bid_price_level_it = BookerCommonData::to_price(bid_it->first.price());
         }
 
+        *bid_price_level_it = BookerCommonData::to_price(bid_it->first.price());
         *bid_quantity_level_it += BookerCommonData::to_quantity(bid_it->second.open_qty());
 
-        last_bid_price = bid_it->first.price();
         bid_it++;
     }
 
