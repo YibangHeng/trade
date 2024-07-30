@@ -40,7 +40,7 @@ trade::reporter::SubReporter::~SubReporter()
     m_event_loop_future.wait();
 }
 
-void trade::reporter::SubReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap)
+void trade::reporter::SubReporter::exchange_l2_snap_arrived(const std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap)
 {
     std::lock_guard lock(m_app_id_to_symbols_mutex);
 
@@ -52,7 +52,7 @@ void trade::reporter::SubReporter::exchange_l2_tick_arrived(const std::shared_pt
 
     m_last_data[exchange_l2_snap->symbol()] = exchange_l2_snap;
 
-    m_outside->exchange_l2_tick_arrived(exchange_l2_snap);
+    m_outside->exchange_l2_snap_arrived(exchange_l2_snap);
 }
 
 void trade::reporter::SubReporter::on_connected(const muduo::net::TcpConnectionPtr& conn)

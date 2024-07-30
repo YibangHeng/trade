@@ -179,7 +179,7 @@ void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
         if (generated_l2_tick != nullptr) {
             logger->debug("Received l2 tick: {}", utilities::ToJSON()(*generated_l2_tick));
 
-            m_reporter->exchange_l2_tick_arrived(generated_l2_tick);
+            m_reporter->exchange_l2_snap_arrived(generated_l2_tick);
         }
 
         /// boost::freelock::queue imposes a constraint that its elements

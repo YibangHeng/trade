@@ -36,7 +36,7 @@ public:
 public:
     void exchange_order_tick_arrived(std::shared_ptr<types::OrderTick> order_tick) override;
     void exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick) override;
-    void exchange_l2_tick_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) override;
+    void exchange_l2_snap_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) override;
     void l2_tick_generated(std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick) override;
 
 private:
@@ -70,35 +70,47 @@ private:
 
     /// Order.
     BufferType<types::BrokerAcceptance> m_broker_acceptance_buffer;
+    std::mutex m_broker_acceptance_mutex;
     std::thread m_broker_acceptance_thread;
     BufferType<types::ExchangeAcceptance> m_exchange_acceptance_buffer;
+    std::mutex m_exchange_acceptance_mutex;
     std::thread m_exchange_acceptance_thread;
     BufferType<types::OrderRejection> m_order_rejection_buffer;
+    std::mutex m_order_rejection_mutex;
     std::thread m_order_rejection_thread;
 
     /// Cancel.
     BufferType<types::CancelBrokerAcceptance> m_cancel_broker_acceptance_buffer;
+    std::mutex m_cancel_broker_acceptance_mutex;
     std::thread m_cancel_broker_acceptance_thread;
     BufferType<types::CancelExchangeAcceptance> m_cancel_exchange_acceptance_buffer;
+    std::mutex m_cancel_exchange_acceptance_mutex;
     std::thread m_cancel_exchange_acceptance_thread;
     BufferType<types::CancelSuccess> m_cancel_success_buffer;
+    std::mutex m_cancel_success_mutex;
     std::thread m_cancel_success_thread;
     BufferType<types::CancelOrderRejection> m_cancel_order_rejection_buffer;
+    std::mutex m_cancel_order_rejection_mutex;
     std::thread m_cancel_order_rejection_thread;
 
     /// Trade.
     BufferType<types::Trade> m_trade_buffer;
+    std::mutex m_trade_mutex;
     std::thread m_trade_thread;
 
     /// Market data.
     BufferType<types::OrderTick> m_exchange_order_tick_buffer;
+    std::mutex m_exchange_order_tick_mutex;
     std::thread m_exchange_order_tick_thread;
     BufferType<types::TradeTick> m_exchange_trade_tick_buffer;
+    std::mutex m_exchange_trade_tick_mutex;
     std::thread m_exchange_trade_tick_thread;
     BufferType<types::ExchangeL2Snap> m_exchange_l2_snap_buffer;
+    std::mutex m_exchange_l2_snap_mutex;
     std::thread m_exchange_l2_tick_thread;
     BufferType<types::GeneratedL2Tick> m_generated_l2_tick_buffer;
-    std::thread m_l2_tick_thread;
+    std::mutex m_generated_l2_tick_mutex;
+    std::thread m_generated_l2_tick_thread;
 
 private:
     std::atomic<bool> m_is_running;

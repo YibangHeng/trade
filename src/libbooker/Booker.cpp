@@ -350,6 +350,9 @@ void trade::booker::Booker::generate_level_price()
         if (*ask_price_level_it != BookerCommonData::to_price(ask_it->first.price())) {
             ask_price_level_it++;
             ask_quantity_level_it++;
+
+            if (ask_price_level_it == ask_price_level.end() || ask_quantity_level_it == ask_quantity_level.end())
+                break;
         }
 
         *ask_price_level_it = BookerCommonData::to_price(ask_it->first.price());
@@ -383,6 +386,9 @@ void trade::booker::Booker::generate_level_price()
         if (*bid_price_level_it != BookerCommonData::to_price(bid_it->first.price())) {
             bid_price_level_it++;
             bid_quantity_level_it++;
+
+            if (bid_price_level_it == bid_price_level.end() || bid_quantity_level_it == bid_quantity_level.end())
+                break;
         }
 
         *bid_price_level_it = BookerCommonData::to_price(bid_it->first.price());

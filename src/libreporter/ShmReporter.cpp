@@ -63,10 +63,10 @@ void trade::reporter::ShmReporter::exchange_trade_tick_arrived(const std::shared
     m_outside->exchange_trade_tick_arrived(trade_tick);
 }
 
-void trade::reporter::ShmReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap)
+void trade::reporter::ShmReporter::exchange_l2_snap_arrived(const std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap)
 {
     do_exchange_l2_snap_report(exchange_l2_snap);
-    m_outside->exchange_l2_tick_arrived(exchange_l2_snap);
+    m_outside->exchange_l2_snap_arrived(exchange_l2_snap);
 }
 
 void trade::reporter::ShmReporter::l2_tick_generated(const std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick)

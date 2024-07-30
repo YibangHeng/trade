@@ -107,14 +107,14 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
         std::unique_lock lock(mutex);
         cv.wait(lock, [&new_subscribe_req_acknowledged] { return new_subscribe_req_acknowledged; });
 
-        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_0);
-        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_1);
-        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_2);
+        sub_reporter.exchange_l2_snap_arrived(sse_l2_snap_0);
+        sub_reporter.exchange_l2_snap_arrived(sse_l2_snap_1);
+        sub_reporter.exchange_l2_snap_arrived(sse_l2_snap_2);
 
         /// This l2 snap will not be sent to the client since it is not subscribed.
-        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_0);
-        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_1);
-        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_2);
+        sub_reporter.exchange_l2_snap_arrived(szse_l2_snap_0);
+        sub_reporter.exchange_l2_snap_arrived(szse_l2_snap_1);
+        sub_reporter.exchange_l2_snap_arrived(szse_l2_snap_2);
 
         for (auto& client_thread : client_threads)
             client_thread.join();
@@ -185,13 +185,13 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
         std::unique_lock lock(mutex);
         cv.wait(lock, [&new_subscribe_req_acknowledged] { return new_subscribe_req_acknowledged; });
 
-        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_0);
-        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_1);
-        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_2);
+        sub_reporter.exchange_l2_snap_arrived(sse_l2_snap_0);
+        sub_reporter.exchange_l2_snap_arrived(sse_l2_snap_1);
+        sub_reporter.exchange_l2_snap_arrived(sse_l2_snap_2);
 
-        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_0);
-        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_1);
-        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_2);
+        sub_reporter.exchange_l2_snap_arrived(szse_l2_snap_0);
+        sub_reporter.exchange_l2_snap_arrived(szse_l2_snap_1);
+        sub_reporter.exchange_l2_snap_arrived(szse_l2_snap_2);
 
         for (auto& client_thread : client_threads)
             client_thread.join();
@@ -203,13 +203,13 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
         trade::reporter::SubReporter sub_reporter(10100);
 
         /// Report before client connected.
-        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_0);
-        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_1);
-        sub_reporter.exchange_l2_tick_arrived(sse_l2_snap_2);
+        sub_reporter.exchange_l2_snap_arrived(sse_l2_snap_0);
+        sub_reporter.exchange_l2_snap_arrived(sse_l2_snap_1);
+        sub_reporter.exchange_l2_snap_arrived(sse_l2_snap_2);
 
-        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_0);
-        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_1);
-        sub_reporter.exchange_l2_tick_arrived(szse_l2_snap_2);
+        sub_reporter.exchange_l2_snap_arrived(szse_l2_snap_0);
+        sub_reporter.exchange_l2_snap_arrived(szse_l2_snap_1);
+        sub_reporter.exchange_l2_snap_arrived(szse_l2_snap_2);
 
         /// Client side.
         auto client_worker = [] {

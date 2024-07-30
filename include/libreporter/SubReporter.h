@@ -25,7 +25,7 @@ public:
 
     /// Market data.
 public:
-    void exchange_l2_tick_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) override;
+    void exchange_l2_snap_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) override;
 
 private:
     void on_connected(const muduo::net::TcpConnectionPtr& conn);
