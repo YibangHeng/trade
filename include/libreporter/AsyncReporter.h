@@ -36,8 +36,8 @@ public:
 public:
     void exchange_order_tick_arrived(std::shared_ptr<types::OrderTick> order_tick) override;
     void exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick) override;
-    void exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick) override;
-    void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick) override;
+    void exchange_l2_tick_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) override;
+    void l2_tick_generated(std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick) override;
 
 private:
     /// Order.
@@ -95,9 +95,9 @@ private:
     std::thread m_exchange_order_tick_thread;
     BufferType<types::TradeTick> m_exchange_trade_tick_buffer;
     std::thread m_exchange_trade_tick_thread;
-    BufferType<types::L2Tick> m_exchange_l2_tick_buffer;
+    BufferType<types::ExchangeL2Snap> m_exchange_l2_snap_buffer;
     std::thread m_exchange_l2_tick_thread;
-    BufferType<types::L2Tick> m_l2_tick_buffer;
+    BufferType<types::GeneratedL2Tick> m_generated_l2_tick_buffer;
     std::thread m_l2_tick_thread;
 
 private:

@@ -12,7 +12,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
     const std::string shm_mutex_name = "trade_data_mutex_for_unit_test";
 
     /// Shared memory size.
-    constexpr boost::interprocess::offset_t shm_size = 3 * GB;
+    constexpr boost::interprocess::offset_t shm_size = 1 * GB;
 
     /// Create reporter and the reporter will create shared memory
     /// automatically.
@@ -20,9 +20,10 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
 
     /// Map areas of shared memory with same size.
     boost::interprocess::shared_memory_object shm_reader(boost::interprocess::open_only, shm_name.c_str(), boost::interprocess::read_only); /// Use open_only to make sure reporter created it.
-    auto m_order_tick_region = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 0 * shm_size / 3, shm_size / 3);
-    auto m_trade_tick_region = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 1 * shm_size / 3, shm_size / 3);
-    auto m_l2_tick_region    = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 2 * shm_size / 3, shm_size / 3);
+    auto m_order_tick_region        = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 0 * shm_size / 4, shm_size / 4);
+    auto m_trade_tick_region        = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 1 * shm_size / 4, shm_size / 4);
+    auto m_exchange_l2_snap_region  = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 2 * shm_size / 4, shm_size / 4);
+    auto m_generated_l2_tick_region = std::make_shared<boost::interprocess::mapped_region>(shm_reader, boost::interprocess::read_only, 3 * shm_size / 4, shm_size / 4);
 
     SECTION("Order tick writing and reading")
     {
@@ -171,7 +172,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
     SECTION("L2 tick writing and reading")
     {
         /// Mock l2 tick data.
-        const auto l2_tick_0 = std::make_shared<trade::types::L2Tick>();
+        const auto l2_tick_0 = std::make_shared<trade::types::GeneratedL2Tick>();
         l2_tick_0->set_symbol("600875.SH");
         l2_tick_0->set_price_1000x(2222);
         l2_tick_0->set_quantity(100);
@@ -188,7 +189,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         l2_tick_0->set_buy_price_1000x_3(3333);
         l2_tick_0->set_buy_quantity_3(3000);
 
-        const auto l2_tick_1 = std::make_shared<trade::types::L2Tick>();
+        const auto l2_tick_1 = std::make_shared<trade::types::GeneratedL2Tick>();
         l2_tick_1->set_symbol("600875.SH");
         l2_tick_1->set_price_1000x(2233);
         l2_tick_1->set_quantity(200);
@@ -205,7 +206,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         l2_tick_1->set_buy_price_1000x_3(3333);
         l2_tick_1->set_buy_quantity_3(3000);
 
-        const auto l2_tick_2 = std::make_shared<trade::types::L2Tick>();
+        const auto l2_tick_2 = std::make_shared<trade::types::GeneratedL2Tick>();
         l2_tick_2->set_symbol("600875.SH");
         l2_tick_2->set_price_1000x(3322);
         l2_tick_2->set_quantity(300);
@@ -222,7 +223,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         l2_tick_2->set_buy_price_1000x_3(3333);
         l2_tick_2->set_buy_quantity_3(3000);
 
-        const auto l2_tick_3 = std::make_shared<trade::types::L2Tick>();
+        const auto l2_tick_3 = std::make_shared<trade::types::GeneratedL2Tick>();
         l2_tick_3->set_symbol("600875.SH");
         l2_tick_3->set_price_1000x(3333);
         l2_tick_3->set_quantity(400);
@@ -244,12 +245,12 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         reporter->l2_tick_generated(l2_tick_2);
         reporter->l2_tick_generated(l2_tick_3);
 
-        auto shm_mate_info = static_cast<trade::reporter::SML2TickMateInfo*>(m_l2_tick_region->get_address());
+        auto shm_mate_info = static_cast<trade::reporter::SMGeneratedL2TickMateInfo*>(m_generated_l2_tick_region->get_address());
 
-        CHECK(shm_mate_info->l2_tick_count == 4);
+        CHECK(shm_mate_info->generated_l2_tick_count == 4);
 
-        auto md_current = reinterpret_cast<trade::reporter::L2Tick*>(shm_mate_info + 1);
-        CHECK(md_current[0].shm_union_type == trade::reporter::ShmUnionType::self_generated_l2_tick);
+        auto md_current = reinterpret_cast<trade::reporter::GeneratedL2Tick*>(shm_mate_info + 1);
+        CHECK(md_current[0].shm_union_type == trade::reporter::ShmUnionType::generated_l2_tick);
         CHECK(std::string(md_current[0].symbol) == "600875.SH");
         CHECK(md_current[0].price_1000x == 2222);
         CHECK(md_current[0].quantity == 100);
@@ -266,7 +267,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         CHECK(md_current[0].buy_3.price_1000x == 3333);
         CHECK(md_current[0].buy_3.quantity == 3000);
 
-        CHECK(md_current[1].shm_union_type == trade::reporter::ShmUnionType::self_generated_l2_tick);
+        CHECK(md_current[1].shm_union_type == trade::reporter::ShmUnionType::generated_l2_tick);
         CHECK(std::string(md_current[1].symbol) == "600875.SH");
         CHECK(md_current[1].price_1000x == 2233);
         CHECK(md_current[1].quantity == 200);
@@ -283,7 +284,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         CHECK(md_current[1].buy_3.price_1000x == 3333);
         CHECK(md_current[1].buy_3.quantity == 3000);
 
-        CHECK(md_current[2].shm_union_type == trade::reporter::ShmUnionType::self_generated_l2_tick);
+        CHECK(md_current[2].shm_union_type == trade::reporter::ShmUnionType::generated_l2_tick);
         CHECK(std::string(md_current[2].symbol) == "600875.SH");
         CHECK(md_current[2].price_1000x == 3322);
         CHECK(md_current[2].quantity == 300);
@@ -300,7 +301,7 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         CHECK(md_current[2].buy_3.price_1000x == 3333);
         CHECK(md_current[2].buy_3.quantity == 3000);
 
-        CHECK(md_current[3].shm_union_type == trade::reporter::ShmUnionType::self_generated_l2_tick);
+        CHECK(md_current[3].shm_union_type == trade::reporter::ShmUnionType::generated_l2_tick);
         CHECK(std::string(md_current[3].symbol) == "600875.SH");
         CHECK(md_current[3].price_1000x == 3333);
         CHECK(md_current[3].quantity == 400);

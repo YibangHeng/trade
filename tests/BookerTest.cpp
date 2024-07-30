@@ -23,13 +23,13 @@ public:
     }
 
 public:
-    void l2_tick_generated(const std::shared_ptr<trade::types::L2Tick> l2_tick) override
+    void l2_tick_generated(const trade::booker::GeneratedL2TickPtr generated_l2_tick) override
     {
-        m_trade_results.push_back(l2_tick);
+        m_trade_results.push_back(generated_l2_tick);
     }
 
 private:
-    std::vector<std::shared_ptr<trade::types::L2Tick>> m_trade_results;
+    std::vector<trade::booker::GeneratedL2TickPtr> m_trade_results;
 };
 
 const auto g_reporter = std::make_shared<SeqChecker>();

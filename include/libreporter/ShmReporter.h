@@ -46,26 +46,34 @@ static_assert(sizeof(OrderType) == 4, "OrderType should be 4 bytes");
 
 struct PUBLIC_API SMTickMateInfo {
     size_t tick_count        = 0;
-    int64_t last_update_time = {}; /// Time in ISO 8601 format.
+    int64_t last_update_time = 0; /// Time in ISO 8601 format.
     RESERVED(240)
 };
 
 static_assert(sizeof(SMTickMateInfo) == 256, "MateInfo for tick should be 256 bytes");
 
-struct PUBLIC_API SML2TickMateInfo {
-    size_t l2_tick_count     = 0;
-    int64_t last_update_time = {}; /// Time in ISO 8601 format.
+struct PUBLIC_API SMExchangeL2SnapMateInfo {
+    size_t exchange_l2_snap_count = 0;
+    int64_t last_update_time      = 0; /// Time in ISO 8601 format.
     RESERVED(240)
 };
 
-static_assert(sizeof(SML2TickMateInfo) == 256, "MateInfo for l2 tick should be 256 bytes");
+static_assert(sizeof(SMExchangeL2SnapMateInfo) == 256, "MateInfo for exchange l2 sanp should be 256 bytes");
 
-struct PriceQuantityPair {
-    int64_t price_1000x = 0;
-    int64_t quantity    = 0;
+struct PUBLIC_API SMGeneratedL2TickMateInfo {
+    size_t generated_l2_tick_count = 0;
+    int64_t last_update_time       = 0; /// Time in ISO 8601 format.
+    RESERVED(240)
 };
 
-static_assert(sizeof(PriceQuantityPair) == 16, "PriceQuantityPair should be 16 bytes");
+static_assert(sizeof(SMGeneratedL2TickMateInfo) == 256, "MateInfo for generated l2 tick should be 256 bytes");
+
+struct PriceQuantityPair {
+    uint32_t price_1000x = 0;
+    uint32_t quantity    = 0;
+};
+
+static_assert(sizeof(PriceQuantityPair) == 8, "PriceQuantityPair should be 16 bytes");
 
 enum class ShmUnionType
 {
@@ -73,8 +81,8 @@ enum class ShmUnionType
 
     order_tick_from_exchange = 1, /// 交易所逐笔委托
     trade_tick_from_exchange = 2, /// 交易所逐笔成交
-    l2_tick_from_exchange    = 3, /// 交易所行情切片
-    self_generated_l2_tick   = 4, /// 撮合行情
+    l2_snap_from_exchange    = 3, /// 交易所行情切片
+    generated_l2_tick        = 4, /// 逐笔撮合行情
 };
 
 static_assert(sizeof(ShmUnionType) == 4, "ShmUnionType should be 4 bytes");
@@ -116,12 +124,21 @@ struct PUBLIC_API TradeTick {
 
 static_assert(sizeof(TradeTick) == 256, "Tick should be 256 bytes");
 
-struct PUBLIC_API L2Tick {
+struct PUBLIC_API ExchangeL2Snap {
     ShmUnionType shm_union_type;
 
-    SymbolType symbol   = {};
-    int64_t price_1000x = 0;
-    int64_t quantity    = 0;
+    SymbolType symbol               = {};
+    int64_t price_1000x             = 0;
+
+    int64_t pre_settlement_1000x    = 0;
+    int64_t pre_close_price_1000x   = 0;
+    int64_t open_price_1000x        = 0;
+    int64_t highest_price_1000x     = 0;
+    int64_t lowest_price_1000x      = 0;
+    int64_t close_price_1000x       = 0;
+    int64_t settlement_price_1000x  = 0;
+    int64_t upper_limit_price_1000x = 0;
+    int64_t lower_limit_price_1000x = 0;
 
     PriceQuantityPair sell_5;
     PriceQuantityPair sell_4;
@@ -137,16 +154,44 @@ struct PUBLIC_API L2Tick {
     int64_t exchange_time     = 0;
     int64_t local_system_time = 0;
 
-    RESERVED(44)
+    RESERVED(60)
 };
 
-static_assert(sizeof(L2Tick) == 256, "L2Tick should be 256 bytes");
+static_assert(sizeof(ExchangeL2Snap) == 256, "L2Tick should be 256 bytes");
+
+struct PUBLIC_API GeneratedL2Tick {
+    ShmUnionType shm_union_type;
+
+    SymbolType symbol     = {};
+    int64_t price_1000x   = 0;
+    int64_t quantity      = 0;
+    int64_t ask_unique_id = 0;
+    int64_t bid_unique_id = 0;
+
+    PriceQuantityPair sell_5;
+    PriceQuantityPair sell_4;
+    PriceQuantityPair sell_3;
+    PriceQuantityPair sell_2;
+    PriceQuantityPair sell_1;
+    PriceQuantityPair buy_1;
+    PriceQuantityPair buy_2;
+    PriceQuantityPair buy_3;
+    PriceQuantityPair buy_4;
+    PriceQuantityPair buy_5;
+
+    int64_t exchange_time     = 0;
+    int64_t local_system_time = 0;
+
+    RESERVED(108)
+};
+
+static_assert(sizeof(GeneratedL2Tick) == 256, "L2Tick should be 256 bytes");
 
 union PUBLIC_API ShmUnion
 {
     OrderTick order_tick;
     TradeTick trade_tick;
-    L2Tick market_data;
+    GeneratedL2Tick market_data;
 };
 
 static_assert(sizeof(ShmUnion) == 256, "ShmUnion should be 256 bytes");
@@ -169,13 +214,14 @@ public:
 public:
     void exchange_order_tick_arrived(std::shared_ptr<types::OrderTick> order_tick) override;
     void exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick) override;
-    void exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick) override;
-    void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick) override;
+    void exchange_l2_tick_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) override;
+    void l2_tick_generated(std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick) override;
 
 private:
     void do_exchange_order_tick_report(const std::shared_ptr<types::OrderTick>& order_tick);
     void do_exchange_trade_tick_report(const std::shared_ptr<types::TradeTick>& trade_tick);
-    void do_l2_tick_report(const std::shared_ptr<types::L2Tick>& l2_tick, ShmUnionType shm_union_type);
+    void do_exchange_l2_snap_report(const std::shared_ptr<types::ExchangeL2Snap>& exchange_l2_snap);
+    void do_generated_l2_tick_report(const std::shared_ptr<types::GeneratedL2Tick>& generated_l2_tick);
 
 private:
     /// Return the start memory address of trade area.
@@ -183,20 +229,24 @@ private:
 
 private:
     boost::interprocess::shared_memory_object m_shm;
+    boost::interprocess::named_upgradable_mutex m_named_mutex;
     std::shared_ptr<boost::interprocess::mapped_region> m_order_tick_region;
     std::shared_ptr<boost::interprocess::mapped_region> m_trade_tick_region;
-    std::shared_ptr<boost::interprocess::mapped_region> m_l2_tick_region;
-    boost::interprocess::named_upgradable_mutex m_named_mutex;
+    std::shared_ptr<boost::interprocess::mapped_region> m_exchange_l2_snap_region;
+    std::shared_ptr<boost::interprocess::mapped_region> m_generated_l2_tick_region;
     SMTickMateInfo* m_order_tick_mate_info;
     SMTickMateInfo* m_trade_tick_mate_info;
-    SML2TickMateInfo* m_l2_tick_mate_info;
+    SMExchangeL2SnapMateInfo* m_exchange_l2_snap_mate_info;
+    SMGeneratedL2TickMateInfo* m_generated_l2_tick_mate_info;
     /// Store the start/current memory address of tick area.
     OrderTick* m_order_tick_start;
     OrderTick* m_order_tick_current;
     TradeTick* m_trade_tick_start;
     TradeTick* m_trade_tick_current;
-    L2Tick* m_l2_tick_start;
-    L2Tick* m_l2_tick_current;
+    ExchangeL2Snap* m_exchange_l2_snap_start;
+    ExchangeL2Snap* m_exchange_l2_snap_current;
+    GeneratedL2Tick* m_generated_l2_tick_start;
+    GeneratedL2Tick* m_generated_l2_tick_current;
 
 private:
     static constexpr boost::interprocess::offset_t GB = 1024 * 1024 * 1024;

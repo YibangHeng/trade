@@ -27,7 +27,7 @@ public:
 
     /// Market data.
 public:
-    void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick) override;
+    void l2_tick_generated(std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick) override;
 
 private:
     void new_l2_tick_writer(const std::string& symbol);

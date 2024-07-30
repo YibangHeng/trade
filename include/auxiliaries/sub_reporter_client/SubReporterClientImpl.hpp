@@ -14,9 +14,9 @@
 namespace trade
 {
 
-using L2SnapCallBackType          = std::function<void(
+using GeneratedL2SnapCallBackType = std::function<void(
     const muduo::net::TcpConnectionPtr&,
-    const types::L2Tick&,
+    const types::ExchangeL2Snap&,
     muduo::Timestamp
 )>;
 using NewSubscribeRspCallBackType = std::function<void(
@@ -33,7 +33,7 @@ public:
     explicit SubReporterClientImpl(
         const std::string& host                                  = "127.0.0.1",
         const uint16_t port                                      = 10100,
-        L2SnapCallBackType&& l2_snap_callback                    = [](const muduo::net::TcpConnectionPtr&, const types::L2Tick&, muduo::Timestamp) {},
+        GeneratedL2SnapCallBackType&& l2_snap_callback           = [](const muduo::net::TcpConnectionPtr&, const types::ExchangeL2Snap&, muduo::Timestamp) {},
         NewSubscribeRspCallBackType&& new_subscribe_rsp_callback = [](const muduo::net::TcpConnectionPtr&, const types::NewSubscribeRsp&, muduo::Timestamp) {},
         ConnectCallBackType&& connect_callback                   = [](const muduo::net::TcpConnectionPtr&) {},
         DisconnectCallBackType&& disconnect_callback             = [](const muduo::net::TcpConnectionPtr&) {}
@@ -49,7 +49,7 @@ public:
 
         muduo::Logger::setLogLevel(muduo::Logger::NUM_LOG_LEVELS);
 
-        m_dispatcher.register_message_callback<types::L2Tick>([this](const muduo::net::TcpConnectionPtr& conn, const utilities::MessagePtr& message, const muduo::Timestamp timestamp) { on_new_l2_snap_arrived(conn, message, timestamp); });
+        m_dispatcher.register_message_callback<types::ExchangeL2Snap>([this](const muduo::net::TcpConnectionPtr& conn, const utilities::MessagePtr& message, const muduo::Timestamp timestamp) { on_new_l2_snap_arrived(conn, message, timestamp); });
         m_dispatcher.register_message_callback<types::NewSubscribeRsp>([this](const muduo::net::TcpConnectionPtr& conn, const utilities::MessagePtr& message, const muduo::Timestamp timestamp) { on_new_subscribe_rsp(conn, message, timestamp); });
 
         /// Start event loop.
@@ -130,9 +130,9 @@ private:
         const muduo::Timestamp timestamp
     ) const
     {
-        const auto& l2_tick = std::dynamic_pointer_cast<types::L2Tick>(message);
-        if (l2_tick != nullptr)
-            l2_snap_callback(conn, *l2_tick, timestamp);
+        const auto& exchange_l2_snap = std::dynamic_pointer_cast<types::ExchangeL2Snap>(message);
+        if (exchange_l2_snap != nullptr)
+            l2_snap_callback(conn, *exchange_l2_snap, timestamp);
     }
 
     void on_new_subscribe_rsp(
@@ -162,7 +162,7 @@ private:
     }
 
 private:
-    L2SnapCallBackType l2_snap_callback;
+    GeneratedL2SnapCallBackType l2_snap_callback;
     NewSubscribeRspCallBackType new_subscribe_rsp_callback;
     ConnectCallBackType connect_callback;
     DisconnectCallBackType disconnect_callback;

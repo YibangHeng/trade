@@ -1,12 +1,12 @@
 #include "libbooker/MdValidator.h"
 
-void trade::booker::MdValidator::l2_tick_generated(const L2TickPtr& l2_tick)
+void trade::booker::MdValidator::l2_tick_generated(const GeneratedL2TickPtr& generated_l2_tick)
 {
-    new_trade_tick_buffer(l2_tick->symbol());
+    new_trade_tick_buffer(generated_l2_tick->symbol());
 
-    m_traded_ask_unique_ids[l2_tick->symbol()].push_back(l2_tick->ask_unique_id());
-    m_traded_bid_unique_ids[l2_tick->symbol()].push_back(l2_tick->bid_unique_id());
-    m_traded_quantities[l2_tick->symbol()].push_back(l2_tick->quantity());
+    m_traded_ask_unique_ids[generated_l2_tick->symbol()].push_back(generated_l2_tick->ask_unique_id());
+    m_traded_bid_unique_ids[generated_l2_tick->symbol()].push_back(generated_l2_tick->bid_unique_id());
+    m_traded_quantities[generated_l2_tick->symbol()].push_back(generated_l2_tick->quantity());
 }
 
 bool trade::booker::MdValidator::check(const TradeTickPtr& trade_tick) const

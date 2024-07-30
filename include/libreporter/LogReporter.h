@@ -41,8 +41,8 @@ public:
 public:
     void exchange_order_tick_arrived(std::shared_ptr<types::OrderTick> order_tick) override;
     void exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick) override;
-    void exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick) override;
-    void l2_tick_generated(std::shared_ptr<types::L2Tick> l2_tick) override;
+    void exchange_l2_tick_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) override;
+    void l2_tick_generated(std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick) override;
 
 private:
     std::shared_ptr<spdlog::logger> trade_logger;

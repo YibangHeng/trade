@@ -65,7 +65,7 @@ public:
     template<IsTradeTick Mess7ageType>
     [[nodiscard]] static booker::TradeTickPtr to_trade_tick(const std::vector<u_char>& message);
     template<IsMdTrade MessageType>
-    [[nodiscard]] static booker::L2TickPtr to_l2_tick(const std::vector<u_char>& message);
+    [[nodiscard]] static booker::ExchangeL2SnapPtr to_l2_tick(const std::vector<u_char>& message);
 
     [[nodiscard]] static booker::TradeTickPtr x_ost_forward_to_trade_from_order(booker::OrderTickPtr& order_tick);
     [[nodiscard]] static booker::OrderTickPtr x_ost_forward_to_order_from_trade(booker::TradeTickPtr& trade_tick);
@@ -162,73 +162,95 @@ inline booker::TradeTickPtr CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(const
 }
 
 template<>
-inline booker::L2TickPtr CUTCommonData::to_l2_tick<SSEHpfL2Snap>(const std::vector<u_char>& message)
+inline booker::ExchangeL2SnapPtr CUTCommonData::to_l2_tick<SSEHpfL2Snap>(const std::vector<u_char>& message)
 {
-    auto l2_tick = std::make_shared<types::L2Tick>();
+    auto exchange_l2_snap = std::make_shared<types::ExchangeL2Snap>();
 
     assert(message.size() == sizeof(SSEHpfL2Snap));
     const auto raw_l2_tick = reinterpret_cast<const SSEHpfL2Snap*>(message.data());
 
-    l2_tick->set_symbol(raw_l2_tick->m_symbol_id);
-    l2_tick->set_price_1000x(to_price_1000x_from_sse(raw_l2_tick->m_last_price));
-    l2_tick->set_quantity(to_quantity_from_sse(raw_l2_tick->m_trade_volume));
+    exchange_l2_snap->set_symbol(raw_l2_tick->m_symbol_id);
+    exchange_l2_snap->set_price(raw_l2_tick->m_last_price / 1000.);
 
-    l2_tick->set_sell_price_1000x_1(to_price_1000x_from_sse(raw_l2_tick->m_ask_px[0].m_px));
-    l2_tick->set_sell_quantity_1(to_quantity_from_sse(raw_l2_tick->m_ask_px[0].m_qty));
-    l2_tick->set_sell_price_1000x_2(to_price_1000x_from_sse(raw_l2_tick->m_ask_px[1].m_px));
-    l2_tick->set_sell_quantity_2(to_quantity_from_sse(raw_l2_tick->m_ask_px[1].m_qty));
-    l2_tick->set_sell_price_1000x_3(to_price_1000x_from_sse(raw_l2_tick->m_ask_px[2].m_px));
-    l2_tick->set_sell_quantity_3(to_quantity_from_sse(raw_l2_tick->m_ask_px[2].m_qty));
-    l2_tick->set_sell_price_1000x_4(to_price_1000x_from_sse(raw_l2_tick->m_ask_px[3].m_px));
-    l2_tick->set_sell_quantity_4(to_quantity_from_sse(raw_l2_tick->m_ask_px[3].m_qty));
-    l2_tick->set_sell_price_1000x_5(to_price_1000x_from_sse(raw_l2_tick->m_ask_px[4].m_px));
-    l2_tick->set_sell_quantity_5(to_quantity_from_sse(raw_l2_tick->m_ask_px[4].m_qty));
+    exchange_l2_snap->set_pre_settlement(raw_l2_tick->m_prev_close);
+    exchange_l2_snap->set_pre_close_price(raw_l2_tick->m_prev_close);
+    exchange_l2_snap->set_open_price(raw_l2_tick->m_open_price);
+    exchange_l2_snap->set_highest_price(raw_l2_tick->m_day_high);
+    exchange_l2_snap->set_lowest_price(raw_l2_tick->m_day_low);
+    exchange_l2_snap->set_close_price(raw_l2_tick->m_last_price);
+    exchange_l2_snap->set_settlement_price(raw_l2_tick->m_close_price);
+    exchange_l2_snap->set_upper_limit_price(raw_l2_tick->m_last_price * 1.1 / 1000.);
+    exchange_l2_snap->set_lower_limit_price(raw_l2_tick->m_last_price * 0.9 / 1000.);
 
-    l2_tick->set_buy_price_1000x_1(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[0].m_px));
-    l2_tick->set_buy_quantity_1(to_quantity_from_sse(raw_l2_tick->m_bid_px[0].m_qty));
-    l2_tick->set_buy_price_1000x_2(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[1].m_px));
-    l2_tick->set_buy_quantity_2(to_quantity_from_sse(raw_l2_tick->m_bid_px[1].m_qty));
-    l2_tick->set_buy_price_1000x_3(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[2].m_px));
-    l2_tick->set_buy_quantity_3(to_quantity_from_sse(raw_l2_tick->m_bid_px[2].m_qty));
-    l2_tick->set_buy_price_1000x_4(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[3].m_px));
-    l2_tick->set_buy_quantity_4(to_quantity_from_sse(raw_l2_tick->m_bid_px[3].m_qty));
-    l2_tick->set_buy_price_1000x_5(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[4].m_px));
-    l2_tick->set_buy_quantity_5(to_quantity_from_sse(raw_l2_tick->m_bid_px[4].m_qty));
+    exchange_l2_snap->set_sell_price_1(raw_l2_tick->m_ask_px[0].m_px / 1000.);
+    exchange_l2_snap->set_sell_quantity_1(to_quantity_from_sse(raw_l2_tick->m_ask_px[0].m_qty));
+    exchange_l2_snap->set_sell_price_2(raw_l2_tick->m_ask_px[1].m_px / 1000.);
+    exchange_l2_snap->set_sell_quantity_2(to_quantity_from_sse(raw_l2_tick->m_ask_px[1].m_qty));
+    exchange_l2_snap->set_sell_price_3(raw_l2_tick->m_ask_px[2].m_px / 1000.);
+    exchange_l2_snap->set_sell_quantity_3(to_quantity_from_sse(raw_l2_tick->m_ask_px[2].m_qty));
+    exchange_l2_snap->set_sell_price_4(raw_l2_tick->m_ask_px[3].m_px / 1000.);
+    exchange_l2_snap->set_sell_quantity_4(to_quantity_from_sse(raw_l2_tick->m_ask_px[3].m_qty));
+    exchange_l2_snap->set_sell_price_5(raw_l2_tick->m_ask_px[4].m_px / 1000.);
+    exchange_l2_snap->set_sell_quantity_5(to_quantity_from_sse(raw_l2_tick->m_ask_px[4].m_qty));
 
-    return l2_tick;
+    exchange_l2_snap->set_buy_price_1(raw_l2_tick->m_bid_px[0].m_px / 1000.);
+    exchange_l2_snap->set_buy_quantity_1(to_quantity_from_sse(raw_l2_tick->m_bid_px[0].m_qty));
+    exchange_l2_snap->set_buy_price_2(raw_l2_tick->m_bid_px[1].m_px / 1000.);
+    exchange_l2_snap->set_buy_quantity_2(to_quantity_from_sse(raw_l2_tick->m_bid_px[1].m_qty));
+    exchange_l2_snap->set_buy_price_3(raw_l2_tick->m_bid_px[2].m_px / 1000.);
+    exchange_l2_snap->set_buy_quantity_3(to_quantity_from_sse(raw_l2_tick->m_bid_px[2].m_qty));
+    exchange_l2_snap->set_buy_price_4(raw_l2_tick->m_bid_px[3].m_px / 1000.);
+    exchange_l2_snap->set_buy_quantity_4(to_quantity_from_sse(raw_l2_tick->m_bid_px[3].m_qty));
+    exchange_l2_snap->set_buy_price_5(raw_l2_tick->m_bid_px[4].m_px / 1000.);
+    exchange_l2_snap->set_buy_quantity_5(to_quantity_from_sse(raw_l2_tick->m_bid_px[4].m_qty));
+
+    return exchange_l2_snap;
 }
 
 template<>
-inline booker::L2TickPtr CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(const std::vector<u_char>& message)
+inline booker::ExchangeL2SnapPtr CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(const std::vector<u_char>& message)
 {
-    auto l2_tick = std::make_shared<types::L2Tick>();
+    auto exchange_l2_snap = std::make_shared<types::ExchangeL2Snap>();
 
     assert(message.size() == sizeof(SZSEHpfL2Snap));
     const auto raw_l2_tick = reinterpret_cast<const SZSEHpfL2Snap*>(message.data());
 
-    l2_tick->set_symbol(raw_l2_tick->m_header.m_symbol);
-    l2_tick->set_price_1000x(to_price_1000x_from_szse(raw_l2_tick->m_last_price));
-    l2_tick->set_quantity(to_quantity_from_szse(raw_l2_tick->m_total_quantity_trade));
+    exchange_l2_snap->set_symbol(raw_l2_tick->m_header.m_symbol);
+    exchange_l2_snap->set_price(raw_l2_tick->m_last_price / 10000.);
 
-    l2_tick->set_sell_price_1000x_1(to_price_1000x_from_szse(raw_l2_tick->m_ask_unit[0].m_price));
-    l2_tick->set_sell_quantity_1(to_quantity_from_szse(raw_l2_tick->m_ask_unit[0].m_qty));
-    l2_tick->set_sell_price_1000x_2(to_price_1000x_from_szse(raw_l2_tick->m_ask_unit[1].m_price));
-    l2_tick->set_sell_quantity_2(to_quantity_from_szse(raw_l2_tick->m_ask_unit[1].m_qty));
-    l2_tick->set_sell_price_1000x_3(to_price_1000x_from_szse(raw_l2_tick->m_ask_unit[2].m_price));
-    l2_tick->set_sell_quantity_3(to_quantity_from_szse(raw_l2_tick->m_ask_unit[2].m_qty));
-    l2_tick->set_sell_price_1000x_4(to_price_1000x_from_szse(raw_l2_tick->m_ask_unit[3].m_price));
-    l2_tick->set_sell_quantity_4(to_quantity_from_szse(raw_l2_tick->m_ask_unit[3].m_qty));
+    exchange_l2_snap->set_pre_settlement(raw_l2_tick->m_previous_close_price / 10000.);
+    exchange_l2_snap->set_pre_close_price(raw_l2_tick->m_previous_close_price / 10000.);
+    exchange_l2_snap->set_open_price(raw_l2_tick->m_open_price / 10000.);
+    exchange_l2_snap->set_highest_price(raw_l2_tick->m_day_high / 10000.);
+    exchange_l2_snap->set_lowest_price(raw_l2_tick->m_day_low / 10000.);
+    exchange_l2_snap->set_close_price(raw_l2_tick->m_today_close_price / 10000.);
+    exchange_l2_snap->set_settlement_price(raw_l2_tick->m_today_close_price / 10000.);
+    exchange_l2_snap->set_upper_limit_price(raw_l2_tick->m_upper_limit_price / 10000.);
+    exchange_l2_snap->set_lower_limit_price(raw_l2_tick->m_lower_limit_price / 10000.);
 
-    l2_tick->set_buy_price_1000x_1(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[0].m_price));
-    l2_tick->set_buy_quantity_1(to_quantity_from_szse(raw_l2_tick->m_bid_unit[0].m_qty));
-    l2_tick->set_buy_price_1000x_2(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[1].m_price));
-    l2_tick->set_buy_quantity_2(to_quantity_from_szse(raw_l2_tick->m_bid_unit[1].m_qty));
-    l2_tick->set_buy_price_1000x_3(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[2].m_price));
-    l2_tick->set_buy_quantity_3(to_quantity_from_szse(raw_l2_tick->m_bid_unit[2].m_qty));
-    l2_tick->set_buy_price_1000x_4(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[3].m_price));
-    l2_tick->set_buy_quantity_4(to_quantity_from_szse(raw_l2_tick->m_bid_unit[3].m_qty));
+    exchange_l2_snap->set_sell_price_1(raw_l2_tick->m_ask_unit[0].m_price / 10000.);
+    exchange_l2_snap->set_sell_quantity_1(to_quantity_from_szse(raw_l2_tick->m_ask_unit[0].m_qty));
+    exchange_l2_snap->set_sell_price_2(raw_l2_tick->m_ask_unit[1].m_price / 10000.);
+    exchange_l2_snap->set_sell_quantity_2(to_quantity_from_szse(raw_l2_tick->m_ask_unit[1].m_qty));
+    exchange_l2_snap->set_sell_price_3(raw_l2_tick->m_ask_unit[2].m_price / 10000.);
+    exchange_l2_snap->set_sell_quantity_3(to_quantity_from_szse(raw_l2_tick->m_ask_unit[2].m_qty));
+    exchange_l2_snap->set_sell_price_4(raw_l2_tick->m_ask_unit[3].m_price / 10000.);
+    exchange_l2_snap->set_sell_quantity_4(to_quantity_from_szse(raw_l2_tick->m_ask_unit[3].m_qty));
+    exchange_l2_snap->set_sell_price_5(raw_l2_tick->m_ask_unit[4].m_price / 10000.);
+    exchange_l2_snap->set_sell_quantity_5(to_quantity_from_szse(raw_l2_tick->m_ask_unit[4].m_qty));
 
-    return l2_tick;
+    exchange_l2_snap->set_buy_price_1(raw_l2_tick->m_bid_unit[0].m_price / 10000.);
+    exchange_l2_snap->set_buy_quantity_1(to_quantity_from_szse(raw_l2_tick->m_bid_unit[0].m_qty));
+    exchange_l2_snap->set_buy_price_2(raw_l2_tick->m_bid_unit[1].m_price / 10000.);
+    exchange_l2_snap->set_buy_quantity_2(to_quantity_from_szse(raw_l2_tick->m_bid_unit[1].m_qty));
+    exchange_l2_snap->set_buy_price_3(raw_l2_tick->m_bid_unit[2].m_price / 10000.);
+    exchange_l2_snap->set_buy_quantity_3(to_quantity_from_szse(raw_l2_tick->m_bid_unit[2].m_qty));
+    exchange_l2_snap->set_buy_price_4(raw_l2_tick->m_bid_unit[3].m_price / 10000.);
+    exchange_l2_snap->set_buy_quantity_4(to_quantity_from_szse(raw_l2_tick->m_bid_unit[3].m_qty));
+    exchange_l2_snap->set_buy_price_5(raw_l2_tick->m_bid_unit[4].m_price / 10000.);
+    exchange_l2_snap->set_buy_quantity_5(to_quantity_from_szse(raw_l2_tick->m_bid_unit[4].m_qty));
+
+    return exchange_l2_snap;
 }
 
 template<std::integral T>

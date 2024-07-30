@@ -31,7 +31,7 @@ private:
 private:
     void on_l2_snap_arrived(
         const muduo::net::TcpConnectionPtr& conn,
-        const types::L2Tick& l2_tick,
+        const types::ExchangeL2Snap& exchange_tick_snap,
         muduo::Timestamp timestamp
     ) const;
 

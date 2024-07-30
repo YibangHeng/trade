@@ -25,7 +25,7 @@ public:
 
     /// Market data.
 public:
-    void exchange_l2_tick_arrived(std::shared_ptr<types::L2Tick> l2_tick) override;
+    void exchange_l2_tick_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) override;
 
 private:
     void on_connected(const muduo::net::TcpConnectionPtr& conn);
@@ -47,7 +47,7 @@ private:
     );
 
 private:
-    std::unordered_map<std::string, std::shared_ptr<types::L2Tick>> m_last_data;
+    std::unordered_map<std::string, std::shared_ptr<types::ExchangeL2Snap>> m_last_data;
 
 private:
     utilities::ProtobufCodec m_codec;

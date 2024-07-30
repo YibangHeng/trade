@@ -130,14 +130,14 @@ void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
 
         booker::OrderTickPtr order_tick;
         booker::TradeTickPtr trade_tick;
-        booker::L2TickPtr l2_tick;
+        booker::ExchangeL2SnapPtr generated_l2_tick;
 
         switch (message->size()) {
         case sizeof(SSEHpfTick): order_tick = CUTCommonData::to_order_tick<SSEHpfTick>(*message); break;
-        case sizeof(SSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SSEHpfL2Snap>(*message); break;
+        case sizeof(SSEHpfL2Snap): generated_l2_tick = CUTCommonData::to_l2_tick<SSEHpfL2Snap>(*message); break;
         case sizeof(SZSEHpfOrderTick): order_tick = CUTCommonData::to_order_tick<SZSEHpfOrderTick>(*message); break;
         case sizeof(SZSEHpfTradeTick): trade_tick = CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(*message); break;
-        case sizeof(SZSEHpfL2Snap): l2_tick = CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(*message); break;
+        case sizeof(SZSEHpfL2Snap): generated_l2_tick = CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(*message); break;
         default: break;
         }
 
@@ -176,10 +176,10 @@ void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
             m_reporter->exchange_trade_tick_arrived(trade_tick);
         }
 
-        if (l2_tick != nullptr) {
-            logger->debug("Received l2 tick: {}", utilities::ToJSON()(*l2_tick));
+        if (generated_l2_tick != nullptr) {
+            logger->debug("Received l2 tick: {}", utilities::ToJSON()(*generated_l2_tick));
 
-            m_reporter->exchange_l2_tick_arrived(l2_tick);
+            m_reporter->exchange_l2_tick_arrived(generated_l2_tick);
         }
 
         /// boost::freelock::queue imposes a constraint that its elements

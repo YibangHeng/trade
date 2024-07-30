@@ -27,7 +27,7 @@ int trade::SubReporterClient::run()
     m_sub_reporter_client_impl = std::make_shared<SubReporterClientImpl>(
         m_arguments["address"].as<std::string>(),
         m_arguments["port"].as<uint16_t>(),
-        [this](const muduo::net::TcpConnectionPtr& conn, const types::L2Tick& l2_tick, const muduo::Timestamp timestamp) { on_l2_snap_arrived(conn, l2_tick, timestamp); },
+        [this](const muduo::net::TcpConnectionPtr& conn, const types::ExchangeL2Snap& exchange_l2_snap, const muduo::Timestamp timestamp) { on_l2_snap_arrived(conn, exchange_l2_snap, timestamp); },
         [this](const muduo::net::TcpConnectionPtr& conn, const types::NewSubscribeRsp& new_subscribe_rsp, const muduo::Timestamp timestamp) { on_new_subscribe_rsp(conn, new_subscribe_rsp, timestamp); },
         [this](const muduo::net::TcpConnectionPtr& conn) { on_connected(conn); },
         [this](const muduo::net::TcpConnectionPtr& conn) { on_disconnected(conn); }
@@ -124,11 +124,11 @@ bool trade::SubReporterClient::argv_parse(const int argc, char* argv[])
 
 void trade::SubReporterClient::on_l2_snap_arrived(
     const muduo::net::TcpConnectionPtr& conn,
-    const types::L2Tick& l2_tick,
+    const types::ExchangeL2Snap& exchange_tick_snap,
     muduo::Timestamp timestamp
 ) const
 {
-    logger->info("Received L2 tick {}", utilities::ToJSON()(l2_tick));
+    logger->info("Received L2 tick {}", utilities::ToJSON()(exchange_tick_snap));
 }
 
 void trade::SubReporterClient::on_new_subscribe_rsp(

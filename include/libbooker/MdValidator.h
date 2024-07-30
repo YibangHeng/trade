@@ -18,7 +18,7 @@ public:
     /// Market data.
 public:
     /// Feed self-generated l2 tick.
-    void l2_tick_generated(const L2TickPtr& l2_tick);
+    void l2_tick_generated(const GeneratedL2TickPtr& generated_l2_tick);
 
 public:
     /// Check by exchange trade tick.

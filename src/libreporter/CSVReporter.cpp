@@ -10,43 +10,43 @@ trade::reporter::CSVReporter::~CSVReporter()
         writer.flush();
 }
 
-void trade::reporter::CSVReporter::l2_tick_generated(const std::shared_ptr<types::L2Tick> l2_tick)
+void trade::reporter::CSVReporter::l2_tick_generated(const std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick)
 {
-    new_l2_tick_writer(l2_tick->symbol());
+    new_l2_tick_writer(generated_l2_tick->symbol());
 
-    m_l2_tick_writers[l2_tick->symbol()] << fmt::format(
+    m_l2_tick_writers[generated_l2_tick->symbol()] << fmt::format(
         "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
-        l2_tick->symbol(),
-        l2_tick->price_1000x(),
-        l2_tick->quantity(),
-        l2_tick->ask_unique_id(),
-        l2_tick->bid_unique_id(),
-        l2_tick->sell_price_1000x_5(),
-        l2_tick->sell_quantity_5(),
-        l2_tick->sell_price_1000x_4(),
-        l2_tick->sell_quantity_4(),
-        l2_tick->sell_price_1000x_3(),
-        l2_tick->sell_quantity_3(),
-        l2_tick->sell_price_1000x_2(),
-        l2_tick->sell_quantity_2(),
-        l2_tick->sell_price_1000x_1(),
-        l2_tick->sell_quantity_1(),
-        l2_tick->buy_price_1000x_1(),
-        l2_tick->buy_quantity_1(),
-        l2_tick->buy_price_1000x_2(),
-        l2_tick->buy_quantity_2(),
-        l2_tick->buy_price_1000x_3(),
-        l2_tick->buy_quantity_3(),
-        l2_tick->buy_price_1000x_4(),
-        l2_tick->buy_quantity_4(),
-        l2_tick->buy_price_1000x_5(),
-        l2_tick->buy_quantity_5(),
+        generated_l2_tick->symbol(),
+        generated_l2_tick->price_1000x(),
+        generated_l2_tick->quantity(),
+        generated_l2_tick->ask_unique_id(),
+        generated_l2_tick->bid_unique_id(),
+        generated_l2_tick->sell_price_1000x_5(),
+        generated_l2_tick->sell_quantity_5(),
+        generated_l2_tick->sell_price_1000x_4(),
+        generated_l2_tick->sell_quantity_4(),
+        generated_l2_tick->sell_price_1000x_3(),
+        generated_l2_tick->sell_quantity_3(),
+        generated_l2_tick->sell_price_1000x_2(),
+        generated_l2_tick->sell_quantity_2(),
+        generated_l2_tick->sell_price_1000x_1(),
+        generated_l2_tick->sell_quantity_1(),
+        generated_l2_tick->buy_price_1000x_1(),
+        generated_l2_tick->buy_quantity_1(),
+        generated_l2_tick->buy_price_1000x_2(),
+        generated_l2_tick->buy_quantity_2(),
+        generated_l2_tick->buy_price_1000x_3(),
+        generated_l2_tick->buy_quantity_3(),
+        generated_l2_tick->buy_price_1000x_4(),
+        generated_l2_tick->buy_quantity_4(),
+        generated_l2_tick->buy_price_1000x_5(),
+        generated_l2_tick->buy_quantity_5(),
         /// Time.
-        l2_tick->exchange_time(),
+        generated_l2_tick->exchange_time(),
         utilities::Now<std::string>()()
     );
 
-    m_outside->l2_tick_generated(l2_tick);
+    m_outside->l2_tick_generated(generated_l2_tick);
 }
 
 void trade::reporter::CSVReporter::new_l2_tick_writer(const std::string& symbol)

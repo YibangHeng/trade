@@ -72,7 +72,7 @@ private:
     void new_booker(const std::string& symbol);
 
 private:
-    L2TickPtr m_latest_l2_tick;
+    GeneratedL2TickPtr m_latest_l2_tick;
     std::unordered_set<std::string> m_failed_symbols;
 
 private:

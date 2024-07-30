@@ -13,9 +13,9 @@ public:
     ~CounterChecker() override = default;
 
 public:
-    void l2_tick_generated(const std::shared_ptr<trade::types::L2Tick> l2_tick) override
+    void l2_tick_generated(const std::shared_ptr<trade::types::GeneratedL2Tick> generated_l2_tick) override
     {
-        NopReporter::l2_tick_generated(l2_tick);
+        NopReporter::l2_tick_generated(generated_l2_tick);
 
         /// Simulate time-consuming processing.
         std::this_thread::sleep_for(std::chrono::milliseconds(m_sleep_time));
@@ -45,7 +45,7 @@ TEST_CASE("AsyncReporter reporting", "[AsyncReporter]")
         auto reporter              = std::make_shared<trade::reporter::AsyncReporter>(counter_checker);
 
         for (int i = 0; i < iteration_times; i++) {
-            reporter->l2_tick_generated(std::make_shared<trade::types::L2Tick>());
+            reporter->l2_tick_generated(std::make_shared<trade::types::GeneratedL2Tick>());
         }
 
         /// Wait for reporter to finish jobs.
@@ -63,7 +63,7 @@ TEST_CASE("AsyncReporter reporting", "[AsyncReporter]")
         auto reporter              = std::make_shared<trade::reporter::AsyncReporter>(counter_checker);
 
         for (int i = 0; i < iteration_times; i++) {
-            reporter->l2_tick_generated(std::make_shared<trade::types::L2Tick>());
+            reporter->l2_tick_generated(std::make_shared<trade::types::GeneratedL2Tick>());
         }
 
         /// Wait for reporter to finish jobs.

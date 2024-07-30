@@ -107,16 +107,16 @@ bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
     if ((exchange_time >= 92500 && exchange_time < 93000)
         || (exchange_time >= 145700 && exchange_time <= 151000)) [[unlikely]] {
         /// Report trade.
-        const auto l2_tick = std::make_shared<types::L2Tick>();
+        const auto generated_l2_tick = std::make_shared<types::GeneratedL2Tick>();
 
-        l2_tick->set_symbol(trade_tick->symbol());
-        l2_tick->set_price_1000x(trade_tick->exec_price_1000x());
-        l2_tick->set_quantity(trade_tick->exec_quantity());
-        l2_tick->set_ask_unique_id(trade_tick->ask_unique_id());
-        l2_tick->set_bid_unique_id(trade_tick->bid_unique_id());
-        l2_tick->set_exchange_time(trade_tick->exchange_time());
+        generated_l2_tick->set_symbol(trade_tick->symbol());
+        generated_l2_tick->set_price_1000x(trade_tick->exec_price_1000x());
+        generated_l2_tick->set_quantity(trade_tick->exec_quantity());
+        generated_l2_tick->set_ask_unique_id(trade_tick->ask_unique_id());
+        generated_l2_tick->set_bid_unique_id(trade_tick->bid_unique_id());
+        generated_l2_tick->set_exchange_time(trade_tick->exchange_time());
 
-        m_reporter->l2_tick_generated(l2_tick);
+        m_reporter->l2_tick_generated(generated_l2_tick);
 
         return true;
     }
@@ -261,7 +261,7 @@ void trade::booker::Booker::on_fill(
     liquibook::book::Price fill_price
 )
 {
-    m_latest_l2_tick = std::make_shared<types::L2Tick>();
+    m_latest_l2_tick = std::make_shared<types::GeneratedL2Tick>();
 
     if (order->is_buy()) {
         m_latest_l2_tick->set_ask_unique_id(matched_order->unique_id());

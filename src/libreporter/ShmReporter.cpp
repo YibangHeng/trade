@@ -24,26 +24,31 @@ trade::reporter::ShmReporter::ShmReporter(
     logger->info("Created/Opened shared memory {} with size {}GB ({} bytes)", m_shm.get_name(), allocated_shm_size / GB, allocated_shm_size);
 
     /// Map areas of shared memory with same size.
-    m_order_tick_region    = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 0 * allocated_shm_size / 3, allocated_shm_size / 3);
-    m_trade_tick_region    = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 1 * allocated_shm_size / 3, allocated_shm_size / 3);
-    m_l2_tick_region       = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 2 * allocated_shm_size / 3, allocated_shm_size / 3);
+    m_order_tick_region           = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 0 * allocated_shm_size / 4, allocated_shm_size / 4);
+    m_trade_tick_region           = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 1 * allocated_shm_size / 4, allocated_shm_size / 4);
+    m_exchange_l2_snap_region     = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 2 * allocated_shm_size / 4, allocated_shm_size / 4);
+    m_generated_l2_tick_region    = std::make_shared<boost::interprocess::mapped_region>(m_shm, boost::interprocess::read_write, 3 * allocated_shm_size / 4, allocated_shm_size / 4);
 
-    m_order_tick_mate_info = static_cast<SMTickMateInfo*>(m_order_tick_region->get_address());
-    m_trade_tick_mate_info = static_cast<SMTickMateInfo*>(m_trade_tick_region->get_address());
-    m_l2_tick_mate_info    = static_cast<SML2TickMateInfo*>(m_l2_tick_region->get_address());
+    m_order_tick_mate_info        = static_cast<SMTickMateInfo*>(m_order_tick_region->get_address());
+    m_trade_tick_mate_info        = static_cast<SMTickMateInfo*>(m_trade_tick_region->get_address());
+    m_exchange_l2_snap_mate_info  = static_cast<SMExchangeL2SnapMateInfo*>(m_exchange_l2_snap_region->get_address());
+    m_generated_l2_tick_mate_info = static_cast<SMGeneratedL2TickMateInfo*>(m_generated_l2_tick_region->get_address());
 
     /// Set memory areas.
-    memset(m_order_tick_region->get_address(), 0, allocated_shm_size / 3);
-    memset(m_trade_tick_region->get_address(), 0, allocated_shm_size / 3);
-    memset(m_l2_tick_region->get_address(), 0, allocated_shm_size / 3);
+    memset(m_order_tick_region->get_address(), 0, allocated_shm_size / 4);
+    memset(m_trade_tick_region->get_address(), 0, allocated_shm_size / 4);
+    memset(m_exchange_l2_snap_region->get_address(), 0, allocated_shm_size / 4);
+    memset(m_generated_l2_tick_region->get_address(), 0, allocated_shm_size / 4);
 
     /// Assign pointers with start address.
-    m_order_tick_start   = reinterpret_cast<OrderTick*>(m_order_tick_mate_info + 1);
-    m_order_tick_current = m_order_tick_start;
-    m_trade_tick_start   = reinterpret_cast<TradeTick*>(m_trade_tick_mate_info + 1);
-    m_trade_tick_current = m_trade_tick_start;
-    m_l2_tick_start      = reinterpret_cast<L2Tick*>(m_l2_tick_mate_info + 1);
-    m_l2_tick_current    = m_l2_tick_start;
+    m_order_tick_start          = reinterpret_cast<OrderTick*>(m_order_tick_mate_info + 1);
+    m_order_tick_current        = m_order_tick_start;
+    m_trade_tick_start          = reinterpret_cast<TradeTick*>(m_trade_tick_mate_info + 1);
+    m_trade_tick_current        = m_trade_tick_start;
+    m_exchange_l2_snap_start    = reinterpret_cast<ExchangeL2Snap*>(m_exchange_l2_snap_mate_info + 1);
+    m_exchange_l2_snap_current  = m_exchange_l2_snap_start;
+    m_generated_l2_tick_start   = reinterpret_cast<GeneratedL2Tick*>(m_generated_l2_tick_mate_info + 1);
+    m_generated_l2_tick_current = m_generated_l2_tick_start;
 }
 
 void trade::reporter::ShmReporter::exchange_order_tick_arrived(const std::shared_ptr<types::OrderTick> order_tick)
@@ -52,22 +57,22 @@ void trade::reporter::ShmReporter::exchange_order_tick_arrived(const std::shared
     m_outside->exchange_order_tick_arrived(order_tick);
 }
 
-void trade::reporter::ShmReporter::exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick)
+void trade::reporter::ShmReporter::exchange_trade_tick_arrived(const std::shared_ptr<types::TradeTick> trade_tick)
 {
     do_exchange_trade_tick_report(trade_tick);
     m_outside->exchange_trade_tick_arrived(trade_tick);
 }
 
-void trade::reporter::ShmReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::L2Tick> l2_tick)
+void trade::reporter::ShmReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap)
 {
-    do_l2_tick_report(l2_tick, ShmUnionType::l2_tick_from_exchange);
-    m_outside->exchange_l2_tick_arrived(l2_tick);
+    do_exchange_l2_snap_report(exchange_l2_snap);
+    m_outside->exchange_l2_tick_arrived(exchange_l2_snap);
 }
 
-void trade::reporter::ShmReporter::l2_tick_generated(const std::shared_ptr<types::L2Tick> l2_tick)
+void trade::reporter::ShmReporter::l2_tick_generated(const std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick)
 {
-    do_l2_tick_report(l2_tick, ShmUnionType::self_generated_l2_tick);
-    m_outside->l2_tick_generated(l2_tick);
+    do_generated_l2_tick_report(generated_l2_tick);
+    m_outside->l2_tick_generated(generated_l2_tick);
 }
 
 void trade::reporter::ShmReporter::do_exchange_order_tick_report(const std::shared_ptr<types::OrderTick>& order_tick)
@@ -132,50 +137,109 @@ void trade::reporter::ShmReporter::do_exchange_trade_tick_report(const std::shar
     }
 }
 
-void trade::reporter::ShmReporter::do_l2_tick_report(const std::shared_ptr<types::L2Tick>& l2_tick, const ShmUnionType shm_union_type)
+void trade::reporter::ShmReporter::do_exchange_l2_snap_report(const std::shared_ptr<types::ExchangeL2Snap>& exchange_l2_snap)
 {
     /// Check if shared memory is full.
-    if (m_l2_tick_current - m_l2_tick_start > m_l2_tick_region->get_size() / sizeof(L2Tick)) {
+    if (m_exchange_l2_snap_current - m_exchange_l2_snap_start > m_exchange_l2_snap_region->get_size() / sizeof(ExchangeL2Snap)) {
         logger->warn("Shared memory of tick is full");
-        m_l2_tick_current = m_l2_tick_start;
+        m_exchange_l2_snap_current = m_exchange_l2_snap_start;
     }
 
     /// Writing scope.
     {
         boost::interprocess::scoped_lock lock(m_named_mutex);
 
-        m_l2_tick_current->shm_union_type     = shm_union_type;
+        m_exchange_l2_snap_current->shm_union_type          = ShmUnionType::l2_snap_from_exchange;
 
-        M_A {m_l2_tick_current->symbol}       = l2_tick->symbol();
-        m_l2_tick_current->price_1000x        = l2_tick->price_1000x();
-        m_l2_tick_current->quantity           = static_cast<int32_t>(l2_tick->quantity());
+        M_A {m_generated_l2_tick_current->symbol}           = exchange_l2_snap->symbol();
+        m_exchange_l2_snap_current->price_1000x             = static_cast<int64_t>(exchange_l2_snap->price() * 1000.);
 
-        m_l2_tick_current->sell_5.price_1000x = l2_tick->sell_price_1000x_5();
-        m_l2_tick_current->sell_5.quantity    = l2_tick->sell_quantity_5();
-        m_l2_tick_current->sell_4.price_1000x = l2_tick->sell_price_1000x_4();
-        m_l2_tick_current->sell_4.quantity    = l2_tick->sell_quantity_4();
-        m_l2_tick_current->sell_3.price_1000x = l2_tick->sell_price_1000x_3();
-        m_l2_tick_current->sell_3.quantity    = l2_tick->sell_quantity_3();
-        m_l2_tick_current->sell_2.price_1000x = l2_tick->sell_price_1000x_2();
-        m_l2_tick_current->sell_2.quantity    = l2_tick->sell_quantity_2();
-        m_l2_tick_current->sell_1.price_1000x = l2_tick->sell_price_1000x_1();
-        m_l2_tick_current->sell_1.quantity    = l2_tick->sell_quantity_1();
-        m_l2_tick_current->buy_1.price_1000x  = l2_tick->buy_price_1000x_1();
-        m_l2_tick_current->buy_1.quantity     = l2_tick->buy_quantity_1();
-        m_l2_tick_current->buy_2.price_1000x  = l2_tick->buy_price_1000x_2();
-        m_l2_tick_current->buy_2.quantity     = l2_tick->buy_quantity_2();
-        m_l2_tick_current->buy_3.price_1000x  = l2_tick->buy_price_1000x_3();
-        m_l2_tick_current->buy_3.quantity     = l2_tick->buy_quantity_3();
-        m_l2_tick_current->buy_4.price_1000x  = l2_tick->buy_price_1000x_4();
-        m_l2_tick_current->buy_4.quantity     = l2_tick->buy_quantity_4();
-        m_l2_tick_current->buy_5.price_1000x  = l2_tick->buy_price_1000x_5();
-        m_l2_tick_current->buy_5.quantity     = l2_tick->buy_quantity_5();
+        m_exchange_l2_snap_current->pre_settlement_1000x    = static_cast<int64_t>(exchange_l2_snap->pre_settlement() * 1000.);
+        m_exchange_l2_snap_current->pre_close_price_1000x   = static_cast<int64_t>(exchange_l2_snap->pre_close_price() * 1000.);
+        m_exchange_l2_snap_current->open_price_1000x        = static_cast<int64_t>(exchange_l2_snap->open_price() * 1000.);
+        m_exchange_l2_snap_current->highest_price_1000x     = static_cast<int64_t>(exchange_l2_snap->highest_price() * 1000.);
+        m_exchange_l2_snap_current->lowest_price_1000x      = static_cast<int64_t>(exchange_l2_snap->lowest_price() * 1000.);
+        m_exchange_l2_snap_current->close_price_1000x       = static_cast<int64_t>(exchange_l2_snap->close_price() * 1000.);
+        m_exchange_l2_snap_current->settlement_price_1000x  = static_cast<int64_t>(exchange_l2_snap->settlement_price() * 1000.);
+        m_exchange_l2_snap_current->upper_limit_price_1000x = static_cast<int64_t>(exchange_l2_snap->upper_limit_price() * 1000.);
+        m_exchange_l2_snap_current->lower_limit_price_1000x = static_cast<int64_t>(exchange_l2_snap->lower_limit_price() * 1000.);
 
-        m_l2_tick_current->exchange_time      = REMOVE_DATE(l2_tick->exchange_time());
-        m_l2_tick_current->local_system_time  = REMOVE_DATE(utilities::Now<int64_t>()());
+        m_exchange_l2_snap_current->sell_5.price_1000x      = static_cast<int64_t>(exchange_l2_snap->sell_price_5() * 1000.);
+        m_exchange_l2_snap_current->sell_5.quantity         = exchange_l2_snap->sell_quantity_5();
+        m_exchange_l2_snap_current->sell_4.price_1000x      = static_cast<int64_t>(exchange_l2_snap->sell_price_4() * 1000.);
+        m_exchange_l2_snap_current->sell_4.quantity         = exchange_l2_snap->sell_quantity_4();
+        m_exchange_l2_snap_current->sell_3.price_1000x      = static_cast<int64_t>(exchange_l2_snap->sell_price_3() * 1000.);
+        m_exchange_l2_snap_current->sell_3.quantity         = exchange_l2_snap->sell_quantity_3();
+        m_exchange_l2_snap_current->sell_2.price_1000x      = static_cast<int64_t>(exchange_l2_snap->sell_price_2() * 1000.);
+        m_exchange_l2_snap_current->sell_2.quantity         = exchange_l2_snap->sell_quantity_2();
+        m_exchange_l2_snap_current->sell_1.price_1000x      = static_cast<int64_t>(exchange_l2_snap->sell_price_1() * 1000.);
+        m_exchange_l2_snap_current->sell_1.quantity         = exchange_l2_snap->sell_quantity_1();
+        m_exchange_l2_snap_current->buy_1.price_1000x       = static_cast<int64_t>(exchange_l2_snap->buy_price_1() * 1000.);
+        m_exchange_l2_snap_current->buy_1.quantity          = exchange_l2_snap->buy_quantity_1();
+        m_exchange_l2_snap_current->buy_2.price_1000x       = static_cast<int64_t>(exchange_l2_snap->buy_price_2() * 1000.);
+        m_exchange_l2_snap_current->buy_2.quantity          = exchange_l2_snap->buy_quantity_2();
+        m_exchange_l2_snap_current->buy_3.price_1000x       = static_cast<int64_t>(exchange_l2_snap->buy_price_3() * 1000.);
+        m_exchange_l2_snap_current->buy_3.quantity          = exchange_l2_snap->buy_quantity_3();
+        m_exchange_l2_snap_current->buy_4.price_1000x       = static_cast<int64_t>(exchange_l2_snap->buy_price_4() * 1000.);
+        m_exchange_l2_snap_current->buy_4.quantity          = exchange_l2_snap->buy_quantity_4();
+        m_exchange_l2_snap_current->buy_5.price_1000x       = static_cast<int64_t>(exchange_l2_snap->buy_price_5() * 1000.);
+        m_exchange_l2_snap_current->buy_5.quantity          = exchange_l2_snap->buy_quantity_5();
 
-        m_l2_tick_current++;
-        m_l2_tick_mate_info->l2_tick_count++;
-        m_l2_tick_mate_info->last_update_time = REMOVE_DATE(utilities::Now<int64_t>()());
+        m_exchange_l2_snap_current->exchange_time           = REMOVE_DATE(exchange_l2_snap->exchange_time());
+        m_exchange_l2_snap_current->local_system_time       = REMOVE_DATE(utilities::Now<int64_t>()());
+
+        m_exchange_l2_snap_current++;
+        m_exchange_l2_snap_mate_info->exchange_l2_snap_count++;
+        m_exchange_l2_snap_mate_info->last_update_time = REMOVE_DATE(utilities::Now<int64_t>()());
+    }
+}
+
+void trade::reporter::ShmReporter::do_generated_l2_tick_report(const std::shared_ptr<types::GeneratedL2Tick>& generated_l2_tick)
+{
+    /// Check if shared memory is full.
+    if (m_generated_l2_tick_current - m_generated_l2_tick_start > m_generated_l2_tick_region->get_size() / sizeof(ExchangeL2Snap)) {
+        logger->warn("Shared memory of tick is full");
+        m_generated_l2_tick_current = m_generated_l2_tick_start;
+    }
+
+    /// Writing scope.
+    {
+        boost::interprocess::scoped_lock lock(m_named_mutex);
+
+        m_generated_l2_tick_current->shm_union_type     = ShmUnionType::generated_l2_tick;
+
+        M_A {m_generated_l2_tick_current->symbol}       = generated_l2_tick->symbol();
+        m_generated_l2_tick_current->price_1000x        = generated_l2_tick->price_1000x();
+        m_generated_l2_tick_current->quantity           = generated_l2_tick->quantity();
+        m_generated_l2_tick_current->ask_unique_id      = generated_l2_tick->ask_unique_id();
+        m_generated_l2_tick_current->bid_unique_id      = generated_l2_tick->bid_unique_id();
+
+        m_generated_l2_tick_current->sell_5.price_1000x = generated_l2_tick->sell_price_1000x_5();
+        m_generated_l2_tick_current->sell_5.quantity    = generated_l2_tick->sell_quantity_5();
+        m_generated_l2_tick_current->sell_4.price_1000x = generated_l2_tick->sell_price_1000x_4();
+        m_generated_l2_tick_current->sell_4.quantity    = generated_l2_tick->sell_quantity_4();
+        m_generated_l2_tick_current->sell_3.price_1000x = generated_l2_tick->sell_price_1000x_3();
+        m_generated_l2_tick_current->sell_3.quantity    = generated_l2_tick->sell_quantity_3();
+        m_generated_l2_tick_current->sell_2.price_1000x = generated_l2_tick->sell_price_1000x_2();
+        m_generated_l2_tick_current->sell_2.quantity    = generated_l2_tick->sell_quantity_2();
+        m_generated_l2_tick_current->sell_1.price_1000x = generated_l2_tick->sell_price_1000x_1();
+        m_generated_l2_tick_current->sell_1.quantity    = generated_l2_tick->sell_quantity_1();
+        m_generated_l2_tick_current->buy_1.price_1000x  = generated_l2_tick->buy_price_1000x_1();
+        m_generated_l2_tick_current->buy_1.quantity     = generated_l2_tick->buy_quantity_1();
+        m_generated_l2_tick_current->buy_2.price_1000x  = generated_l2_tick->buy_price_1000x_2();
+        m_generated_l2_tick_current->buy_2.quantity     = generated_l2_tick->buy_quantity_2();
+        m_generated_l2_tick_current->buy_3.price_1000x  = generated_l2_tick->buy_price_1000x_3();
+        m_generated_l2_tick_current->buy_3.quantity     = generated_l2_tick->buy_quantity_3();
+        m_generated_l2_tick_current->buy_4.price_1000x  = generated_l2_tick->buy_price_1000x_4();
+        m_generated_l2_tick_current->buy_4.quantity     = generated_l2_tick->buy_quantity_4();
+        m_generated_l2_tick_current->buy_5.price_1000x  = generated_l2_tick->buy_price_1000x_5();
+        m_generated_l2_tick_current->buy_5.quantity     = generated_l2_tick->buy_quantity_5();
+
+        m_generated_l2_tick_current->exchange_time      = REMOVE_DATE(generated_l2_tick->exchange_time());
+        m_generated_l2_tick_current->local_system_time  = REMOVE_DATE(utilities::Now<int64_t>()());
+
+        m_generated_l2_tick_current++;
+        m_generated_l2_tick_mate_info->generated_l2_tick_count++;
+        m_generated_l2_tick_mate_info->last_update_time = REMOVE_DATE(utilities::Now<int64_t>()());
     }
 }

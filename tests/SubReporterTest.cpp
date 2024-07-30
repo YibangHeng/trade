@@ -13,58 +13,40 @@ constexpr size_t num_threads = 1;
 
 TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "[SubReporterClientImpl]")
 {
-    const auto sse_l2_snap_0 = std::make_shared<trade::types::L2Tick>();
+    const auto sse_l2_snap_0 = std::make_shared<trade::types::ExchangeL2Snap>();
 
     sse_l2_snap_0->set_symbol("600875");
-    sse_l2_snap_0->set_price_1000x(2233);
-    sse_l2_snap_0->set_quantity(1000);
-    sse_l2_snap_0->set_ask_unique_id(10001);
-    sse_l2_snap_0->set_bid_unique_id(10002);
+    sse_l2_snap_0->set_price(1000);
     sse_l2_snap_0->set_exchange_time(925000);
 
-    const auto sse_l2_snap_1 = std::make_shared<trade::types::L2Tick>();
+    const auto sse_l2_snap_1 = std::make_shared<trade::types::ExchangeL2Snap>();
 
     sse_l2_snap_1->set_symbol("600875");
-    sse_l2_snap_1->set_price_1000x(2233);
-    sse_l2_snap_1->set_quantity(2000);
-    sse_l2_snap_1->set_ask_unique_id(20001);
-    sse_l2_snap_1->set_bid_unique_id(20002);
+    sse_l2_snap_1->set_price(2000);
     sse_l2_snap_1->set_exchange_time(925000);
 
-    const auto sse_l2_snap_2 = std::make_shared<trade::types::L2Tick>();
+    const auto sse_l2_snap_2 = std::make_shared<trade::types::ExchangeL2Snap>();
 
     sse_l2_snap_2->set_symbol("600875");
-    sse_l2_snap_2->set_price_1000x(2233);
-    sse_l2_snap_2->set_quantity(3000);
-    sse_l2_snap_2->set_ask_unique_id(30001);
-    sse_l2_snap_2->set_bid_unique_id(30002);
+    sse_l2_snap_2->set_price(3000);
     sse_l2_snap_2->set_exchange_time(925000);
 
-    const auto szse_l2_snap_0 = std::make_shared<trade::types::L2Tick>();
+    const auto szse_l2_snap_0 = std::make_shared<trade::types::ExchangeL2Snap>();
 
     szse_l2_snap_0->set_symbol("000001");
-    szse_l2_snap_0->set_price_1000x(3322);
-    szse_l2_snap_0->set_quantity(4000);
-    szse_l2_snap_0->set_ask_unique_id(40001);
-    szse_l2_snap_0->set_bid_unique_id(40002);
+    szse_l2_snap_0->set_price(4000);
     szse_l2_snap_0->set_exchange_time(925000);
 
-    const auto szse_l2_snap_1 = std::make_shared<trade::types::L2Tick>();
+    const auto szse_l2_snap_1 = std::make_shared<trade::types::ExchangeL2Snap>();
 
     szse_l2_snap_1->set_symbol("000001");
-    szse_l2_snap_1->set_price_1000x(3322);
-    szse_l2_snap_1->set_quantity(5000);
-    szse_l2_snap_1->set_ask_unique_id(50001);
-    szse_l2_snap_1->set_bid_unique_id(50002);
+    szse_l2_snap_1->set_price(5000);
     szse_l2_snap_1->set_exchange_time(925000);
 
-    const auto szse_l2_snap_2 = std::make_shared<trade::types::L2Tick>();
+    const auto szse_l2_snap_2 = std::make_shared<trade::types::ExchangeL2Snap>();
 
     szse_l2_snap_2->set_symbol("000001");
-    szse_l2_snap_2->set_price_1000x(3322);
-    szse_l2_snap_2->set_quantity(6000);
-    szse_l2_snap_2->set_ask_unique_id(60001);
-    szse_l2_snap_2->set_bid_unique_id(60002);
+    szse_l2_snap_2->set_price(6000);
     szse_l2_snap_2->set_exchange_time(925000);
 
     SECTION("Subscribing for specific symbols")
@@ -83,15 +65,12 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
             trade::SubReporterClientImpl client(
                 "127.0.0.1",
                 10100,
-                [&l2_snap_counter](const muduo::net::TcpConnectionPtr&, const trade::types::L2Tick& l2_tick, muduo::Timestamp) {
+                [&l2_snap_counter](const muduo::net::TcpConnectionPtr&, const trade::types::ExchangeL2Snap& exchange_l2_snap, muduo::Timestamp) {
                     l2_snap_counter++;
 
-                    CHECK(l2_tick.symbol() == "600875");
-                    CHECK(l2_tick.price_1000x() == 2233);
-                    CHECK(l2_tick.quantity() == 1000 * l2_snap_counter);
-                    CHECK(l2_tick.ask_unique_id() == l2_snap_counter * 10000 + 1);
-                    CHECK(l2_tick.bid_unique_id() == l2_snap_counter * 10000 + 2);
-                    CHECK(l2_tick.exchange_time() == 925000);
+                    CHECK(exchange_l2_snap.symbol() == "600875");
+                    CHECK(exchange_l2_snap.price() == 1000 * l2_snap_counter);
+                    CHECK(exchange_l2_snap.exchange_time() == 925000);
                 },
                 [&new_subscribe_req_acknowledged, &mutex, &cv](const muduo::net::TcpConnectionPtr&, const trade::types::NewSubscribeRsp& new_subscribe_rsp, muduo::Timestamp) {
                     CHECK(new_subscribe_rsp.subscribed_symbols().size() == 1);
@@ -157,24 +136,18 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
             trade::SubReporterClientImpl client(
                 "127.0.0.1",
                 10100,
-                [&l2_snap_counter](const muduo::net::TcpConnectionPtr&, const trade::types::L2Tick& l2_tick, muduo::Timestamp) {
+                [&l2_snap_counter](const muduo::net::TcpConnectionPtr&, const trade::types::ExchangeL2Snap& exchange_l2_snap, muduo::Timestamp) {
                     l2_snap_counter++;
 
                     if (l2_snap_counter < 4) {
-                        CHECK(l2_tick.symbol() == "600875");
-                        CHECK(l2_tick.price_1000x() == 2233);
-                        CHECK(l2_tick.quantity() == 1000 * l2_snap_counter);
-                        CHECK(l2_tick.ask_unique_id() == l2_snap_counter * 10000 + 1);
-                        CHECK(l2_tick.bid_unique_id() == l2_snap_counter * 10000 + 2);
-                        CHECK(l2_tick.exchange_time() == 925000);
+                        CHECK(exchange_l2_snap.symbol() == "600875");
+                        CHECK(exchange_l2_snap.price() == 1000 * l2_snap_counter);
+                        CHECK(exchange_l2_snap.exchange_time() == 925000);
                     }
                     else {
-                        CHECK(l2_tick.symbol() == "000001");
-                        CHECK(l2_tick.price_1000x() == 3322);
-                        CHECK(l2_tick.quantity() == 1000 * l2_snap_counter);
-                        CHECK(l2_tick.ask_unique_id() == l2_snap_counter * 10000 + 1);
-                        CHECK(l2_tick.bid_unique_id() == l2_snap_counter * 10000 + 2);
-                        CHECK(l2_tick.exchange_time() == 925000);
+                        CHECK(exchange_l2_snap.symbol() == "000001");
+                        CHECK(exchange_l2_snap.price() == 1000 * l2_snap_counter);
+                        CHECK(exchange_l2_snap.exchange_time() == 925000);
                     }
                 },
                 [&new_subscribe_req_acknowledged, &mutex, &cv](const muduo::net::TcpConnectionPtr&, const trade::types::NewSubscribeRsp& new_subscribe_rsp, muduo::Timestamp) {
@@ -245,24 +218,18 @@ TEST_CASE("Communication between SubReporterServer and SubReporterClientImpl", "
             trade::SubReporterClientImpl client(
                 "127.0.0.1",
                 10100,
-                [&l2_snap_counter](const muduo::net::TcpConnectionPtr&, const trade::types::L2Tick& l2_tick, muduo::Timestamp) {
+                [&l2_snap_counter](const muduo::net::TcpConnectionPtr&, const trade::types::ExchangeL2Snap& exchange_l2_snap, muduo::Timestamp) {
                     l2_snap_counter++;
 
                     if (l2_snap_counter == 1) {
-                        CHECK(l2_tick.symbol() == "000001");
-                        CHECK(l2_tick.price_1000x() == 3322);
-                        CHECK(l2_tick.quantity() == 6000);
-                        CHECK(l2_tick.ask_unique_id() == 60001);
-                        CHECK(l2_tick.bid_unique_id() == 60002);
-                        CHECK(l2_tick.exchange_time() == 925000);
+                        CHECK(exchange_l2_snap.symbol() == "000001");
+                        CHECK(exchange_l2_snap.price() == 6000);
+                        CHECK(exchange_l2_snap.exchange_time() == 925000);
                     }
                     else {
-                        CHECK(l2_tick.symbol() == "600875");
-                        CHECK(l2_tick.price_1000x() == 2233);
-                        CHECK(l2_tick.quantity() == 3000);
-                        CHECK(l2_tick.ask_unique_id() == 30001);
-                        CHECK(l2_tick.bid_unique_id() == 30002);
-                        CHECK(l2_tick.exchange_time() == 925000);
+                        CHECK(exchange_l2_snap.symbol() == "600875");
+                        CHECK(exchange_l2_snap.price() == 3000);
+                        CHECK(exchange_l2_snap.exchange_time() == 925000);
                     }
                 },
                 [](const muduo::net::TcpConnectionPtr&, const trade::types::NewSubscribeRsp& new_subscribe_rsp, muduo::Timestamp) {

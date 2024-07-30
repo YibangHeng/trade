@@ -40,19 +40,19 @@ trade::reporter::SubReporter::~SubReporter()
     m_event_loop_future.wait();
 }
 
-void trade::reporter::SubReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::L2Tick> l2_tick)
+void trade::reporter::SubReporter::exchange_l2_tick_arrived(const std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap)
 {
     std::lock_guard lock(m_app_id_to_symbols_mutex);
 
     for (const auto& [conn, symbols] : m_app_id_to_symbols) {
-        if (symbols.contains(l2_tick->symbol()) || symbols.contains("*")) {
-            utilities::ProtobufCodec::send(conn, *l2_tick);
+        if (symbols.contains(exchange_l2_snap->symbol()) || symbols.contains("*")) {
+            utilities::ProtobufCodec::send(conn, *exchange_l2_snap);
         }
     }
 
-    m_last_data[l2_tick->symbol()] = l2_tick;
+    m_last_data[exchange_l2_snap->symbol()] = exchange_l2_snap;
 
-    m_outside->exchange_l2_tick_arrived(l2_tick);
+    m_outside->exchange_l2_tick_arrived(exchange_l2_snap);
 }
 
 void trade::reporter::SubReporter::on_connected(const muduo::net::TcpConnectionPtr& conn)
@@ -102,8 +102,8 @@ void trade::reporter::SubReporter::on_new_subscribe_req(
 
         for (const auto& symbol : m_app_id_to_symbols[conn]) {
             if (symbol == "*")
-                for (const auto& l2_tick : m_last_data | std::views::values)
-                    utilities::ProtobufCodec::send(conn, *l2_tick);
+                for (const auto& exchange_l2_snap : m_last_data | std::views::values)
+                    utilities::ProtobufCodec::send(conn, *exchange_l2_snap);
             else if (m_last_data.contains(symbol))
                 utilities::ProtobufCodec::send(conn, *m_last_data[symbol]);
         }
