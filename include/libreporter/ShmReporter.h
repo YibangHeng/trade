@@ -47,18 +47,18 @@ static_assert(sizeof(OrderType) == 4, "OrderType should be 4 bytes");
 struct PUBLIC_API SMTickMateInfo {
     size_t tick_count        = 0;
     int64_t last_update_time = {}; /// Time in ISO 8601 format.
-    RESERVED(496)
+    RESERVED(240)
 };
 
-static_assert(sizeof(SMTickMateInfo) == 512, "MateInfo for tick should be 512 bytes");
+static_assert(sizeof(SMTickMateInfo) == 256, "MateInfo for tick should be 256 bytes");
 
 struct PUBLIC_API SML2TickMateInfo {
     size_t l2_tick_count     = 0;
     int64_t last_update_time = {}; /// Time in ISO 8601 format.
-    RESERVED(496)
+    RESERVED(240)
 };
 
-static_assert(sizeof(SML2TickMateInfo) == 512, "MateInfo for l2 tick should be 512 bytes");
+static_assert(sizeof(SML2TickMateInfo) == 256, "MateInfo for l2 tick should be 256 bytes");
 
 struct PriceQuantityPair {
     int64_t price_1000x = 0;
@@ -93,10 +93,10 @@ struct PUBLIC_API OrderTick {
     int64_t exhange_time      = 0;
     int64_t local_system_time = 0;
 
-    RESERVED(448)
+    RESERVED(192)
 };
 
-static_assert(sizeof(OrderTick) == 512, "Tick should be 512 bytes");
+static_assert(sizeof(OrderTick) == 256, "Tick should be 256 bytes");
 
 /// @types::TradeTick.
 struct PUBLIC_API TradeTick {
@@ -111,10 +111,10 @@ struct PUBLIC_API TradeTick {
     int64_t exchange_time     = 0;
     int64_t local_system_time = 0;
 
-    RESERVED(444)
+    RESERVED(188)
 };
 
-static_assert(sizeof(TradeTick) == 512, "Tick should be 512 bytes");
+static_assert(sizeof(TradeTick) == 256, "Tick should be 256 bytes");
 
 struct PUBLIC_API L2Tick {
     ShmUnionType shm_union_type;
@@ -123,11 +123,6 @@ struct PUBLIC_API L2Tick {
     int64_t price_1000x = 0;
     int64_t quantity    = 0;
 
-    PriceQuantityPair sell_10;
-    PriceQuantityPair sell_9;
-    PriceQuantityPair sell_8;
-    PriceQuantityPair sell_7;
-    PriceQuantityPair sell_6;
     PriceQuantityPair sell_5;
     PriceQuantityPair sell_4;
     PriceQuantityPair sell_3;
@@ -138,19 +133,14 @@ struct PUBLIC_API L2Tick {
     PriceQuantityPair buy_3;
     PriceQuantityPair buy_4;
     PriceQuantityPair buy_5;
-    PriceQuantityPair buy_6;
-    PriceQuantityPair buy_7;
-    PriceQuantityPair buy_8;
-    PriceQuantityPair buy_9;
-    PriceQuantityPair buy_10;
 
     int64_t exchange_time     = 0;
     int64_t local_system_time = 0;
 
-    RESERVED(140)
+    RESERVED(44)
 };
 
-static_assert(sizeof(L2Tick) == 512, "L2Tick should be 512 bytes");
+static_assert(sizeof(L2Tick) == 256, "L2Tick should be 256 bytes");
 
 union PUBLIC_API ShmUnion
 {
@@ -159,7 +149,7 @@ union PUBLIC_API ShmUnion
     L2Tick market_data;
 };
 
-static_assert(sizeof(ShmUnion) == 512, "ShmUnion should be 512 bytes");
+static_assert(sizeof(ShmUnion) == 256, "ShmUnion should be 256 bytes");
 
 #pragma pack(pop)
 

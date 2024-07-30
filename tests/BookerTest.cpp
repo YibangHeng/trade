@@ -537,13 +537,13 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_1() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_1() == 3322);
-            CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_2() == 2233);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_3() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_quantity_3() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_quantity_1() == 0);
-            CHECK(g_reporter->get_trade_result()[0]->buy_quantity_1() == 20);
-            CHECK(g_reporter->get_trade_result()[0]->buy_quantity_2() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->buy_quantity_1() == 40);
+            CHECK(g_reporter->get_trade_result()[0]->buy_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_quantity_3() == 0);
 
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
@@ -555,13 +555,13 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_1() == 0);
             CHECK(g_reporter->get_trade_result()[1]->buy_price_1000x_1() == 3322);
-            CHECK(g_reporter->get_trade_result()[1]->buy_price_1000x_2() == 2233);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[1]->buy_price_1000x_3() == 0);
             CHECK(g_reporter->get_trade_result()[1]->sell_quantity_3() == 0);
             CHECK(g_reporter->get_trade_result()[1]->sell_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[1]->sell_quantity_1() == 0);
-            CHECK(g_reporter->get_trade_result()[1]->buy_quantity_1() == 20);
-            CHECK(g_reporter->get_trade_result()[1]->buy_quantity_2() == 20);
+            CHECK(g_reporter->get_trade_result()[1]->buy_quantity_1() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->buy_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[1]->buy_quantity_3() == 0);
 
             CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
@@ -795,14 +795,14 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
-            CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_2() == 2233);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_1() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_1() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_3() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_quantity_3() == 0);
-            CHECK(g_reporter->get_trade_result()[0]->sell_quantity_2() == 80);
-            CHECK(g_reporter->get_trade_result()[0]->sell_quantity_1() == 40);
+            CHECK(g_reporter->get_trade_result()[0]->sell_quantity_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_quantity_1() == 120);
             CHECK(g_reporter->get_trade_result()[0]->buy_quantity_1() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_quantity_3() == 0);
@@ -884,14 +884,14 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
-            CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_2() == 2233);
+            CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_1() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_1() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_3() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_quantity_3() == 0);
-            CHECK(g_reporter->get_trade_result()[0]->sell_quantity_2() == 80);
-            CHECK(g_reporter->get_trade_result()[0]->sell_quantity_1() == 40);
+            CHECK(g_reporter->get_trade_result()[0]->sell_quantity_2() == 0);
+            CHECK(g_reporter->get_trade_result()[0]->sell_quantity_1() == 120);
             CHECK(g_reporter->get_trade_result()[0]->buy_quantity_1() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_quantity_3() == 0);
@@ -972,13 +972,13 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_1() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_1() == 3322);
-            CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_2() == 2233);
+            CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_price_1000x_3() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_quantity_3() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_quantity_1() == 0);
-            CHECK(g_reporter->get_trade_result()[0]->buy_quantity_1() == 20);
-            CHECK(g_reporter->get_trade_result()[0]->buy_quantity_2() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->buy_quantity_1() == 40);
+            CHECK(g_reporter->get_trade_result()[0]->buy_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[0]->buy_quantity_3() == 0);
 
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
@@ -990,13 +990,13 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_1() == 0);
             CHECK(g_reporter->get_trade_result()[1]->buy_price_1000x_1() == 3322);
-            CHECK(g_reporter->get_trade_result()[1]->buy_price_1000x_2() == 2233);
+            CHECK(g_reporter->get_trade_result()[1]->buy_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[1]->buy_price_1000x_3() == 0);
             CHECK(g_reporter->get_trade_result()[1]->sell_quantity_3() == 0);
             CHECK(g_reporter->get_trade_result()[1]->sell_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[1]->sell_quantity_1() == 0);
-            CHECK(g_reporter->get_trade_result()[1]->buy_quantity_1() == 20);
-            CHECK(g_reporter->get_trade_result()[1]->buy_quantity_2() == 20);
+            CHECK(g_reporter->get_trade_result()[1]->buy_quantity_1() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->buy_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[1]->buy_quantity_3() == 0);
         }
 
@@ -1257,14 +1257,14 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[2]->sell_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[2]->sell_price_1000x_1() == 0);
             CHECK(g_reporter->get_trade_result()[2]->buy_price_1000x_1() == 3322);
-            CHECK(g_reporter->get_trade_result()[2]->buy_price_1000x_2() == 2233);
-            CHECK(g_reporter->get_trade_result()[2]->buy_price_1000x_3() == 2222);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1000x_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_price_1000x_3() == 0);
             CHECK(g_reporter->get_trade_result()[2]->sell_quantity_3() == 0);
             CHECK(g_reporter->get_trade_result()[2]->sell_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[2]->sell_quantity_1() == 0);
-            CHECK(g_reporter->get_trade_result()[2]->buy_quantity_1() == 40);
-            CHECK(g_reporter->get_trade_result()[2]->buy_quantity_2() == 100);
-            CHECK(g_reporter->get_trade_result()[2]->buy_quantity_3() == 100);
+            CHECK(g_reporter->get_trade_result()[2]->buy_quantity_1() == 240);
+            CHECK(g_reporter->get_trade_result()[2]->buy_quantity_2() == 0);
+            CHECK(g_reporter->get_trade_result()[2]->buy_quantity_3() == 0);
 
             CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[3]->price_1000x() == 3322);
@@ -1275,13 +1275,13 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[3]->sell_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[3]->sell_price_1000x_1() == 3322);
             CHECK(g_reporter->get_trade_result()[3]->buy_price_1000x_1() == 2233);
-            CHECK(g_reporter->get_trade_result()[3]->buy_price_1000x_2() == 2222);
+            CHECK(g_reporter->get_trade_result()[3]->buy_price_1000x_2() == 0);
             CHECK(g_reporter->get_trade_result()[3]->buy_price_1000x_3() == 0);
             CHECK(g_reporter->get_trade_result()[3]->sell_quantity_3() == 0);
             CHECK(g_reporter->get_trade_result()[3]->sell_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[3]->sell_quantity_1() == 60);
-            CHECK(g_reporter->get_trade_result()[3]->buy_quantity_1() == 100);
-            CHECK(g_reporter->get_trade_result()[3]->buy_quantity_2() == 100);
+            CHECK(g_reporter->get_trade_result()[3]->buy_quantity_1() == 200);
+            CHECK(g_reporter->get_trade_result()[3]->buy_quantity_2() == 0);
             CHECK(g_reporter->get_trade_result()[3]->buy_quantity_3() == 0);
 
             CHECK(g_reporter->get_trade_result()[4]->symbol() == "600875.SH");

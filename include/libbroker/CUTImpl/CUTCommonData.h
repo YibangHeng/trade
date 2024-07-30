@@ -183,16 +183,6 @@ inline booker::L2TickPtr CUTCommonData::to_l2_tick<SSEHpfL2Snap>(const std::vect
     l2_tick->set_sell_quantity_4(to_quantity_from_sse(raw_l2_tick->m_ask_px[3].m_qty));
     l2_tick->set_sell_price_1000x_5(to_price_1000x_from_sse(raw_l2_tick->m_ask_px[4].m_px));
     l2_tick->set_sell_quantity_5(to_quantity_from_sse(raw_l2_tick->m_ask_px[4].m_qty));
-    l2_tick->set_sell_price_1000x_6(to_price_1000x_from_sse(raw_l2_tick->m_ask_px[5].m_px));
-    l2_tick->set_sell_quantity_6(to_quantity_from_sse(raw_l2_tick->m_ask_px[5].m_qty));
-    l2_tick->set_sell_price_1000x_7(to_price_1000x_from_sse(raw_l2_tick->m_ask_px[6].m_px));
-    l2_tick->set_sell_quantity_7(to_quantity_from_sse(raw_l2_tick->m_ask_px[6].m_qty));
-    l2_tick->set_sell_price_1000x_8(to_price_1000x_from_sse(raw_l2_tick->m_ask_px[7].m_px));
-    l2_tick->set_sell_quantity_8(to_quantity_from_sse(raw_l2_tick->m_ask_px[7].m_qty));
-    l2_tick->set_sell_price_1000x_9(to_price_1000x_from_sse(raw_l2_tick->m_ask_px[8].m_px));
-    l2_tick->set_sell_quantity_9(to_quantity_from_sse(raw_l2_tick->m_ask_px[8].m_qty));
-    l2_tick->set_sell_price_1000x_10(to_price_1000x_from_sse(raw_l2_tick->m_ask_px[9].m_px));
-    l2_tick->set_sell_quantity_10(to_quantity_from_sse(raw_l2_tick->m_ask_px[9].m_qty));
 
     l2_tick->set_buy_price_1000x_1(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[0].m_px));
     l2_tick->set_buy_quantity_1(to_quantity_from_sse(raw_l2_tick->m_bid_px[0].m_qty));
@@ -204,16 +194,6 @@ inline booker::L2TickPtr CUTCommonData::to_l2_tick<SSEHpfL2Snap>(const std::vect
     l2_tick->set_buy_quantity_4(to_quantity_from_sse(raw_l2_tick->m_bid_px[3].m_qty));
     l2_tick->set_buy_price_1000x_5(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[4].m_px));
     l2_tick->set_buy_quantity_5(to_quantity_from_sse(raw_l2_tick->m_bid_px[4].m_qty));
-    l2_tick->set_buy_price_1000x_6(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[5].m_px));
-    l2_tick->set_buy_quantity_6(to_quantity_from_sse(raw_l2_tick->m_bid_px[5].m_qty));
-    l2_tick->set_buy_price_1000x_7(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[6].m_px));
-    l2_tick->set_buy_quantity_7(to_quantity_from_sse(raw_l2_tick->m_bid_px[6].m_qty));
-    l2_tick->set_buy_price_1000x_8(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[7].m_px));
-    l2_tick->set_buy_quantity_8(to_quantity_from_sse(raw_l2_tick->m_bid_px[7].m_qty));
-    l2_tick->set_buy_price_1000x_9(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[8].m_px));
-    l2_tick->set_buy_quantity_9(to_quantity_from_sse(raw_l2_tick->m_bid_px[8].m_qty));
-    l2_tick->set_buy_price_1000x_10(to_price_1000x_from_sse(raw_l2_tick->m_bid_px[9].m_px));
-    l2_tick->set_buy_quantity_10(to_quantity_from_sse(raw_l2_tick->m_bid_px[9].m_qty));
 
     return l2_tick;
 }
@@ -238,18 +218,6 @@ inline booker::L2TickPtr CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(const std::vec
     l2_tick->set_sell_quantity_3(to_quantity_from_szse(raw_l2_tick->m_ask_unit[2].m_qty));
     l2_tick->set_sell_price_1000x_4(to_price_1000x_from_szse(raw_l2_tick->m_ask_unit[3].m_price));
     l2_tick->set_sell_quantity_4(to_quantity_from_szse(raw_l2_tick->m_ask_unit[3].m_qty));
-    l2_tick->set_sell_price_1000x_5(to_price_1000x_from_szse(raw_l2_tick->m_ask_unit[4].m_price));
-    l2_tick->set_sell_quantity_5(to_quantity_from_szse(raw_l2_tick->m_ask_unit[4].m_qty));
-    l2_tick->set_sell_price_1000x_6(to_price_1000x_from_szse(raw_l2_tick->m_ask_unit[5].m_price));
-    l2_tick->set_sell_quantity_6(to_quantity_from_szse(raw_l2_tick->m_ask_unit[5].m_qty));
-    l2_tick->set_sell_price_1000x_7(to_price_1000x_from_szse(raw_l2_tick->m_ask_unit[6].m_price));
-    l2_tick->set_sell_quantity_7(to_quantity_from_szse(raw_l2_tick->m_ask_unit[6].m_qty));
-    l2_tick->set_sell_price_1000x_8(to_price_1000x_from_szse(raw_l2_tick->m_ask_unit[7].m_price));
-    l2_tick->set_sell_quantity_8(to_quantity_from_szse(raw_l2_tick->m_ask_unit[7].m_qty));
-    l2_tick->set_sell_price_1000x_9(to_price_1000x_from_szse(raw_l2_tick->m_ask_unit[8].m_price));
-    l2_tick->set_sell_quantity_9(to_quantity_from_szse(raw_l2_tick->m_ask_unit[8].m_qty));
-    l2_tick->set_sell_price_1000x_10(to_price_1000x_from_szse(raw_l2_tick->m_ask_unit[9].m_price));
-    l2_tick->set_sell_quantity_10(to_quantity_from_szse(raw_l2_tick->m_ask_unit[9].m_qty));
 
     l2_tick->set_buy_price_1000x_1(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[0].m_price));
     l2_tick->set_buy_quantity_1(to_quantity_from_szse(raw_l2_tick->m_bid_unit[0].m_qty));
@@ -259,18 +227,6 @@ inline booker::L2TickPtr CUTCommonData::to_l2_tick<SZSEHpfL2Snap>(const std::vec
     l2_tick->set_buy_quantity_3(to_quantity_from_szse(raw_l2_tick->m_bid_unit[2].m_qty));
     l2_tick->set_buy_price_1000x_4(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[3].m_price));
     l2_tick->set_buy_quantity_4(to_quantity_from_szse(raw_l2_tick->m_bid_unit[3].m_qty));
-    l2_tick->set_buy_price_1000x_5(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[4].m_price));
-    l2_tick->set_buy_quantity_5(to_quantity_from_szse(raw_l2_tick->m_bid_unit[4].m_qty));
-    l2_tick->set_buy_price_1000x_6(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[5].m_price));
-    l2_tick->set_buy_quantity_6(to_quantity_from_szse(raw_l2_tick->m_bid_unit[5].m_qty));
-    l2_tick->set_buy_price_1000x_7(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[6].m_price));
-    l2_tick->set_buy_quantity_7(to_quantity_from_szse(raw_l2_tick->m_bid_unit[6].m_qty));
-    l2_tick->set_buy_price_1000x_8(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[7].m_price));
-    l2_tick->set_buy_quantity_8(to_quantity_from_szse(raw_l2_tick->m_bid_unit[7].m_qty));
-    l2_tick->set_buy_price_1000x_9(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[8].m_price));
-    l2_tick->set_buy_quantity_9(to_quantity_from_szse(raw_l2_tick->m_bid_unit[8].m_qty));
-    l2_tick->set_buy_price_1000x_10(to_price_1000x_from_szse(raw_l2_tick->m_bid_unit[9].m_price));
-    l2_tick->set_buy_quantity_10(to_quantity_from_szse(raw_l2_tick->m_bid_unit[9].m_qty));
 
     return l2_tick;
 }
