@@ -1,6 +1,7 @@
 #pragma once
 
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <fmt/format.h>
 #include <google/protobuf/message.h>
 #include <zmq.h>
@@ -24,45 +25,51 @@ public:
     ///
     /// @param message_id The Message ID.
     /// @param message The message.
-    /// @return The serialized message.
-    static std::string serialize(
+    /// @param message_buffer The serialized message.
+    static void serialize(
         const types::MessageID message_id,
-        const google::protobuf::Message& message
+        const google::protobuf::Message& message,
+        std::vector<u_char>& message_buffer
     )
     {
         /// Serialize message_id.
-        unsigned char message_id_buf[4];
+        u_char message_id_buf[4];
         serialize_int32(message_id_buf, message_id);
 
-        std::string serialized;
+        const auto message_body = message.SerializeAsString();
 
-        serialized.append(reinterpret_cast<const char*>(message_id_buf), 4);
-        serialized.append(message.SerializeAsString());
+        if (message_body.empty()) {
+            message_buffer.clear();
+            message_buffer.insert(message_buffer.end(), message_id_buf, message_id_buf + 4);
+        }
 
-        return serialized;
+        message_buffer.clear();
+        message_buffer.insert(message_buffer.end(), message_id_buf, message_id_buf + 4);
+        message_buffer.insert(message_buffer.end(), message_body.begin(), message_body.end());
     }
 
     /// Unserialize a message.
-    /// @param serialized The serialized message.
+    /// @param message_buffer The serialized message.
     /// @return The message ID and the raw message body. If the serialized
     /// message is invalid, the message ID will be 0 and the message body will
     /// be empty.
-    static auto deserialize(const std::string& serialized)
+    static auto deserialize(const std::vector<u_char>& message_buffer)
     {
-        if (serialized.size() < 4)
-            return std::make_tuple(types::MessageID::invalid_message_id, std::string {});
+        if (message_buffer.size() < 4)
+            return std::make_tuple(types::MessageID::invalid_message_id, message_buffer.end());
 
-        unsigned char message_id_buf[4];
-        memcpy(message_id_buf, serialized.data(), 4);
-
-        const auto message_id = static_cast<types::MessageID>(parse_int32(message_id_buf));
+        const auto message_id = static_cast<types::MessageID>(parse_int32(message_buffer.data()));
 
         /// Check if the message is in range.
-        if (message_id < types::MessageID_MIN || message_id > types::MessageID_MAX)
-            return std::make_tuple(types::MessageID::invalid_message_id, serialized.substr(4, serialized.size() - 4));
+        if (message_id < types::MessageID_MIN || message_id > types::MessageID_MAX) [[unlikely]]
+            return std::make_tuple(types::MessageID::invalid_message_id, message_buffer.begin() + 4);
 
-        return std::make_tuple(message_id, serialized.substr(4, serialized.size() - 4));
+        return std::make_tuple(message_id, message_buffer.begin() + HEAD_SIZE<>);
     }
+
+public:
+    template<typename T = int>
+    constexpr static T HEAD_SIZE = T(4);
 
 private:
     static void serialize_int32(unsigned char (&buf)[4], const int32_t val)
@@ -74,7 +81,7 @@ private:
         buf[3]              = uval >> 24;
     }
 
-    static int32_t parse_int32(const unsigned char (&buf)[4])
+    static int32_t parse_int32(const u_char buf[4])
     {
         // This prevents buf[i] from being promoted to a signed int.
         const uint32_t u0 = buf[0], u1 = buf[1], u2 = buf[2], u3 = buf[3];
@@ -112,16 +119,27 @@ using ZMQSocketPtr = std::unique_ptr<void, ZMQSocketPtrDeleter>;
 class RRServer
 {
 public:
-    explicit RRServer(const std::string& address, const ZMQContextPtr& context = nullptr) : zmq_request()
+    explicit RRServer(
+        const std::string& address,
+        const ZMQContextPtr& context = nullptr,
+        const int timeout_ms         = 100
+    )
+        : m_zmq_request()
     {
         if (context != nullptr)
-            zmq_context = context;
+            m_zmq_context = context;
         else
-            zmq_context.reset(zmq_ctx_new(), ZMQContextPtrDeleter());
+            m_zmq_context.reset(zmq_ctx_new(), ZMQContextPtrDeleter());
 
-        zmq_socket.reset(::zmq_socket(zmq_context.get(), ZMQ_REP));
+        m_zmq_socket.reset(zmq_socket(m_zmq_context.get(), ZMQ_REP));
 
-        const auto code = zmq_bind(zmq_socket.get(), address.c_str());
+        auto code = zmq_setsockopt(m_zmq_socket.get(), ZMQ_RCVTIMEO, &timeout_ms, sizeof(timeout_ms));
+
+        if (code != 0) {
+            throw std::runtime_error(fmt::format("Failed to set ZMQ socket timeout: {}", std::string(zmq_strerror(errno))));
+        }
+
+        code = zmq_bind(m_zmq_socket.get(), address.c_str());
 
         if (code != 0) {
             throw std::runtime_error(fmt::format("Failed to bind ZMQ socket at {}: {}", address, std::string(zmq_strerror(errno))));
@@ -129,32 +147,41 @@ public:
     }
     ~RRServer()
     {
-        zmq_msg_close(&zmq_request);
+        zmq_msg_close(&m_zmq_request);
     }
 
 public:
-    [[nodiscard]] auto receive()
+    [[nodiscard]] auto receive(std::vector<u_char>& message_buffer)
     {
-        int code;
+        zmq_msg_init(&m_zmq_request);
+        const int code = zmq_msg_recv(&m_zmq_request, m_zmq_socket.get(), 0);
 
-        do {
-            zmq_msg_init(&zmq_request);
-            code = zmq_msg_recv(&zmq_request, zmq_socket.get(), 0);
-        } while (code < 0);
+        if (code > 0) {
+            /// Copy message to the caller's buffer.
+            message_buffer.clear();
+            message_buffer.insert(
+                message_buffer.begin(),
+                static_cast<u_char*>(zmq_msg_data(&m_zmq_request)),
+                static_cast<u_char*>(zmq_msg_data(&m_zmq_request)) + zmq_msg_size(&m_zmq_request)
+            );
+        }
 
-        return Serializer::deserialize(std::string(static_cast<char*>(zmq_msg_data(&zmq_request)), zmq_msg_size(&zmq_request)));
+        return Serializer::deserialize(message_buffer);
     }
 
-    void send(const types::MessageID message_id, const google::protobuf::Message& message_body) const
+    void send(const types::MessageID message_id, const google::protobuf::Message& message_body)
     {
-        const auto message = Serializer::serialize(message_id, message_body);
-        zmq_send(zmq_socket.get(), message.c_str(), message.size(), ZMQ_DONTWAIT);
+        Serializer::serialize(message_id, message_body, m_message_buffer);
+        zmq_send(m_zmq_socket.get(), m_message_buffer.data(), m_message_buffer.size(), ZMQ_DONTWAIT);
     }
 
 private:
-    ZMQContextPtr zmq_context;
-    ZMQSocketPtr zmq_socket;
-    zmq_msg_t zmq_request;
+    ZMQContextPtr m_zmq_context;
+    ZMQSocketPtr m_zmq_socket;
+    zmq_msg_t m_zmq_request;
+
+private:
+    std::vector<u_char> m_message_buffer;
 };
 
 /// Encapsulate a ZeroMQ REQ (request) socket for creating a request-reply
@@ -167,16 +194,16 @@ private:
 class RRClient
 {
 public:
-    explicit RRClient(const std::string& address, const ZMQContextPtr& context = nullptr) : zmq_response()
+    explicit RRClient(const std::string& address, const ZMQContextPtr& context = nullptr) : m_zmq_response()
     {
         if (context != nullptr)
-            zmq_context = context;
+            m_zmq_context = context;
         else
-            zmq_context.reset(zmq_ctx_new(), ZMQContextPtrDeleter());
+            m_zmq_context.reset(zmq_ctx_new(), ZMQContextPtrDeleter());
 
-        zmq_socket.reset(::zmq_socket(zmq_context.get(), ZMQ_REQ));
+        m_zmq_socket.reset(zmq_socket(m_zmq_context.get(), ZMQ_REQ));
 
-        const auto code = zmq_connect(zmq_socket.get(), address.c_str());
+        const auto code = zmq_connect(m_zmq_socket.get(), address.c_str());
 
         if (code != 0) {
             throw std::runtime_error(fmt::format("Failed to connect ZMQ socket to {}: {}", address, std::string(zmq_strerror(errno))));
@@ -184,7 +211,7 @@ public:
     }
     ~RRClient()
     {
-        zmq_msg_close(&zmq_response);
+        zmq_msg_close(&m_zmq_response);
     }
 
 public:
@@ -195,31 +222,41 @@ public:
     )
     {
         /// Send request.
-        const auto message_body = Serializer::serialize(message_id, message);
+        Serializer::serialize(message_id, message, m_message_buffer);
 
-        zmq_send(zmq_socket.get(), message_body.c_str(), message_body.size(), 0);
+        zmq_send(m_zmq_socket.get(), m_message_buffer.data(), m_message_buffer.size(), 0);
 
         /// Receive response.
-        zmq_msg_init(&zmq_response);
+        zmq_msg_init(&m_zmq_response);
+        zmq_msg_recv(&m_zmq_response, m_zmq_socket.get(), 0);
 
-        zmq_msg_recv(&zmq_response, zmq_socket.get(), 0);
+        /// Copy message to the buffer.
+        m_message_buffer.clear();
+        m_message_buffer.insert(
+            m_message_buffer.begin(),
+            static_cast<u_char*>(zmq_msg_data(&m_zmq_response)),
+            static_cast<u_char*>(zmq_msg_data(&m_zmq_response)) + zmq_msg_size(&m_zmq_response)
+        );
 
-        const auto [response_id, response_body] = Serializer::deserialize({static_cast<char*>(zmq_msg_data(&zmq_response)), zmq_msg_size(&zmq_response)});
+        const auto [response_id, response_body_it] = Serializer::deserialize(m_message_buffer);
 
         /// Return an empty message if the response is invalid.
         if (response_id == types::MessageID::invalid_message_id)
             return ReturnedMessageType {};
 
         ReturnedMessageType returned_message;
-        returned_message.ParseFromString(response_body);
+        returned_message.ParseFromArray(response_body_it.base(), m_message_buffer.size() - Serializer::HEAD_SIZE<>);
 
         return returned_message;
     }
 
 private:
-    ZMQContextPtr zmq_context;
-    ZMQSocketPtr zmq_socket;
-    zmq_msg_t zmq_response;
+    ZMQContextPtr m_zmq_context;
+    ZMQSocketPtr m_zmq_socket;
+    zmq_msg_t m_zmq_response;
+
+private:
+    std::vector<u_char> m_message_buffer;
 };
 
 /// Encapsulate raw UDP multicast socket.
@@ -252,9 +289,9 @@ public:
     }
 
 public:
-    void send(const std::string& message)
+    void send(const std::vector<u_char>& message)
     {
-        std::ignore = sendto(m_sender_fd, message.c_str(), message.size(), 0, reinterpret_cast<sockaddr*>(&m_send_addr), sizeof(m_send_addr));
+        std::ignore = sendto(m_sender_fd, message.data(), message.size(), 0, reinterpret_cast<sockaddr*>(&m_send_addr), sizeof(m_send_addr));
     }
 
 private:
@@ -262,35 +299,41 @@ private:
     int m_sender_fd;
 };
 
-/// Encapsulate raw UDP multicast socke.
+/// Encapsulate raw UDP multicast socket.
 ///
 /// This class manages the lifecycle of a raw socket, handling the
 /// initialization, and cleanup. It provides methods to receive messages using
 /// the UDP multicast pattern.
-template<typename T>
+template<size_t BufferSize>
 class MCClient
 {
 public:
-    explicit MCClient(const std::string& address, const uint16_t port)
+    explicit MCClient(
+        const std::string& address,
+        const uint16_t port,
+        const std::string& interface_address = "0.0.0.0",
+        const time_t timeout_ms              = 100
+    )
         : m_receive_addr(),
           m_mreq(),
-          addr_len(sizeof(m_receive_addr))
+          m_addr_len(sizeof(m_receive_addr)),
+          m_receiver_fd(-1) // Initialize to an invalid value.
     {
         /// Create what looks like an ordinary UDP socket.
-        auto code = m_receiver_fd = socket(AF_INET, SOCK_DGRAM, 0);
+        m_receiver_fd = socket(AF_INET, SOCK_DGRAM, 0);
 
-        if (code < 0) {
-            close(m_receiver_fd);
+        if (m_receiver_fd < 0) {
             throw std::runtime_error(fmt::format("Failed to create receiving socket for {}: {}", address, strerror(errno)));
         }
 
-        constexpr u_int yes = 1;
+        constexpr int yes = 1;
 
         /// Allow multiple sockets to use the same port number.
-        code = setsockopt(m_receiver_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+        auto code = setsockopt(m_receiver_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
         if (code < 0) {
-            throw std::runtime_error(fmt::format("Failed to resue address {}: {}", address, strerror(errno)));
+            close(m_receiver_fd);
+            throw std::runtime_error(fmt::format("Failed to reuse address {}: {}", address, strerror(errno)));
         }
 
         /// Set up destination address.
@@ -298,44 +341,79 @@ public:
         m_receive_addr.sin_addr.s_addr = htonl(INADDR_ANY);
         m_receive_addr.sin_port        = htons(port);
 
+        /// Set up non-blocking or timeout IO.
+        if (timeout_ms == 0)
+            set_non_blocking();
+        else
+            /// Split timeout in seconds and microseconds.
+            set_timeout(timeout_ms / 1000, timeout_ms % 1000 * 1000);
+
         /// Bind to receive address.
         code = bind(m_receiver_fd, reinterpret_cast<sockaddr*>(&m_receive_addr), sizeof(m_receive_addr));
 
         if (code < 0) {
             close(m_receiver_fd);
-            throw std::runtime_error("Failed to bind receiving socket");
+            throw std::runtime_error(fmt::format("Failed to bind receiving socket at {}:{}: {}", address, port, strerror(errno)));
+        }
+
+        constexpr int buff_size = 1024 * 1024 * 1024; /// 1GB for udp buffer.
+
+        /// Increase UDP receive buffer size.
+        code = setsockopt(m_receiver_fd, SOL_SOCKET, SO_RCVBUF, &buff_size, sizeof(buff_size));
+
+        if (code < 0) {
+            close(m_receiver_fd);
+            throw std::runtime_error(fmt::format("Failed to increase receive buffer size: {}", strerror(errno)));
         }
 
         /// Set up multicast address.
         m_mreq.imr_multiaddr.s_addr = inet_addr(address.c_str());
-        m_mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+        m_mreq.imr_interface.s_addr = inet_addr(interface_address.c_str());
 
         /// Request that the kernel join a multicast group.
         code = setsockopt(m_receiver_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &m_mreq, sizeof(m_mreq));
 
         if (code < 0) {
             close(m_receiver_fd);
-            throw std::runtime_error(fmt::format("Failed to join multicast group: {}", strerror(errno)));
+            throw std::runtime_error(fmt::format("Failed to join multicast group {}:{}: {}", address, port, strerror(errno)));
         }
-
-        /// Allocate buffer.
-        buffer.reset(new char[sizeof(T)]);
     }
     ~MCClient()
     {
-        close(m_receiver_fd);
+        if (m_receiver_fd >= 0) {
+            close(m_receiver_fd);
+        }
     }
 
 public:
-    std::string receive()
+    ssize_t receive(std::vector<u_char>& message)
     {
-        const auto received_bytes = recvfrom(m_receiver_fd, buffer.get(), sizeof(T), 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &addr_len);
+        message.resize(BufferSize);
+        const auto bytes_received = recvfrom(m_receiver_fd, message.data(), BufferSize, 0, reinterpret_cast<sockaddr*>(&m_receive_addr), &m_addr_len);
+        message.resize(bytes_received >= 0 ? bytes_received : 0);
+        return bytes_received;
+    }
 
-        if (received_bytes < 0) {
-            return "";
+private:
+    void set_non_blocking() const
+    {
+        const auto code = fcntl(m_receiver_fd, F_GETFL, 0);
+
+        if (code < 0 || fcntl(m_receiver_fd, F_SETFL, code | O_NONBLOCK) < 0) {
+            close(m_receiver_fd);
+            throw std::runtime_error(fmt::format("Failed to set receiving socket to non-blocking: {}", strerror(errno)));
         }
+    }
+    void set_timeout(const time_t seconds, const suseconds_t microseconds) const
+    {
+        const timeval timeout(seconds, microseconds);
 
-        return {buffer.get(), static_cast<std::string::size_type>(received_bytes)};
+        const auto code = setsockopt(m_receiver_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+        if (code < 0) {
+            close(m_receiver_fd);
+            throw std::runtime_error(fmt::format("Failed to set receiving socket timeout: {}", strerror(errno)));
+        }
     }
 
 private:
@@ -344,8 +422,7 @@ private:
     int m_receiver_fd;
 
 private:
-    std::unique_ptr<char> buffer;
-    socklen_t addr_len;
+    socklen_t m_addr_len;
 };
 
 } // namespace trade::utilities

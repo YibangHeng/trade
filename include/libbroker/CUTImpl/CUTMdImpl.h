@@ -1,6 +1,9 @@
 #pragma once
 
+#include <boost/lockfree/spsc_queue.hpp>
+
 #include "AppBase.hpp"
+#include "libbooker/Booker.h"
 #include "libholder/IHolder.h"
 #include "libreporter/IReporter.hpp"
 #include "third/ctp/ThostFtdcMdApi.h"
@@ -9,7 +12,8 @@
 namespace trade::broker
 {
 
-class CUTMdImpl final: private AppBase<int>, private CThostFtdcMdSpi
+class CUTMdImpl final: private AppBase<int>,
+                       private CThostFtdcMdSpi
 {
 public:
     CUTMdImpl(
@@ -24,14 +28,17 @@ public:
     void unsubscribe(const std::unordered_set<std::string>& symbols);
 
 private:
-    void odtd_receiver(const std::string& address) const;
+    using MessageBufferType = boost::lockfree::spsc_queue<std::vector<u_char>*, boost::lockfree::capacity<100000000>>;
+
+    void tick_receiver();
+    void booker(MessageBufferType& message_buffer);
 
 private:
-    static std::tuple<std::string, uint16_t> extract_address(const std::string& address);
-
-private:
-    std::atomic<bool> is_running;
-    std::thread* thread;
+    std::atomic<bool> m_is_running;
+    std::thread m_tick_receiver_thread;
+    size_t m_booker_thread_size;
+    std::vector<std::thread> m_booker_threads;
+    std::vector<std::unique_ptr<MessageBufferType>> m_message_buffers;
 
 private:
     std::shared_ptr<holder::IHolder> m_holder;

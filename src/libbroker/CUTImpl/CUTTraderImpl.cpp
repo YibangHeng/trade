@@ -64,7 +64,7 @@ void trade::broker::CUTTraderImpl::new_order(
 
     /// Fields required in docs.
     input_order_field.OrderPriceType   = UT_OPT_LimitPrice; /// 限价单
-    input_order_field.TimeCondition    = UT_TC_GFD;         /// 当日有效)
+    input_order_field.TimeCondition    = UT_TC_GFD;         /// 当日有效
 
     M_A {input_order_field.InvestorID} = m_common_data.m_investor_id;
 

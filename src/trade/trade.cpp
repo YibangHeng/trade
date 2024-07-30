@@ -1,11 +1,16 @@
 #include <csignal>
+#include <fmt/ranges.h>
 #include <iostream>
 
 #include "info.h"
 #include "libbroker/CTPBroker.h"
 #include "libbroker/CUTBroker.h"
 #include "libholder/SQLiteHolder.h"
+#include "libreporter/AsyncReporter.h"
+#include "libreporter/CSVReporter.h"
 #include "libreporter/LogReporter.h"
+#include "libreporter/ShmReporter.h"
+#include "libreporter/SubReporter.h"
 #include "trade/trade.h"
 #include "utilities/NetworkHelper.hpp"
 
@@ -30,12 +35,25 @@ int trade::Trade::run()
     }
     catch (const boost::property_tree::ini_parser_error& e) {
         logger->error("Failed to load config: {}", e.what());
-        return 1;
+        return EXIT_FAILURE;
     }
 
-    m_reporter = std::make_shared<reporter::LogReporter>();
+    const auto log_reporter = std::make_shared<reporter::LogReporter>();
+    const auto csv_reporter = std::make_shared<reporter::CSVReporter>(config->get<std::string>("Output.CSVOutputFolder"), log_reporter);
+    const auto sub_reporter = std::make_shared<reporter::SubReporter>(10100, csv_reporter);
+    const auto shm_reporter = std::make_shared<reporter::ShmReporter>(
+        config->get<std::string>("Output.ShmName"),
+        config->get<std::string>("Output.ShmMutexName"),
+        config->get<size_t>("Output.ShmSize"),
+        sub_reporter
+    );
+    const auto async_reporter = std::make_shared<reporter::AsyncReporter>(sub_reporter);
 
-    m_holder   = std::make_shared<holder::SQLiteHolder>();
+    /// Reporter.
+    m_reporter = async_reporter;
+
+    /// Holder.
+    m_holder = std::make_shared<holder::SQLiteHolder>();
 
     if (config->get<std::string>("Broker.Type") == "CTP") {
         m_broker = std::make_shared<broker::CTPBroker>(
@@ -53,29 +71,45 @@ int trade::Trade::run()
     }
     else {
         logger->error("Unsupported broker type {}", config->get<std::string>("Broker.Type"));
-        return 1;
+        return EXIT_FAILURE;
     }
 
-    m_broker->start_login();
+    /// Trade login.
+    if (config->get<bool>("Functionality.EnableTrade")) {
+        m_broker->start_login();
 
-    try {
-        m_broker->wait_login();
+        try {
+            m_broker->wait_login();
+        }
+        catch (const std::runtime_error& e) {
+            logger->error("Failed to login: {}", e.what());
+            return EXIT_FAILURE;
+        }
     }
-    catch (const std::runtime_error& e) {
-        logger->error("Failed to login: {}", e.what());
-        return 1;
+
+    /// Market data subscription.
+    if (config->get<bool>("Functionality.EnableMd")) {
+        m_broker->subscribe({});
     }
 
     m_exit_code = network_events();
 
-    m_broker->start_logout();
-
-    try {
-        m_broker->wait_logout();
+    /// Market data unsubscription.
+    if (config->get<bool>("Functionality.EnableMd")) {
+        m_broker->unsubscribe({});
     }
-    catch (const std::runtime_error& e) {
-        logger->error("Failed to logout: {}", e.what());
-        return 1;
+
+    /// Trade logout.
+    if (config->get<bool>("Functionality.EnableTrade")) {
+        m_broker->start_logout();
+
+        try {
+            m_broker->wait_logout();
+        }
+        catch (const std::runtime_error& e) {
+            logger->error("Failed to logout: {}", e.what());
+            return EXIT_FAILURE;
+        }
     }
 
     logger->info("App exited with code {}", m_exit_code.load());
@@ -164,7 +198,7 @@ bool trade::Trade::argv_parse(const int argc, char* argv[])
     }
 
     if (m_arguments.contains("version")) {
-        std::cout << fmt::format("trade {}", trade_VERSION) << std::endl;
+        std::cout << fmt::format("{} {}", app_name(), trade_VERSION) << std::endl;
         return false;
     }
 
@@ -173,23 +207,28 @@ bool trade::Trade::argv_parse(const int argc, char* argv[])
         this->logger->set_level(spdlog::level::debug);
     }
 
+#if WIN32
+    #undef contains
+#endif
+
     return true;
 }
 
 int trade::Trade::network_events() const
 {
-    /// Make the network server optional.
     utilities::RRServer server(config->get<std::string>("Server.APIAddress"));
 
     logger->info("Bound ZMQ socket at {}", config->get<std::string>("Server.APIAddress"));
 
-    while (true) {
-        const auto [message_id, message_body] = server.receive();
+    std::vector<u_char> message_buffer;
+
+    while (m_is_running) {
+        const auto [message_id, message_body_it] = server.receive(message_buffer);
 
         switch (message_id) {
         case types::MessageID::unix_sig: {
             types::UnixSig unix_sig;
-            unix_sig.ParseFromString(message_body);
+            unix_sig.ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size() - utilities::Serializer::HEAD_SIZE<>));
 
             if (m_is_running) {
                 /// Make sure the unix_sig message is send by itself in @signal.
@@ -208,7 +247,7 @@ int trade::Trade::network_events() const
         }
         case types::MessageID::new_order_req: {
             const auto new_order_req = std::make_shared<types::NewOrderReq>();
-            new_order_req->ParseFromString(message_body);
+            new_order_req->ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
 
             const auto new_order_rsp = m_broker->new_order(new_order_req);
 
@@ -218,7 +257,7 @@ int trade::Trade::network_events() const
         }
         case types::MessageID::new_cancel_req: {
             const auto new_cancel_req = std::make_shared<types::NewCancelReq>();
-            new_cancel_req->ParseFromString(message_body);
+            new_cancel_req->ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
 
             const auto new_cancel_rsp = m_broker->cancel_order(new_cancel_req);
 
@@ -228,7 +267,7 @@ int trade::Trade::network_events() const
         }
         case types::MessageID::new_cancel_all_req: {
             const auto new_cancel_all_req = std::make_shared<types::NewCancelAllReq>();
-            new_cancel_all_req->ParseFromString(message_body);
+            new_cancel_all_req->ParseFromArray(message_body_it.base(), static_cast<int>(message_buffer.size()));
 
             const auto new_cancel_all_rsp = m_broker->cancel_all(new_cancel_all_req);
 
@@ -236,12 +275,13 @@ int trade::Trade::network_events() const
 
             break;
         }
-        default: {
-            /// TODO: Use base64 for message data here.
-            logger->warn("Unknown Message ID {}({}) received with Message Body \"{}\"({} bytes)", MessageID_Name(message_id), static_cast<int>(message_id), message_body.data(), message_body.size());
-        }
+        default: break;
         }
     }
+
+    logger->info("Network event loop exited");
+
+    return 0;
 }
 
 std::set<trade::Trade*> trade::Trade::m_instances;

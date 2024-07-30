@@ -4,7 +4,19 @@
   "builtin-baseline": "055721089e8037d4d617250814d11f881e557549",
   "dependencies": [
     {
+      "name": "boost-circular-buffer",
+      "version>=": "1.84.0"
+    },
+    {
       "name": "boost-core",
+      "version>=": "1.84.0"
+    },
+    {
+      "name": "boost-interprocess",
+      "version>=": "1.84.0"
+    },
+    {
+      "name": "boost-lockfree",
       "version>=": "1.84.0"
     },
     {
@@ -34,6 +46,10 @@
     {
       "name": "fmt",
       "version>=": "10.2.1#1"
+    },
+    {
+      "name": "libpcap",
+      "version>=": "1.10.4#1"
     },
     {
       "name": "nlohmann-json",

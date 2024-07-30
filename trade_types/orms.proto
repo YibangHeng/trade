@@ -74,18 +74,104 @@ message Orders
     repeated Order orders = 1;
 }
 
+///
+/// 行情信息
+///
+
+/// 逐笔委托信息
 message OrderTick
 {
-    string symbol        = 1;
-    OrderType order_type = 2;
-    SideType side        = 3;
-    double price         = 4;
-    int64 quantity       = 5;
+    int64 unique_id                        = 1;   /// 委托 UniqueID
+    OrderType order_type                   = 2;   /// 委托类型
+    string symbol                          = 3;   /// 合约代码
+    SideType side                          = 4;   /// 买卖方向
+    int64 price_1000x                      = 5;   /// 价格
+    int64 quantity                         = 6;   /// 数量
+    int64 exchange_time                    = 7;   /// 交易所时间（HHMMSSmmm）
+    optional int64 x_ost_sse_ask_unique_id = 100; /// 上交所卖方委托 UniqueID
+    optional int64 x_ost_sse_bid_unique_id = 101; /// 上交所买方委托 UniqueID
 }
 
+/// 逐笔成交信息
 message TradeTick
 {
-    string symbol       = 1;
-    double exec_price   = 2;
-    int64 exec_quantity = 3;
+    int64 ask_unique_id                    = 1;   /// 卖方委托 UniqueID
+    int64 bid_unique_id                    = 2;   /// 买方委托 UniqueID
+    string symbol                          = 3;   /// 合约代码
+    int64 exec_price_1000x                 = 4;   /// 执行价格
+    int64 exec_quantity                    = 5;   /// 执行数量
+    int64 exchange_time                    = 6;   /// 交易所时间（HHMMSSmmm）
+    optional OrderType x_ost_szse_exe_type = 100; /// 深交所成交类型（仅区分成交/撤单）
+}
+
+/// L2 行情信息（交易所切片）
+message ExchangeL2Snap
+{
+    string symbol       = 1; /// 合约代码
+    double price        = 2; /// 最新价格
+    int64 exchange_time = 6; /// 交易所时间（HHMMSSmmm）
+    reserved 3, 4, 5;
+
+    optional double pre_settlement    = 7;  /// 上日结算价
+    optional double pre_close_price   = 8;  /// 上日收盘价
+    optional double open_price        = 9;  /// 开盘价
+    optional double highest_price     = 10; /// 最高价
+    optional double lowest_price      = 11; /// 最低价
+    optional double close_price       = 12; /// 收盘价
+    optional double settlement_price  = 13; /// 结算价
+    optional double upper_limit_price = 14; /// 涨停价
+    optional double lower_limit_price = 15; /// 跌停价
+
+    optional double sell_price_5      = 1105; /// 卖 5
+    optional int64 sell_quantity_5    = 1205; /// 卖 5
+    optional double sell_price_4      = 1104; /// 卖 4
+    optional int64 sell_quantity_4    = 1204; /// 卖 4
+    optional double sell_price_3      = 1103; /// 卖 3
+    optional int64 sell_quantity_3    = 1203; /// 卖 3
+    optional double sell_price_2      = 1102; /// 卖 2
+    optional int64 sell_quantity_2    = 1202; /// 卖 2
+    optional double sell_price_1      = 1101; /// 卖 1
+    optional int64 sell_quantity_1    = 1201; /// 卖 1
+    optional double buy_price_1       = 2101; /// 买 1
+    optional int64 buy_quantity_1     = 2201; /// 买 1
+    optional double buy_price_2       = 2102; /// 买 2
+    optional int64 buy_quantity_2     = 2202; /// 买 2
+    optional double buy_price_3       = 2103; /// 买 3
+    optional int64 buy_quantity_3     = 2203; /// 买 3
+    optional double buy_price_4       = 2104; /// 买 4
+    optional int64 buy_quantity_4     = 2204; /// 买 4
+    optional double buy_price_5       = 2105; /// 买 5
+    optional int64 buy_quantity_5     = 2205; /// 买 5
+}
+
+/// L2 行情信息（逐笔撮合）
+message GeneratedL2Tick
+{
+    string symbol                     = 1; /// 合约代码
+    int64 price_1000x                 = 2; /// 当笔成交价格
+    int64 quantity                    = 3; /// 当笔数量
+    int64 ask_unique_id               = 4; /// 卖方委托 UniqueID
+    int64 bid_unique_id               = 5; /// 买方委托 UniqueID
+    int64 exchange_time               = 6; /// 交易所时间（HHMMSSmmm）
+
+    optional int64 sell_price_1000x_5 = 1105; /// 卖 5
+    optional int64 sell_quantity_5    = 1205; /// 卖 5
+    optional int64 sell_price_1000x_4 = 1104; /// 卖 4
+    optional int64 sell_quantity_4    = 1204; /// 卖 4
+    optional int64 sell_price_1000x_3 = 1103; /// 卖 3
+    optional int64 sell_quantity_3    = 1203; /// 卖 3
+    optional int64 sell_price_1000x_2 = 1102; /// 卖 2
+    optional int64 sell_quantity_2    = 1202; /// 卖 2
+    optional int64 sell_price_1000x_1 = 1101; /// 卖 1
+    optional int64 sell_quantity_1    = 1201; /// 卖 1
+    optional int64 buy_price_1000x_1  = 2101; /// 买 1
+    optional int64 buy_quantity_1     = 2201; /// 买 1
+    optional int64 buy_price_1000x_2  = 2102; /// 买 2
+    optional int64 buy_quantity_2     = 2202; /// 买 2
+    optional int64 buy_price_1000x_3  = 2103; /// 买 3
+    optional int64 buy_quantity_3     = 2203; /// 买 3
+    optional int64 buy_price_1000x_4  = 2104; /// 买 4
+    optional int64 buy_quantity_4     = 2204; /// 买 4
+    optional int64 buy_price_1000x_5  = 2105; /// 买 5
+    optional int64 buy_quantity_5     = 2205; /// 买 5
 }

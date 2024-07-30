@@ -1,0 +1,6 @@
+[submodule "include/third/liquibook"]
+	path = include/third/liquibook
+	url = git@github.com:enewhuis/liquibook.git
+[submodule "include/third/muduo"]
+	path = include/third/muduo
+	url = https://github.com/chenshuo/muduo.git

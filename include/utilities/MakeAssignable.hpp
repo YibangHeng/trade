@@ -17,17 +17,17 @@ public:
         static_assert(L > 0, "L should be greater than 0");
     }
 
-    MakeAssignable& operator=(const std::string& src)
+    MakeAssignable& operator=(const std::string_view src)
     {
-        strncpy(m_dest, src.c_str(), L - 1);
+        strncpy(m_dest, src.data(), L - 1);
         m_dest[src.size() < L ? src.size() : L - 1] = '\0';
 
         return *this;
     }
 
-    MakeAssignable& operator+=(const std::string& src)
+    MakeAssignable& operator+=(const std::string_view src)
     {
-        strncat(m_dest, src.c_str(), L - strlen(m_dest) - 1);
+        strncat(m_dest, src.data(), L - strlen(m_dest) - 1);
         m_dest[strlen(m_dest) + src.size() < L ? strlen(m_dest) + src.size() : L - 1] = '\0';
 
         return *this;

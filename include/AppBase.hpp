@@ -15,7 +15,7 @@ namespace trade
 
 /// AppBase, which contains all the common functionalities (logger, config,
 /// etc), is the base class for all classes.
-template<typename TickerTaperT = int64_t, utilities::ConfigFileType ConfigFileType = utilities::ConfigFileType::INI>
+template<typename TickerTaperType = int64_t, utilities::ConfigFileType ConfigFileType = utilities::ConfigFileType::INI>
 class AppBase: private boost::noncopyable
 {
 protected:
@@ -23,10 +23,11 @@ protected:
 
 public:
     explicit AppBase(
-        const std::string& name,
+        std::string name,
         const std::string& config_path = ""
-    ) : config(!config_path.empty() ? std::make_shared<ConfigType>(config_path) : nullptr),
-        logger(spdlog::default_logger()->clone(name))
+    ) : m_app_name(std::move(name)),
+        config(!config_path.empty() ? std::make_shared<ConfigType>(config_path) : nullptr),
+        logger(spdlog::default_logger()->clone(m_app_name))
     {
         /// TODO: Make it configurable.
         snow_flaker.init(1, 1);
@@ -41,6 +42,12 @@ public:
     virtual ~AppBase() = default;
 
 public:
+    /// Return the application name.
+    std::string app_name()
+    {
+        return m_app_name;
+    }
+
     /// Reset the configuration to the given path.
     /// @param config_path Path to the new configuration.
     /// @throws boost::property_tree::ini_parser_error If the configuration file could not be read.
@@ -66,7 +73,7 @@ public:
     /// Get the unique id by the given sequence id.
     /// @param seq_id The sequence id.
     /// @return The unique id. If the given sequence id is not found, return INVALID_ID.
-    std::optional<int64_t> get_by_seq_id(const TickerTaperT& seq_id)
+    std::optional<int64_t> get_by_seq_id(const TickerTaperType& seq_id)
     {
         std::lock_guard lock(m_id_map_mutex);
 
@@ -74,7 +81,7 @@ public:
     }
 
     /// Erase the unique id by the given sequence id.
-    void earse_by_seq_id(const TickerTaperT& seq_id)
+    void earse_by_seq_id(const TickerTaperType& seq_id)
     {
         std::lock_guard lock(m_id_map_mutex);
 
@@ -82,9 +89,10 @@ public:
     }
 
 public:
+    std::string m_app_name;
     std::shared_ptr<ConfigType> config;
     std::shared_ptr<spdlog::logger> logger;
-    utilities::TickerTaper<TickerTaperT> ticker_taper;
+    utilities::TickerTaper<TickerTaperType> ticker_taper;
     utilities::SnowFlaker<946684800000l> snow_flaker;
 
 private:

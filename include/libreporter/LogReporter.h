@@ -1,19 +1,20 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
 #include <utility>
 
-#include "AppBase.hpp"
 #include "IReporter.hpp"
 #include "NopReporter.hpp"
 
 namespace trade::reporter
 {
 
-class PUBLIC_API LogReporter final: public IReporter, private AppBase<>
+class PUBLIC_API LogReporter final: public IReporter
 {
 public:
     explicit LogReporter(std::shared_ptr<IReporter> outside = std::make_shared<NopReporter>())
-        : AppBase("LogReporter"),
+        : trade_logger(spdlog::default_logger()->clone("TRADE")),
+          md_logger(spdlog::default_logger()->clone("MD")),
           m_outside(std::move(outside))
     {
     }
@@ -35,6 +36,17 @@ public:
     /// Trade.
 public:
     void trade_accepted(std::shared_ptr<types::Trade> trade) override;
+
+    /// Market data.
+public:
+    void exchange_order_tick_arrived(std::shared_ptr<types::OrderTick> order_tick) override;
+    void exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick) override;
+    void exchange_l2_snap_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) override;
+    void l2_tick_generated(std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick) override;
+
+private:
+    std::shared_ptr<spdlog::logger> trade_logger;
+    std::shared_ptr<spdlog::logger> md_logger;
 
 private:
     std::shared_ptr<IReporter> m_outside;

@@ -7,7 +7,11 @@ add_library(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(
         ${PROJECT_NAME}
         PRIVATE
+        pcap
+        PRIVATE
         trade_types
+        PRIVATE
+        booker
         PRIVATE
         thostmduserapi_se
         thosttraderapi_se

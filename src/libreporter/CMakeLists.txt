@@ -8,4 +8,10 @@ target_link_libraries(
         ${PROJECT_NAME}
         PRIVATE
         trade_types
+        PRIVATE
+        date::date
+        date::date-tz
+        z
+        muduo_base
+        muduo_net
 )

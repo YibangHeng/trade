@@ -14,7 +14,6 @@ void trade::broker::CTPBroker::start_login() noexcept
 {
     BrokerProxy::start_login();
 
-    m_md_impl     = std::make_unique<CTPMdImpl>(config, m_holder, m_reporter);
     m_trader_impl = std::make_unique<CTPTraderImpl>(config, m_holder, m_reporter, this);
 }
 
@@ -50,10 +49,14 @@ std::shared_ptr<trade::types::NewCancelRsp> trade::broker::CTPBroker::cancel_ord
 
 void trade::broker::CTPBroker::subscribe(const std::unordered_set<std::string>& symbols)
 {
+    if (m_md_impl != nullptr)
+        m_md_impl = std::make_unique<CTPMdImpl>(config, m_holder, m_reporter);
+
     m_md_impl->subscribe(symbols);
 }
 
 void trade::broker::CTPBroker::unsubscribe(const std::unordered_set<std::string>& symbols)
 {
     m_md_impl->unsubscribe(symbols);
+    /// TODO: m_md_impl.reset() when no subscription left.
 }

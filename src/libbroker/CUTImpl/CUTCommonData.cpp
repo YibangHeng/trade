@@ -44,12 +44,24 @@ trade::types::ExchangeType trade::broker::CUTCommonData::to_exchange(const TUTEx
     }
 }
 
-/// TODO: Confirmation is required.
-trade::types::OrderType trade::broker::CUTCommonData::to_order_type(const char order_type)
+trade::types::OrderType trade::broker::CUTCommonData::to_order_type_from_sse(const char tick_type)
+{
+    switch (tick_type) {
+    case 'A': return types::OrderType::limit;
+    case 'D': return types::OrderType::cancel;
+    case 'T': return types::OrderType::fill;
+    default: return types::OrderType::invalid_order_type;
+    }
+}
+
+trade::types::OrderType trade::broker::CUTCommonData::to_order_type_from_szse(const char order_type)
 {
     switch (order_type) {
     case '2': return types::OrderType::limit;
-    case '1': return types::OrderType::best_price_this_side;
+    case '1': return types::OrderType::market;
+    case 'U': return types::OrderType::best_price;
+    case '4': return types::OrderType::cancel;
+    case 'F': return types::OrderType::fill;
     default: return types::OrderType::invalid_order_type;
     }
 }
@@ -72,8 +84,16 @@ trade::types::SideType trade::broker::CUTCommonData::to_side(const TUTDirectionT
     }
 }
 
-/// TODO: Confirmation is required.
-trade::types::SideType trade::broker::CUTCommonData::to_md_side(const char side)
+trade::types::SideType trade::broker::CUTCommonData::to_md_side_from_sse(const char side)
+{
+    switch (side) {
+    case 'B': return types::SideType::buy;
+    case 'S': return types::SideType::sell;
+    default: return types::SideType::invalid_side;
+    }
+}
+
+trade::types::SideType trade::broker::CUTCommonData::to_md_side_from_szse(const char side)
 {
     switch (side) {
     case '1': return types::SideType::buy;
@@ -160,57 +180,90 @@ std::tuple<std::string, std::string> trade::broker::CUTCommonData::from_exchange
     return std::make_tuple(exchange, order_sys_id);
 }
 
-trade::types::X_OST_SZSEDatagramType trade::broker::CUTCommonData::get_datagram_type(const std::string& message)
+int64_t trade::broker::CUTCommonData::get_symbol_from_message(const std::vector<u_char>& message)
 {
-    return to_szse_datagram_type(reinterpret_cast<const sze_hpf_pkt_head*>(message.data())->m_message_type);
-}
+    int64_t symbol = 0;
 
-uint8_t trade::broker::CUTCommonData::to_szse_datagram_type(const types::X_OST_SZSEDatagramType message_type)
-{
-    switch (message_type) {
-    case types::X_OST_SZSEDatagramType::order: return 23;
-    case types::X_OST_SZSEDatagramType::trade: return 24;
-    default: return 0;
+    try {
+        switch (message.size()) {
+        case sizeof(SSEHpfTick): symbol = std::stoll(reinterpret_cast<const SSEHpfTick*>(message.data())->m_symbol_id); break;
+        case sizeof(SSEHpfL2Snap): symbol = std::stoll(reinterpret_cast<const SSEHpfL2Snap*>(message.data())->m_symbol_id); break;
+        case sizeof(SZSEHpfOrderTick): symbol = std::stoll(reinterpret_cast<const SZSEHpfOrderTick*>(message.data())->m_header.m_symbol); break;
+        case sizeof(SZSEHpfTradeTick): symbol = std::stoll(reinterpret_cast<const SZSEHpfTradeTick*>(message.data())->m_header.m_symbol); break;
+        case sizeof(SZSEHpfL2Snap): symbol = std::stoll(reinterpret_cast<const SZSEHpfL2Snap*>(message.data())->m_header.m_symbol); break;
+        default: break;
+        }
     }
-}
-
-trade::types::X_OST_SZSEDatagramType trade::broker::CUTCommonData::to_szse_datagram_type(const uint8_t message_type)
-{
-    switch (message_type) {
-    case 23: return types::X_OST_SZSEDatagramType::order;
-    case 24: return types::X_OST_SZSEDatagramType::trade;
-    default: return types::X_OST_SZSEDatagramType::invalid_ost_szse_datagram_type;
+    catch (...) {
+        symbol = -1;
     }
+
+    return symbol;
 }
 
-trade::types::OrderTick trade::broker::CUTCommonData::to_order_tick(const std::string& message)
+trade::booker::TradeTickPtr trade::broker::CUTCommonData::x_ost_forward_to_trade_from_order(booker::OrderTickPtr& order_tick)
 {
-    assert(message.size() == sizeof(sze_hpf_order_pkt));
+    auto trade_tick = std::make_shared<types::TradeTick>();
 
-    types::OrderTick order_tick;
+    trade_tick->set_ask_unique_id(order_tick->x_ost_sse_ask_unique_id());
+    trade_tick->set_bid_unique_id(order_tick->x_ost_sse_bid_unique_id());
+    trade_tick->set_symbol(order_tick->symbol());
+    trade_tick->set_exec_price_1000x(order_tick->price_1000x());
+    trade_tick->set_exec_quantity(order_tick->quantity());
+    trade_tick->set_exchange_time(order_tick->exchange_time());
 
-    const auto order = reinterpret_cast<const sze_hpf_order_pkt*>(message.data());
+    /// Reset order tick to nullptr.
+    order_tick.reset();
 
-    order_tick.set_symbol(order->m_header.m_symbol);
-    order_tick.set_order_type(to_order_type(order->m_order_type));
-    order_tick.set_side(to_md_side(order->m_side));
-    order_tick.set_price(order->m_px / 1000.);
-    order_tick.set_quantity(static_cast<int64_t>(order->m_qty) / 1000);
+    return trade_tick;
+}
+
+trade::booker::OrderTickPtr trade::broker::CUTCommonData::x_ost_forward_to_order_from_trade(booker::TradeTickPtr& trade_tick)
+{
+    auto order_tick = std::make_shared<types::OrderTick>();
+
+    order_tick->set_unique_id(std::max(trade_tick->ask_unique_id(), trade_tick->bid_unique_id()));
+    order_tick->set_order_type(trade_tick->x_ost_szse_exe_type());
+    order_tick->set_symbol(trade_tick->symbol());
+    order_tick->set_side(trade_tick->ask_unique_id() > trade_tick->bid_unique_id() ? types::SideType::sell : types::SideType::buy);
+    order_tick->set_price_1000x(trade_tick->exec_price_1000x());
+    order_tick->set_quantity(trade_tick->exec_quantity());
+    order_tick->set_exchange_time(trade_tick->exchange_time());
+
+    /// Reset trade tick to nullptr.
+    trade_tick.reset();
 
     return order_tick;
 }
 
-trade::types::TradeTick trade::broker::CUTCommonData::to_trade_tick(const std::string& message)
+int64_t trade::broker::CUTCommonData::to_price_1000x_from_sse(const uint32_t order_price)
 {
-    assert(message.size() == sizeof(sze_hpf_exe_pkt));
+    return order_price;
+}
 
-    types::TradeTick trade_tick;
+int64_t trade::broker::CUTCommonData::to_price_1000x_from_szse(const uint32_t exe_px)
+{
+    return exe_px / 10;
+}
 
-    const auto trade = reinterpret_cast<const sze_hpf_exe_pkt*>(message.data());
+int64_t trade::broker::CUTCommonData::to_quantity_from_sse(const uint32_t qty)
+{
+    return qty / 1000;
+}
 
-    trade_tick.set_symbol(trade->m_header.m_symbol);
-    trade_tick.set_exec_price(trade->m_exe_px / 1000.);
-    trade_tick.set_exec_quantity(static_cast<int64_t>(trade->m_exe_qty) / 1000);
+int64_t trade::broker::CUTCommonData::to_quantity_from_szse(const uint32_t exe_qty)
+{
+    return exe_qty / 100;
+}
 
-    return trade_tick;
+int64_t trade::broker::CUTCommonData::to_time_from_sse(const uint32_t tick_time)
+{
+    /// tick_time example: 9250000.
+    return tick_time * 10;
+}
+
+int64_t trade::broker::CUTCommonData::to_time_from_szse(const uint64_t quote_update_time)
+{
+    /// quote_update_time example: 20210701092500000.
+    return static_cast<int64_t>(quote_update_time % 1000000000);
 }
