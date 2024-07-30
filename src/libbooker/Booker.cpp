@@ -116,6 +116,8 @@ bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         generated_l2_tick->set_bid_unique_id(trade_tick->bid_unique_id());
         generated_l2_tick->set_exchange_time(trade_tick->exchange_time());
 
+        generated_l2_tick->set_result(true); /// TODO: Use eunms to identify trades that made in call auction stage.
+
         m_reporter->l2_tick_generated(generated_l2_tick);
 
         return true;
@@ -242,6 +244,8 @@ void trade::booker::Booker::on_trade(
     m_latest_l2_tick->set_symbol(book->symbol());
     m_latest_l2_tick->set_price_1000x(BookerCommonData::to_price(price));
     m_latest_l2_tick->set_quantity(BookerCommonData::to_quantity(qty));
+
+    m_latest_l2_tick->set_result(!m_failed_symbols.contains(book->symbol()));
 
     generate_level_price();
 

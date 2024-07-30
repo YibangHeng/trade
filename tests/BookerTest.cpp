@@ -53,6 +53,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -81,6 +82,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -109,6 +111,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -137,6 +140,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -191,6 +195,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -209,6 +214,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -227,6 +233,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[2]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->result() == true);
             CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[2]->sell_price_1000x_3() == 0);
@@ -245,6 +252,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[3]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->result() == true);
             CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 4);
             CHECK(g_reporter->get_trade_result()[3]->sell_price_1000x_3() == 0);
@@ -276,6 +284,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -294,6 +303,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -312,6 +322,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[2]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->result() == true);
             CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[2]->sell_price_1000x_3() == 0);
@@ -330,6 +341,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[3]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->result() == true);
             CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 4);
             CHECK(g_reporter->get_trade_result()[3]->sell_price_1000x_3() == 0);
@@ -361,6 +373,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -379,6 +392,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 4);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -410,6 +424,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -428,6 +443,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 4);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -459,6 +475,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -477,6 +494,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -495,6 +513,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[2]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->result() == true);
             CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[2]->sell_price_1000x_3() == 0);
@@ -513,6 +532,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[3]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->result() == true);
             CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 4);
             CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[3]->sell_price_1000x_3() == 0);
@@ -544,6 +564,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -562,6 +583,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -580,6 +602,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[2]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->result() == true);
             CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[2]->sell_price_1000x_3() == 0);
@@ -598,6 +621,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[3]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->result() == true);
             CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 4);
             CHECK(g_reporter->get_trade_result()[3]->sell_price_1000x_3() == 0);
@@ -629,6 +653,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 3333);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 80);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -647,6 +672,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -665,6 +691,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[2]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[2]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[2]->result() == true);
             CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 4);
             CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[2]->sell_price_1000x_3() == 0);
@@ -696,6 +723,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2222);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -714,6 +742,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -760,6 +789,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 50);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -789,6 +819,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -822,6 +853,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -852,6 +884,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -890,6 +923,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -908,6 +942,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -926,6 +961,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[2]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->result() == true);
             CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[2]->sell_price_1000x_3() == 0);
@@ -944,6 +980,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[3]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->result() == true);
             CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 4);
             CHECK(g_reporter->get_trade_result()[3]->sell_price_1000x_3() == 0);
@@ -979,6 +1016,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -997,6 +1035,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -1015,6 +1054,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[2]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[2]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[2]->result() == true);
             CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[2]->sell_price_1000x_3() == 0);
@@ -1033,6 +1073,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[3]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->result() == true);
             CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 4);
             CHECK(g_reporter->get_trade_result()[3]->sell_price_1000x_3() == 0);
@@ -1064,6 +1105,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 3333);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 80);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -1082,6 +1124,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -1115,6 +1158,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2222);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 3);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -1133,6 +1177,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 4);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -1165,6 +1210,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -1183,6 +1229,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -1212,6 +1259,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -1230,6 +1278,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -1270,6 +1319,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 5);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -1313,6 +1363,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[0]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[0]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[0]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[0]->result() == true);
             CHECK(g_reporter->get_trade_result()[0]->ask_unique_id() == 1);
             CHECK(g_reporter->get_trade_result()[0]->bid_unique_id() == 5);
             CHECK(g_reporter->get_trade_result()[0]->sell_price_1000x_3() == 0);
@@ -1331,6 +1382,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[1]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[1]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[1]->quantity() == 20);
+            CHECK(g_reporter->get_trade_result()[1]->result() == true);
             CHECK(g_reporter->get_trade_result()[1]->ask_unique_id() == 0);
             CHECK(g_reporter->get_trade_result()[1]->bid_unique_id() == 5);
             CHECK(g_reporter->get_trade_result()[1]->sell_price_1000x_3() == 0);
@@ -1349,6 +1401,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[2]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[2]->price_1000x() == 3333);
             CHECK(g_reporter->get_trade_result()[2]->quantity() == 80);
+            CHECK(g_reporter->get_trade_result()[2]->result() == true);
             CHECK(g_reporter->get_trade_result()[2]->ask_unique_id() == 2);
             CHECK(g_reporter->get_trade_result()[2]->bid_unique_id() == 6);
             CHECK(g_reporter->get_trade_result()[2]->sell_price_1000x_3() == 0);
@@ -1367,6 +1420,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[3]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[3]->price_1000x() == 3322);
             CHECK(g_reporter->get_trade_result()[3]->quantity() == 40);
+            CHECK(g_reporter->get_trade_result()[3]->result() == true);
             CHECK(g_reporter->get_trade_result()[3]->ask_unique_id() == 7);
             CHECK(g_reporter->get_trade_result()[3]->bid_unique_id() == 5);
             CHECK(g_reporter->get_trade_result()[3]->sell_price_1000x_3() == 0);
@@ -1385,6 +1439,7 @@ TEST_CASE("Booker system correctness verification", "[Booker]")
             CHECK(g_reporter->get_trade_result()[4]->symbol() == "600875.SH");
             CHECK(g_reporter->get_trade_result()[4]->price_1000x() == 2233);
             CHECK(g_reporter->get_trade_result()[4]->quantity() == 100);
+            CHECK(g_reporter->get_trade_result()[4]->result() == true);
             CHECK(g_reporter->get_trade_result()[4]->ask_unique_id() == 7);
             CHECK(g_reporter->get_trade_result()[4]->bid_unique_id() == 4);
             CHECK(g_reporter->get_trade_result()[4]->sell_price_1000x_3() == 0);
