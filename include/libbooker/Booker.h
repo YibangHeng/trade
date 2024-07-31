@@ -17,6 +17,12 @@ namespace trade::booker
 using OrderBook    = liquibook::book::OrderBook<OrderWrapperPtr>;
 using OrderBookPtr = std::shared_ptr<OrderBook>;
 
+template<typename T>
+struct BuySellPair {
+    T buy;
+    T sell;
+};
+
 class PUBLIC_API Booker final: AppBase<>,
                                private OrderBook::TypedTradeListener,
                                private OrderBook::TypedOrderListener
@@ -67,6 +73,7 @@ private:
 
 private:
     void generate_level_price();
+    void generate_statistic_data();
 
 private:
     void new_booker(const std::string& symbol);
@@ -89,6 +96,12 @@ private:
 private:
     /// Symbol -> remaining quantity of market order.
     std::unordered_map<std::string, OrderTickPtr> m_market_order;
+
+private:
+    /// Symbol -> active traded quantity.
+    std::unordered_map<std::string, BuySellPair<int64_t>> m_active_number;
+    std::unordered_map<std::string, BuySellPair<int64_t>> m_active_traded_quantity;
+    std::unordered_map<std::string, BuySellPair<int64_t>> m_active_traded_amount_1000x;
 
 private:
     std::shared_ptr<reporter::IReporter> m_reporter;

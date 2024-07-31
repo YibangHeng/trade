@@ -176,4 +176,13 @@ message GeneratedL2Tick
     optional int64 buy_quantity_4     = 2204; /// 买 4
     optional int64 buy_price_1000x_5  = 2105; /// 买 5
     optional int64 buy_quantity_5     = 2205; /// 买 5
+
+    int64 active_sell_number          = 3001; /// 主卖成交笔数
+    int64 active_sell_number_in_queue = 3002; /// 主卖报单笔数
+    int64 active_sell_quantity        = 3003; /// 主卖成交数量
+    int64 active_sell_amount_1000x    = 3004; /// 主卖成交金额
+    int64 active_buy_number           = 3101; /// 主买成交笔数
+    int64 active_buy_number_in_queue  = 3102; /// 主买报单笔数
+    int64 active_buy_quantity         = 3103; /// 主买成交数量
+    int64 active_buy_amount_1000x     = 3104; /// 主买成交金额
 }
