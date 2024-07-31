@@ -154,6 +154,8 @@ message GeneratedL2Tick
     int64 bid_unique_id               = 5; /// 买方委托 UniqueID
     int64 exchange_time               = 6; /// 交易所时间（HHMMSSmmm）
 
+    bool result                       = 7; /// 撮合验证结果
+
     optional int64 sell_price_1000x_5 = 1105; /// 卖 5
     optional int64 sell_quantity_5    = 1205; /// 卖 5
     optional int64 sell_price_1000x_4 = 1104; /// 卖 4
