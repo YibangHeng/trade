@@ -103,6 +103,11 @@ void trade::broker::CUTMdImpl::tick_receiver()
 
         const int64_t symbol = CUTCommonData::get_symbol_from_message(*message);
 
+        if (symbol <= 0) {
+            delete message;
+            continue;
+        }
+
         /// For gradual sleep time.
         static size_t full_counter = 0;
 

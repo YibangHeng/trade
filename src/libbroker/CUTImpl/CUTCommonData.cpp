@@ -198,6 +198,11 @@ int64_t trade::broker::CUTCommonData::get_symbol_from_message(const std::vector<
         symbol = -1;
     }
 
+    /// Symbols that not start with "0", "3" or "6" is invalid.
+    const auto symbol_prefix = symbol / 100000;
+    if (symbol_prefix != 0 && symbol_prefix != 3 && symbol_prefix != 6)
+        symbol = -1;
+
     return symbol;
 }
 
