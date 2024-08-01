@@ -185,4 +185,15 @@ message GeneratedL2Tick
     int64 active_buy_number_in_queue  = 3102; /// 主买报单笔数
     int64 active_buy_quantity         = 3103; /// 主买成交数量
     int64 active_buy_amount_1000x     = 3104; /// 主买成交金额
+
+    int64 weighted_sell_price_5_1000x = 4105; /// 加权主卖报单价 5
+    int64 weighted_sell_price_4_1000x = 4104; /// 加权主卖报单价 4
+    int64 weighted_sell_price_3_1000x = 4103; /// 加权主卖报单价 3
+    int64 weighted_sell_price_2_1000x = 4102; /// 加权主卖报单价 2
+    int64 weighted_sell_price_1_1000x = 4101; /// 加权主卖报单价 1
+    int64 weighted_buy_price_1_1000x  = 5101; /// 加权主买报单价 1
+    int64 weighted_buy_price_2_1000x  = 5102; /// 加权主买报单价 2
+    int64 weighted_buy_price_3_1000x  = 5103; /// 加权主买报单价 3
+    int64 weighted_buy_price_4_1000x  = 5104; /// 加权主买报单价 4
+    int64 weighted_buy_price_5_1000x  = 5105; /// 加权主买报单价 5
 }

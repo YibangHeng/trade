@@ -72,11 +72,24 @@ private:
     OrderTickPtr create_virtual_szse_order_tick(const TradeTickPtr& trade_tick);
 
 private:
-    void generate_level_price();
-    void generate_statistic_data();
+    void generate_level_price(const std::string& symbol);
+    void generate_statistic_data(
+        const std::string& symbol,
+        const OrderWrapperPtr& order,
+        const OrderWrapperPtr& matched_order,
+        liquibook::book::Quantity fill_qty,
+        liquibook::book::Price fill_price
+    );
 
 private:
     void new_booker(const std::string& symbol);
+
+private:
+    int64_t calculate_weighted_price_1000x(
+        const std::string& symbol,
+        int64_t order_price_1000x,
+        types::SideType side
+    );
 
 private:
     GeneratedL2TickPtr m_latest_l2_tick;
@@ -98,10 +111,18 @@ private:
     std::unordered_map<std::string, OrderTickPtr> m_market_order;
 
 private:
-    /// Symbol -> active traded quantity.
+    /// All fields refreshed in @generate_level_price.
+    std::unordered_map<std::string, int64_t> m_ask_queue_size;
+    std::unordered_map<std::string, int64_t> m_bid_queue_size;
+    std::unordered_map<std::string, std::array<int64_t, 5>> m_ask_price_levels;
+    std::unordered_map<std::string, std::array<int64_t, 5>> m_ask_quantity_levels;
+    std::unordered_map<std::string, std::array<int64_t, 5>> m_bid_price_levels;
+    std::unordered_map<std::string, std::array<int64_t, 5>> m_bid_quantity_levels;
+
     std::unordered_map<std::string, BuySellPair<int64_t>> m_active_number;
     std::unordered_map<std::string, BuySellPair<int64_t>> m_active_traded_quantity;
     std::unordered_map<std::string, BuySellPair<int64_t>> m_active_traded_amount_1000x;
+    std::unordered_map<std::string, BuySellPair<int64_t>> m_previous_price_1000x_1;
 
 private:
     std::shared_ptr<reporter::IReporter> m_reporter;
