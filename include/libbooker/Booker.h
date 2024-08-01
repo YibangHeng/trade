@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/circular_buffer.hpp>
 #include <memory>
 #include <optional>
 #include <third/liquibook/src/book/order_book.h>
@@ -72,9 +73,15 @@ private:
     OrderTickPtr create_virtual_szse_order_tick(const TradeTickPtr& trade_tick);
 
 private:
-    void generate_level_price(const std::string& symbol);
-    void generate_statistic_data(
+    void generate_level_price(
         const std::string& symbol,
+        const GeneratedL2TickPtr& latest_l2_tick
+    );
+    void generate_weighted_price(
+        const GeneratedL2TickPtr& latest_l2_tick,
+        const GeneratedL2TickPtr& previous_l2_tick
+    );
+    void generate_statistic_data(
         const OrderWrapperPtr& order,
         const OrderWrapperPtr& matched_order,
         liquibook::book::Quantity fill_qty,
@@ -85,14 +92,7 @@ private:
     void new_booker(const std::string& symbol);
 
 private:
-    int64_t calculate_weighted_price_1000x(
-        const std::string& symbol,
-        int64_t order_price_1000x,
-        types::SideType side
-    );
-
-private:
-    GeneratedL2TickPtr m_latest_l2_tick;
+    std::unordered_map<std::string, boost::circular_buffer<GeneratedL2TickPtr>> m_latest_l2_ticks;
     std::unordered_set<std::string> m_failed_symbols;
 
 private:
@@ -109,20 +109,6 @@ private:
 private:
     /// Symbol -> remaining quantity of market order.
     std::unordered_map<std::string, OrderTickPtr> m_market_order;
-
-private:
-    /// All fields refreshed in @generate_level_price.
-    std::unordered_map<std::string, int64_t> m_ask_queue_size;
-    std::unordered_map<std::string, int64_t> m_bid_queue_size;
-    std::unordered_map<std::string, std::array<int64_t, 5>> m_ask_price_levels;
-    std::unordered_map<std::string, std::array<int64_t, 5>> m_ask_quantity_levels;
-    std::unordered_map<std::string, std::array<int64_t, 5>> m_bid_price_levels;
-    std::unordered_map<std::string, std::array<int64_t, 5>> m_bid_quantity_levels;
-
-    std::unordered_map<std::string, BuySellPair<int64_t>> m_active_number;
-    std::unordered_map<std::string, BuySellPair<int64_t>> m_active_traded_quantity;
-    std::unordered_map<std::string, BuySellPair<int64_t>> m_active_traded_amount_1000x;
-    std::unordered_map<std::string, BuySellPair<int64_t>> m_previous_price_1000x_1;
 
 private:
     std::shared_ptr<reporter::IReporter> m_reporter;

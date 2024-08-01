@@ -4,6 +4,7 @@ package trade.types;
 
 import "google/protobuf/timestamp.proto";
 
+import "base.proto";
 import "enums.proto";
 
 message Symbol
@@ -147,53 +148,27 @@ message ExchangeL2Snap
 /// L2 行情信息（逐笔撮合）
 message GeneratedL2Tick
 {
-    string symbol                     = 1; /// 合约代码
-    int64 price_1000x                 = 2; /// 当笔成交价格
-    int64 quantity                    = 3; /// 当笔数量
-    int64 ask_unique_id               = 4; /// 卖方委托 UniqueID
-    int64 bid_unique_id               = 5; /// 买方委托 UniqueID
-    int64 exchange_time               = 6; /// 交易所时间（HHMMSSmmm）
+    string symbol                           = 1; /// 合约代码
+    int64 price_1000x                       = 2; /// 当笔成交价格
+    int64 quantity                          = 3; /// 当笔数量
+    int64 ask_unique_id                     = 4; /// 卖方委托 UniqueID
+    int64 bid_unique_id                     = 5; /// 买方委托 UniqueID
+    int64 exchange_time                     = 6; /// 交易所时间（HHMMSSmmm）
 
-    bool result                       = 7; /// 撮合验证结果
+    bool result                             = 7; /// 撮合验证结果
 
-    optional int64 sell_price_1000x_5 = 1105; /// 卖 5
-    optional int64 sell_quantity_5    = 1205; /// 卖 5
-    optional int64 sell_price_1000x_4 = 1104; /// 卖 4
-    optional int64 sell_quantity_4    = 1204; /// 卖 4
-    optional int64 sell_price_1000x_3 = 1103; /// 卖 3
-    optional int64 sell_quantity_3    = 1203; /// 卖 3
-    optional int64 sell_price_1000x_2 = 1102; /// 卖 2
-    optional int64 sell_quantity_2    = 1202; /// 卖 2
-    optional int64 sell_price_1000x_1 = 1101; /// 卖 1
-    optional int64 sell_quantity_1    = 1201; /// 卖 1
-    optional int64 buy_price_1000x_1  = 2101; /// 买 1
-    optional int64 buy_quantity_1     = 2201; /// 买 1
-    optional int64 buy_price_1000x_2  = 2102; /// 买 2
-    optional int64 buy_quantity_2     = 2202; /// 买 2
-    optional int64 buy_price_1000x_3  = 2103; /// 买 3
-    optional int64 buy_quantity_3     = 2203; /// 买 3
-    optional int64 buy_price_1000x_4  = 2104; /// 买 4
-    optional int64 buy_quantity_4     = 2204; /// 买 4
-    optional int64 buy_price_1000x_5  = 2105; /// 买 5
-    optional int64 buy_quantity_5     = 2205; /// 买 5
+    repeated PriceQuantityPair ask_levels   = 1000; /// 五档卖盘
+    repeated PriceQuantityPair bid_levels   = 1001; /// 五档买盘
 
-    int64 active_sell_number          = 3001; /// 主卖成交笔数
-    int64 active_sell_number_in_queue = 3002; /// 主卖报单笔数
-    int64 active_sell_quantity        = 3003; /// 主卖成交数量
-    int64 active_sell_amount_1000x    = 3004; /// 主卖成交金额
-    int64 active_buy_number           = 3101; /// 主买成交笔数
-    int64 active_buy_number_in_queue  = 3102; /// 主买报单笔数
-    int64 active_buy_quantity         = 3103; /// 主买成交数量
-    int64 active_buy_amount_1000x     = 3104; /// 主买成交金额
+    int64 active_sell_number                = 3001; /// 主卖成交笔数
+    int64 active_sell_number_in_queue       = 3002; /// 主卖报单笔数
+    int64 active_sell_quantity              = 3003; /// 主卖成交数量
+    int64 active_sell_amount_1000x          = 3004; /// 主卖成交金额
+    int64 active_buy_number                 = 3101; /// 主买成交笔数
+    int64 active_buy_number_in_queue        = 3102; /// 主买报单笔数
+    int64 active_buy_quantity               = 3103; /// 主买成交数量
+    int64 active_buy_amount_1000x           = 3104; /// 主买成交金额
 
-    int64 weighted_sell_price_5_1000x = 4105; /// 加权主卖报单价 5
-    int64 weighted_sell_price_4_1000x = 4104; /// 加权主卖报单价 4
-    int64 weighted_sell_price_3_1000x = 4103; /// 加权主卖报单价 3
-    int64 weighted_sell_price_2_1000x = 4102; /// 加权主卖报单价 2
-    int64 weighted_sell_price_1_1000x = 4101; /// 加权主卖报单价 1
-    int64 weighted_buy_price_1_1000x  = 5101; /// 加权主买报单价 1
-    int64 weighted_buy_price_2_1000x  = 5102; /// 加权主买报单价 2
-    int64 weighted_buy_price_3_1000x  = 5103; /// 加权主买报单价 3
-    int64 weighted_buy_price_4_1000x  = 5104; /// 加权主买报单价 4
-    int64 weighted_buy_price_5_1000x  = 5105; /// 加权主买报单价 5
+    repeated double weighted_ask_price_1000x = 4000; /// 五档加权主卖报单价
+    repeated double weighted_bid_price_1000x = 4001; /// 五档加权主买报单价
 }
