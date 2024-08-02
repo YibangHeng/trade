@@ -22,13 +22,10 @@ void trade::booker::CallAuctionHolder::trade(const types::TradeTick& trade_tick)
     const auto ask_order = m_ask_orders.find(trade_tick.ask_unique_id());
     const auto bid_order = m_bid_orders.find(trade_tick.bid_unique_id());
 
-    if (ask_order == m_ask_orders.end() || bid_order == m_bid_orders.end())
-        return;
-
-    if (ask_order->second->accept(trade_tick))
+    if (ask_order != m_ask_orders.end() && ask_order->second->accept(trade_tick))
         m_ask_orders.erase(ask_order);
 
-    if (bid_order->second->accept(trade_tick))
+    if (bid_order != m_bid_orders.end() && bid_order->second->accept(trade_tick))
         m_bid_orders.erase(bid_order);
 }
 

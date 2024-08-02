@@ -180,8 +180,8 @@ def convert_szse_od(order_file):
     )
 
     od["symbol"] = od["symbol"].apply(lambda x: f"{x:06d}")
-    od["ask_unique_id"] = np.where(od["side"] == 2, od["index"], 0)
-    od["bid_unique_id"] = np.where(od["side"] == 1, od["index"], 0)
+    od["ask_unique_id"] = np.where(od["side"] == 2, od["sequence_num"], 0)
+    od["bid_unique_id"] = np.where(od["side"] == 1, od["sequence_num"], 0)
     od["order_type"] = od["order_type"].map({"2": "L", "1": "M", "U": "B"})
     od["price"] = od["price"].apply(lambda x: float(x) / 10000)
     od["quantity"] = od["quantity"].apply(lambda x: int(int(x) / 100))
