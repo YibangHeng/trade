@@ -71,6 +71,8 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
             }
         }
     }
+
+    generate_statistic_data_on_order(order_wrapper);
 }
 
 bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
@@ -248,7 +250,7 @@ void trade::booker::Booker::on_trade(
 {
     /// Booker::on_fill() is called before Booker::on_trade().
 
-    const auto latest_l2_tick = m_latest_l2_ticks[book->symbol()].back();
+    const auto latest_l2_tick = m_l2_ticks[book->symbol()].back();
 
     m_md_validator.has_value() ? m_md_validator.value().l2_tick_generated(latest_l2_tick) : void(); /// Feed to validator first.
 
@@ -268,7 +270,7 @@ void trade::booker::Booker::on_fill(
     const liquibook::book::Price fill_price
 )
 {
-    generate_statistic_data(order, matched_order, fill_qty, fill_price);
+    generate_statistic_data_on_trade(order, matched_order, fill_qty, fill_price);
 }
 
 void trade::booker::Booker::on_cancel_reject(const OrderWrapperPtr& order, const char* reason)
@@ -425,14 +427,39 @@ void trade::booker::Booker::generate_weighted_price(
         previous_bid_price_1000x_1 = previous_l2_tick->bid_levels().at(0).price_1000x();
 
     for (int i = 0; i < 5; i++) {
-        if (latest_l2_tick->ask_levels().size() >= 5)
-            latest_l2_tick->add_weighted_ask_price_1000x(1. - std::tanh((divides(latest_l2_tick->ask_levels().at(i).price_1000x(), previous_ask_price_1000x_1) - 1) * 100));
-        if (latest_l2_tick->bid_levels().size() >= 5)
-            latest_l2_tick->add_weighted_bid_price_1000x(1. - std::tanh((divides(previous_bid_price_1000x_1, latest_l2_tick->bid_levels().at(i).price_1000x()) - 1) * 100));
+        if (latest_l2_tick->ask_levels().size() >= i)
+            latest_l2_tick->add_weighted_ask_price(1. - std::tanh((divides(latest_l2_tick->ask_levels().at(i).price_1000x(), previous_ask_price_1000x_1) - 1) * 100));
+        if (latest_l2_tick->bid_levels().size() >= i)
+            latest_l2_tick->add_weighted_bid_price(1. - std::tanh((divides(previous_bid_price_1000x_1, latest_l2_tick->bid_levels().at(i).price_1000x()) - 1) * 100));
     }
 }
 
-void trade::booker::Booker::generate_statistic_data(
+void trade::booker::Booker::generate_statistic_data_on_order(const OrderWrapperPtr& order)
+{
+    const auto& symbol = order->symbol();
+
+    const auto ask_it  = m_books[symbol]->asks().begin();
+    const auto bid_it  = m_books[symbol]->bids().begin();
+
+    if (m_l2_ticks[symbol].empty())
+        return;
+
+    const auto& latest_l2_tick   = m_l2_ticks[symbol].back();
+    const auto& previous_l2_tick = m_l2_ticks[symbol].size() > 1
+                                     ? m_l2_ticks[symbol].at(m_l2_ticks[symbol].size() - 2)
+                                     : std::make_shared<types::GeneratedL2Tick>();
+
+    if (order->is_buy()) {
+        if (order->price() > BookerCommonData::to_price(ask_it->first.price()))
+            latest_l2_tick->set_aggressive_buy_quantity(previous_l2_tick->aggressive_buy_quantity() + 1);
+    }
+    else {
+        if (order->price() < BookerCommonData::to_price(bid_it->first.price()))
+            latest_l2_tick->set_aggressive_sell_quantity(previous_l2_tick->aggressive_sell_quantity() + 1);
+    }
+}
+
+void trade::booker::Booker::generate_statistic_data_on_trade(
     const OrderWrapperPtr& order,
     const OrderWrapperPtr& matched_order,
     const liquibook::book::Quantity fill_qty,
@@ -441,11 +468,12 @@ void trade::booker::Booker::generate_statistic_data(
 {
     const auto& symbol = order->symbol();
 
-    m_latest_l2_ticks[symbol].push_back(std::make_shared<types::GeneratedL2Tick>());
+    /// TODO: Do not refresh latest l2 tick here. Refresh it by time range.
+    m_l2_ticks[symbol].push_back(std::make_shared<types::GeneratedL2Tick>());
 
-    const auto& latest_l2_tick   = m_latest_l2_ticks[symbol].back();
-    const auto& previous_l2_tick = m_latest_l2_ticks[symbol].size() > 1
-                                     ? m_latest_l2_ticks[symbol].at(m_latest_l2_ticks[symbol].size() - 2)
+    const auto& latest_l2_tick   = m_l2_ticks[symbol].back();
+    const auto& previous_l2_tick = m_l2_ticks[symbol].size() > 1
+                                     ? m_l2_ticks[symbol].at(m_l2_ticks[symbol].size() - 2)
                                      : std::make_shared<types::GeneratedL2Tick>(); /// Make a empty l2_tick for avoiding nullptr dereference.
 
     /// Order data.
@@ -491,6 +519,9 @@ void trade::booker::Booker::generate_statistic_data(
         latest_l2_tick->set_active_buy_quantity(previous_l2_tick->active_buy_quantity());
         latest_l2_tick->set_active_buy_amount_1000x(previous_l2_tick->active_buy_amount_1000x());
     }
+
+    /// Weighted data.
+    generate_weighted_price(latest_l2_tick, previous_l2_tick);
 }
 
 void trade::booker::Booker::new_booker(const std::string& symbol)
@@ -507,7 +538,7 @@ void trade::booker::Booker::new_booker(const std::string& symbol)
     m_books[symbol]->set_trade_listener(this);
 
     /// Historical l2 data for the symbol.
-    m_latest_l2_ticks.emplace(symbol, boost::circular_buffer<GeneratedL2TickPtr>(3));
+    m_l2_ticks.emplace(symbol, boost::circular_buffer<GeneratedL2TickPtr>(3));
 
     logger->info("Created new order book for symbol {}", symbol);
 }

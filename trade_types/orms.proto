@@ -148,27 +148,30 @@ message ExchangeL2Snap
 /// L2 行情信息（逐笔撮合）
 message GeneratedL2Tick
 {
-    string symbol                           = 1; /// 合约代码
-    int64 price_1000x                       = 2; /// 当笔成交价格
-    int64 quantity                          = 3; /// 当笔数量
-    int64 ask_unique_id                     = 4; /// 卖方委托 UniqueID
-    int64 bid_unique_id                     = 5; /// 买方委托 UniqueID
-    int64 exchange_time                     = 6; /// 交易所时间（HHMMSSmmm）
+    string symbol                         = 1; /// 合约代码
+    int64 price_1000x                     = 2; /// 当笔成交价格
+    int64 quantity                        = 3; /// 当笔数量
+    int64 ask_unique_id                   = 4; /// 卖方委托 UniqueID
+    int64 bid_unique_id                   = 5; /// 买方委托 UniqueID
+    int64 exchange_time                   = 6; /// 交易所时间（HHMMSSmmm）
 
-    bool result                             = 7; /// 撮合验证结果
+    bool result                           = 7; /// 撮合验证结果
 
-    repeated PriceQuantityPair ask_levels   = 1000; /// 五档卖盘
-    repeated PriceQuantityPair bid_levels   = 1001; /// 五档买盘
+    repeated PriceQuantityPair ask_levels = 1000; /// 五档卖盘
+    repeated PriceQuantityPair bid_levels = 1001; /// 五档买盘
 
-    int64 active_sell_number                = 3001; /// 主卖成交笔数
-    int64 active_sell_number_in_queue       = 3002; /// 主卖报单笔数
-    int64 active_sell_quantity              = 3003; /// 主卖成交数量
-    int64 active_sell_amount_1000x          = 3004; /// 主卖成交金额
-    int64 active_buy_number                 = 3101; /// 主买成交笔数
-    int64 active_buy_number_in_queue        = 3102; /// 主买报单笔数
-    int64 active_buy_quantity               = 3103; /// 主买成交数量
-    int64 active_buy_amount_1000x           = 3104; /// 主买成交金额
+    int64 active_sell_number              = 3001; /// 主卖成交笔数
+    int64 active_sell_number_in_queue     = 3002; /// 主卖报单笔数
+    int64 active_sell_quantity            = 3003; /// 主卖成交数量
+    int64 active_sell_amount_1000x        = 3004; /// 主卖成交金额
+    int64 active_buy_number               = 3101; /// 主买成交笔数
+    int64 active_buy_number_in_queue      = 3102; /// 主买报单笔数
+    int64 active_buy_quantity             = 3103; /// 主买成交数量
+    int64 active_buy_amount_1000x         = 3104; /// 主买成交金额
 
-    repeated double weighted_ask_price_1000x = 4000; /// 五档加权主卖报单价
-    repeated double weighted_bid_price_1000x = 4001; /// 五档加权主买报单价
+    repeated double weighted_ask_price    = 4000; /// 五档加权主卖报单价
+    repeated double weighted_bid_price    = 4001; /// 五档加权主买报单价
+
+    int64 aggressive_sell_quantity        = 5001; /// 新增激进主卖单量
+    int64 aggressive_buy_quantity         = 5002; /// 新增激进主买单量
 }
