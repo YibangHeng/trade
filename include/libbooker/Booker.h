@@ -77,24 +77,18 @@ private:
         const std::string& symbol,
         const GeneratedL2TickPtr& latest_l2_tick
     );
-    static void generate_weighted_price(
-        const GeneratedL2TickPtr& latest_l2_tick,
-        const GeneratedL2TickPtr& previous_l2_tick
-    );
-    void generate_statistic_data_on_order(const OrderWrapperPtr& order);
-    void generate_statistic_data_on_trade(
-        const OrderWrapperPtr& order,
-        const OrderWrapperPtr& matched_order,
-        liquibook::book::Quantity fill_qty,
-        liquibook::book::Price fill_price
-    );
 
 private:
     void new_booker(const std::string& symbol);
 
 private:
-    std::unordered_map<std::string, boost::circular_buffer<GeneratedL2TickPtr>> m_l2_ticks;
     std::unordered_set<std::string> m_failed_symbols;
+
+private:
+    /// Symbol -> RangedTick.
+    std::unordered_map<std::string, types::RangedTick> m_ranged_ticks;
+    /// Symbol -> GeneratedL2Tick.
+    std::unordered_map<std::string, GeneratedL2TickPtr> m_generated_l2_ticks;
 
 private:
     /// Symbol -> OrderBook.
