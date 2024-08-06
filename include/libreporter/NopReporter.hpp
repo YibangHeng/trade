@@ -73,6 +73,10 @@ public:
     {
         if (m_outside != nullptr) m_outside->l2_tick_generated(generated_l2_tick);
     }
+    void ranged_tick_generated(const std::shared_ptr<types::RangedTick> ranged_tick) override
+    {
+        if (m_outside != nullptr) m_outside->ranged_tick_generated(ranged_tick);
+    }
 
 private:
     std::shared_ptr<IReporter> m_outside;

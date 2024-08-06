@@ -82,13 +82,34 @@ private:
     void new_booker(const std::string& symbol);
 
 private:
+    void refresh_range(const std::string& symbol, int64_t time);
+    void add_range_snap(const OrderTickPtr& order_tick);
+    void add_range_snap(
+        const OrderWrapperPtr& order,
+        const OrderWrapperPtr& matched_order,
+        liquibook::book::Quantity fill_qty,
+        liquibook::book::Price fill_price
+    );
+    static void generate_weighted_price(
+        const GeneratedL2TickPtr& latest_l2_tick,
+        const GeneratedL2TickPtr& previous_l2_tick,
+        const RangedTickPtr& ranged_tick
+    );
+    /// Align time to 3 seconds.
+    /// E.g., 103000000 -> 103000000, 103001000 -> 103000000.
+    static int64_t align_time(int64_t time);
+
+private:
     std::unordered_set<std::string> m_failed_symbols;
 
 private:
-    /// Symbol -> RangedTick.
-    std::unordered_map<std::string, types::RangedTick> m_ranged_ticks;
     /// Symbol -> GeneratedL2Tick.
     std::unordered_map<std::string, GeneratedL2TickPtr> m_generated_l2_ticks;
+    /// Symbol -> RangedTick.
+    std::unordered_map<std::string, std::vector<RangedTickPtr>> m_ranged_ticks;
+    /// Symbol -> Previous l2 prices.
+    /// Other fields in GeneratedL2Tick are not used.
+    std::unordered_map<std::string, GeneratedL2TickPtr> m_privious_l2_prices;
 
 private:
     /// Symbol -> OrderBook.

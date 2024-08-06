@@ -135,6 +135,13 @@ void trade::reporter::AsyncReporter::l2_tick_generated(const std::shared_ptr<typ
         ;
 }
 
+void trade::reporter::AsyncReporter::ranged_tick_generated(const std::shared_ptr<types::RangedTick> ranged_tick)
+{
+    std::lock_guard lock_guard(m_ranged_tick_mutex);
+    while (!m_ranged_tick_buffer.push(ranged_tick))
+        ;
+}
+
 void trade::reporter::AsyncReporter::do_broker_accepted()
 {
     while (m_is_running || !m_broker_acceptance_buffer.empty()) {
@@ -253,5 +260,15 @@ void trade::reporter::AsyncReporter::do_l2_tick_generated()
 
         if (m_generated_l2_tick_buffer.pop(generated_l2_tick))
             m_outside->l2_tick_generated(generated_l2_tick);
+    }
+}
+
+void trade::reporter::AsyncReporter::do_ranged_tick_generated()
+{
+    while (m_is_running || !m_ranged_tick_buffer.empty()) {
+        std::shared_ptr<types::RangedTick> ranged_tick;
+
+        if (m_ranged_tick_buffer.pop(ranged_tick))
+            m_outside->ranged_tick_generated(ranged_tick);
     }
 }
