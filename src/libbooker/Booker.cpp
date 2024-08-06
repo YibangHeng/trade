@@ -8,10 +8,12 @@
 trade::booker::Booker::Booker(
     const std::vector<std::string>& symbols,
     const std::shared_ptr<reporter::IReporter>& reporter,
-    const bool enable_validation
+    const bool enable_validation,
+    const bool enable_advanced_calculating
 ) : AppBase("Booker"),
     m_in_continuous_stage(),
     m_md_validator(enable_validation ? MdValidator() : std::optional<MdValidator> {}),
+    m_enable_advanced_calculating(enable_advanced_calculating),
     m_reporter(reporter)
 {
     for (const auto& symbol : symbols)
@@ -74,7 +76,8 @@ void trade::booker::Booker::add(const OrderTickPtr& order_tick)
         }
     }
 
-    add_range_snap(order_tick);
+    if (m_enable_advanced_calculating)
+        add_range_snap(order_tick);
 }
 
 bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
@@ -296,7 +299,8 @@ void trade::booker::Booker::on_fill(
 
     latest_l2_tick->set_exchange_time(order->exchange_time());
 
-    add_range_snap(order, matched_order, fill_qty, fill_price);
+    if (m_enable_advanced_calculating)
+        add_range_snap(order, matched_order, fill_qty, fill_price);
 
     /// Booker::on_trade() is called after Booker::on_fill().
 }

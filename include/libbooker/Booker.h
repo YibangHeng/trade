@@ -32,7 +32,8 @@ public:
     Booker(
         const std::vector<std::string>& symbols,
         const std::shared_ptr<reporter::IReporter>& reporter,
-        bool enable_validation = false
+        bool enable_validation           = false,
+        bool enable_advanced_calculating = false
     );
     ~Booker() override = default;
 
@@ -121,6 +122,7 @@ private:
     /// Indicates if the book is in call auction stage or in continuous trade stage.
     bool m_in_continuous_stage;
     std::optional<MdValidator> m_md_validator;
+    bool m_enable_advanced_calculating;
 
 private:
     /// Symbol -> remaining quantity of market order.

@@ -125,7 +125,12 @@ void trade::broker::CUTMdImpl::tick_receiver()
 
 void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
 {
-    booker::Booker booker({}, m_reporter, config->get<bool>("Performance.EnableVerification", false)); /// TODO: Initialize tradable symbols here.
+    booker::Booker booker(
+        {},
+        m_reporter,
+        config->get<bool>("Performance.EnableVerification", false),
+        config->get<bool>("Performance.EnableAdvancedCalculating", false)
+    ); /// TODO: Initialize tradable symbols here.
 
     while (m_is_running) {
         std::vector<u_char>* message;
