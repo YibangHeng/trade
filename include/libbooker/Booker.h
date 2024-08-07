@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/circular_buffer.hpp>
 #include <memory>
 #include <optional>
 #include <third/liquibook/src/book/order_book.h>

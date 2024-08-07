@@ -475,6 +475,8 @@ void trade::booker::Booker::refresh_range(const std::string& symbol, const int64
     latest_ranged_tick->set_end_time(INT_MIN);
     latest_ranged_tick->set_highest_price_1000x(INT_MIN);
     latest_ranged_tick->set_lowest_price_1000x(INT_MAX);
+    latest_ranged_tick->set_ask_price_1_valid_duration_1000x(3010);
+    latest_ranged_tick->set_bid_price_1_valid_duration_1000x(3010);
 
     /// Weighted prices.
     const auto& latest_l2_prices = std::make_shared<types::GeneratedL2Tick>();
@@ -486,6 +488,10 @@ void trade::booker::Booker::refresh_range(const std::string& symbol, const int64
     }
 
     m_privious_l2_prices[symbol] = latest_l2_prices;
+
+    /// Initial price 1.
+    int64_t init_ask_price_1 = m_ranged_ticks[symbol].front()->x_ask_price_1_1000x();
+    int64_t init_bid_price_1 = m_ranged_ticks[symbol].front()->x_bid_price_1_1000x();
 
     /// Calculate ranged data.
     for (const auto& ranged_tick : m_ranged_ticks[symbol]) {
@@ -518,7 +524,10 @@ void trade::booker::Booker::refresh_range(const std::string& symbol, const int64
         latest_ranged_tick->set_highest_price_1000x(std::max(latest_ranged_tick->highest_price_1000x(), ranged_tick->highest_price_1000x()));
         latest_ranged_tick->set_lowest_price_1000x(std::min(latest_ranged_tick->lowest_price_1000x(), ranged_tick->lowest_price_1000x()));
 
-        /// TODO: valid_ask/bid_1_per.
+        if (ranged_tick->x_ask_price_1_1000x() > init_ask_price_1 && !latest_ranged_tick->ask_price_1_valid_duration_1000x() != 3010)
+            latest_ranged_tick->set_ask_price_1_valid_duration_1000x(ranged_tick->exchange_time() - latest_ranged_tick->start_time());
+        if (ranged_tick->x_bid_price_1_1000x() < init_bid_price_1 && !latest_ranged_tick->bid_price_1_valid_duration_1000x() != 3010)
+            latest_ranged_tick->set_bid_price_1_valid_duration_1000x(ranged_tick->exchange_time() - latest_ranged_tick->start_time());
     }
 
     /// Clear ranged ticks.
@@ -580,8 +589,10 @@ void trade::booker::Booker::add_range_snap(const OrderTickPtr& order_tick)
     default: break;
     }
 
-    ranged_tick->set_highest_price_1000x(INT_MIN); /// 行情最高价
-    ranged_tick->set_lowest_price_1000x(INT_MAX);  /// 行情最低价
+    ranged_tick->set_highest_price_1000x(INT_MIN);                                                                                  /// 行情最高价
+    ranged_tick->set_lowest_price_1000x(INT_MAX);                                                                                   /// 行情最低价
+    ranged_tick->set_x_ask_price_1_1000x(BookerCommonData::to_price(m_books[order_tick->symbol()]->bids().begin()->first.price())); /// 当前卖一价
+    ranged_tick->set_x_bid_price_1_1000x(BookerCommonData::to_price(m_books[order_tick->symbol()]->asks().begin()->first.price())); /// 当前买一价
 
     m_ranged_ticks[order_tick->symbol()].push_back(ranged_tick);
 }
@@ -627,8 +638,10 @@ void trade::booker::Booker::add_range_snap(
             ranged_tick->set_big_bid_amount_1000x(ranged_tick->active_sell_amount_1000x()); /// 大单卖单成交金额
     }
 
-    ranged_tick->set_highest_price_1000x(BookerCommonData::to_price(fill_price)); /// 行情最高价
-    ranged_tick->set_lowest_price_1000x(BookerCommonData::to_price(fill_price));  /// 行情最低价
+    ranged_tick->set_highest_price_1000x(BookerCommonData::to_price(fill_price));                                              /// 行情最高价
+    ranged_tick->set_lowest_price_1000x(BookerCommonData::to_price(fill_price));                                               /// 行情最低价
+    ranged_tick->set_x_ask_price_1_1000x(BookerCommonData::to_price(m_books[order->symbol()]->bids().begin()->first.price())); /// 当前卖一价
+    ranged_tick->set_x_bid_price_1_1000x(BookerCommonData::to_price(m_books[order->symbol()]->asks().begin()->first.price())); /// 当前买一价
 
     m_ranged_ticks[order->symbol()].push_back(ranged_tick);
 }
