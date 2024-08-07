@@ -169,37 +169,40 @@ message RangedTick
     int64 end_time                         = 3; /// 区间结束时间（开，HHMMSSmmm）
     int64 exchange_time                    = 4; /// 交易所时间（HHMMSSmmm）
 
-    int64 active_traded_sell_number        = 1001; /// 主卖成交笔数
-    int64 active_sell_number               = 1002; /// 主卖报单笔数
-    int64 active_sell_quantity             = 1003; /// 主卖成交数量
-    int64 active_sell_amount_1000x         = 1004; /// 主卖成交金额
-    int64 active_traded_buy_number         = 1101; /// 主买成交笔数
-    int64 active_buy_number                = 1102; /// 主买报单笔数
-    int64 active_buy_quantity              = 1103; /// 主买成交数量
-    int64 active_buy_amount_1000x          = 1104; /// 主买成交金额
+    repeated PriceQuantityPair ask_levels  = 1000; /// 五档卖盘
+    repeated PriceQuantityPair bid_levels  = 1001; /// 五档买盘
 
-    repeated double weighted_ask_price     = 2000; /// 五档加权主卖报单价
-    repeated double weighted_bid_price     = 2001; /// 五档加权主买报单价
+    int64 active_traded_sell_number        = 2001; /// 主卖成交笔数
+    int64 active_sell_number               = 2002; /// 主卖报单笔数
+    int64 active_sell_quantity             = 2003; /// 主卖成交数量
+    int64 active_sell_amount_1000x         = 2004; /// 主卖成交金额
+    int64 active_traded_buy_number         = 2101; /// 主买成交笔数
+    int64 active_buy_number                = 2102; /// 主买报单笔数
+    int64 active_buy_quantity              = 2103; /// 主买成交数量
+    int64 active_buy_amount_1000x          = 2104; /// 主买成交金额
 
-    int64 aggressive_sell_number           = 3001; /// 新增激进主卖报单笔数
-    int64 aggressive_buy_number            = 3002; /// 新增激进主买报单笔数
+    repeated double weighted_ask_price     = 3000; /// 五档加权主卖报单价
+    repeated double weighted_bid_price     = 3001; /// 五档加权主买报单价
 
-    int64 new_added_ask_1_quantity         = 4001; /// 新增卖一量合计
-    int64 new_added_bid_1_quantity         = 4002; /// 新增买一量合计
-    int64 new_canceled_ask_1_quantity      = 4003; /// 新撤卖一量合计
-    int64 new_canceled_bid_1_quantity      = 4004; /// 新撤买一量合计
-    int64 new_canceled_ask_all_quantity    = 4005; /// 新撤卖单量合计
-    int64 new_canceled_bid_all_quantity    = 4006; /// 新撤买单量合计
+    int64 aggressive_sell_number           = 4001; /// 新增激进主卖报单笔数
+    int64 aggressive_buy_number            = 4002; /// 新增激进主买报单笔数
 
-    int64 big_ask_amount_1000x             = 5001; /// 大单卖单成交金额
-    int64 big_bid_amount_1000x             = 5002; /// 大单买单成交金额
+    int64 new_added_ask_1_quantity         = 5001; /// 新增卖一量合计
+    int64 new_added_bid_1_quantity         = 5002; /// 新增买一量合计
+    int64 new_canceled_ask_1_quantity      = 5003; /// 新撤卖一量合计
+    int64 new_canceled_bid_1_quantity      = 5004; /// 新撤买一量合计
+    int64 new_canceled_ask_all_quantity    = 5005; /// 新撤卖单量合计
+    int64 new_canceled_bid_all_quantity    = 5006; /// 新撤买单量合计
 
-    int64 highest_price_1000x              = 6001; /// 行情最高价
-    int64 lowest_price_1000x               = 6002; /// 行情最低价
+    int64 big_ask_amount_1000x             = 6001; /// 大单卖单成交金额
+    int64 big_bid_amount_1000x             = 6002; /// 大单买单成交金额
 
-    int64 ask_price_1_valid_duration_1000x = 7001; /// 卖一价有效时间
-    int64 bid_price_1_valid_duration_1000x = 7002; /// 买一价有效时间
+    int64 highest_price_1000x              = 7001; /// 行情最高价
+    int64 lowest_price_1000x               = 7002; /// 行情最低价
 
-    int64 x_ask_price_1_1000x              = 8001; /// 当前卖一价
-    int64 x_bid_price_1_1000x              = 8002; /// 当前买一价
+    int64 ask_price_1_valid_duration_1000x = 8001; /// 卖一价有效时间
+    int64 bid_price_1_valid_duration_1000x = 8002; /// 买一价有效时间
+
+    int64 x_ask_price_1_1000x              = 9001; /// 当前卖一价
+    int64 x_bid_price_1_1000x              = 9002; /// 当前买一价
 }
