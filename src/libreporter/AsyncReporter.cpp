@@ -24,6 +24,7 @@ trade::reporter::AsyncReporter::AsyncReporter(std::shared_ptr<IReporter> outside
     m_exchange_trade_tick_thread = std::thread(&AsyncReporter::do_exchange_trade_tick_arrived, this);
     m_exchange_l2_tick_thread    = std::thread(&AsyncReporter::do_exchange_l2_tick_arrived, this);
     m_generated_l2_tick_thread   = std::thread(&AsyncReporter::do_l2_tick_generated, this);
+    m_ranged_tick_thread         = std::thread(&AsyncReporter::do_ranged_tick_generated, this);
 }
 
 trade::reporter::AsyncReporter::~AsyncReporter()
@@ -54,92 +55,79 @@ trade::reporter::AsyncReporter::~AsyncReporter()
 void trade::reporter::AsyncReporter::broker_accepted(const std::shared_ptr<types::BrokerAcceptance> broker_acceptance)
 {
     std::lock_guard lock_guard(m_broker_acceptance_mutex);
-    while (!m_broker_acceptance_buffer.push(broker_acceptance))
-        ;
+    while (!m_broker_acceptance_buffer.push(broker_acceptance));
 }
 
 void trade::reporter::AsyncReporter::exchange_accepted(const std::shared_ptr<types::ExchangeAcceptance> exchange_acceptance)
 {
     std::lock_guard lock_guard(m_exchange_acceptance_mutex);
-    while (!m_exchange_acceptance_buffer.push(exchange_acceptance))
-        ;
+    while (!m_exchange_acceptance_buffer.push(exchange_acceptance));
 }
 
 void trade::reporter::AsyncReporter::order_rejected(const std::shared_ptr<types::OrderRejection> order_rejection)
 {
     std::lock_guard lock_guard(m_order_rejection_mutex);
-    while (!m_order_rejection_buffer.push(order_rejection))
-        ;
+    while (!m_order_rejection_buffer.push(order_rejection));
 }
 
 void trade::reporter::AsyncReporter::cancel_broker_accepted(const std::shared_ptr<types::CancelBrokerAcceptance> cancel_broker_acceptance)
 {
     std::lock_guard lock_guard(m_cancel_broker_acceptance_mutex);
-    while (!m_cancel_broker_acceptance_buffer.push(cancel_broker_acceptance))
-        ;
+    while (!m_cancel_broker_acceptance_buffer.push(cancel_broker_acceptance));
 }
 
 void trade::reporter::AsyncReporter::cancel_exchange_accepted(const std::shared_ptr<types::CancelExchangeAcceptance> cancel_exchange_acceptance)
 {
     std::lock_guard lock_guard(m_cancel_exchange_acceptance_mutex);
-    while (!m_cancel_exchange_acceptance_buffer.push(cancel_exchange_acceptance))
-        ;
+    while (!m_cancel_exchange_acceptance_buffer.push(cancel_exchange_acceptance));
 }
 
 void trade::reporter::AsyncReporter::cancel_success(const std::shared_ptr<types::CancelSuccess> cancel_success)
 {
     std::lock_guard lock_guard(m_cancel_success_mutex);
-    while (!m_cancel_success_buffer.push(cancel_success))
-        ;
+    while (!m_cancel_success_buffer.push(cancel_success));
 }
 
 void trade::reporter::AsyncReporter::cancel_order_rejected(const std::shared_ptr<types::CancelOrderRejection> cancel_order_rejection)
 {
     std::lock_guard lock_guard(m_cancel_order_rejection_mutex);
-    while (!m_cancel_order_rejection_buffer.push(cancel_order_rejection))
-        ;
+    while (!m_cancel_order_rejection_buffer.push(cancel_order_rejection));
 }
 
 void trade::reporter::AsyncReporter::trade_accepted(const std::shared_ptr<types::Trade> trade)
 {
     std::lock_guard lock_guard(m_trade_mutex);
-    while (!m_trade_buffer.push(trade))
-        ;
+    while (!m_trade_buffer.push(trade));
 }
 
 void trade::reporter::AsyncReporter::exchange_order_tick_arrived(const std::shared_ptr<types::OrderTick> order_tick)
 {
     std::lock_guard lock_guard(m_exchange_order_tick_mutex);
-    while (!m_exchange_order_tick_buffer.push(order_tick))
-        ;
+    while (!m_exchange_order_tick_buffer.push(order_tick));
 }
 
 void trade::reporter::AsyncReporter::exchange_trade_tick_arrived(const std::shared_ptr<types::TradeTick> trade_tick)
 {
     std::lock_guard lock_guard(m_exchange_trade_tick_mutex);
-    while (!m_exchange_trade_tick_buffer.push(trade_tick))
-        ;
+    while (!m_exchange_trade_tick_buffer.push(trade_tick));
 }
 
 void trade::reporter::AsyncReporter::exchange_l2_snap_arrived(const std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap)
 {
     std::lock_guard lock_guard(m_exchange_l2_snap_mutex);
-    while (!m_exchange_l2_snap_buffer.push(exchange_l2_snap))
-        ;
+    while (!m_exchange_l2_snap_buffer.push(exchange_l2_snap));
 }
 
 void trade::reporter::AsyncReporter::l2_tick_generated(const std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick)
 {
     std::lock_guard lock_guard(m_generated_l2_tick_mutex);
-    while (!m_generated_l2_tick_buffer.push(generated_l2_tick))
-        ;
+    while (!m_generated_l2_tick_buffer.push(generated_l2_tick));
 }
 
 void trade::reporter::AsyncReporter::ranged_tick_generated(const std::shared_ptr<types::RangedTick> ranged_tick)
 {
     std::lock_guard lock_guard(m_ranged_tick_mutex);
-    while (!m_ranged_tick_buffer.push(ranged_tick))
-        ;
+    while (!m_ranged_tick_buffer.push(ranged_tick));
 }
 
 void trade::reporter::AsyncReporter::do_broker_accepted()
