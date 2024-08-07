@@ -70,11 +70,45 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
 void trade::broker::CUTMdImpl::tick_receiver()
 {
     char errbuf[PCAP_ERRBUF_SIZE];
-    const auto handle = pcap_fopen_offline(stdin, errbuf);
 
-    if (handle == nullptr) {
-        logger->error("Failed to read PCAP stream: {}", errbuf);
-        return;
+    const auto filter = config->get<std::string>("Server.CaptureFilter");
+
+    pcap_t* handle;
+
+    if (filter == "stdin") {
+        handle = pcap_fopen_offline(stdin, errbuf);
+
+        if (handle == nullptr) {
+            logger->error("Failed to read PCAP stream: {}", errbuf);
+            return;
+        }
+    }
+    else {
+        /// Open network interface.
+        handle = pcap_open_live(config->get<std::string>("Server.InterfaceName").c_str(), BUFSIZ, 1, 1000, errbuf);
+
+        if (handle == nullptr) {
+            logger->error("Failed to capture packets from {}: {}", config->get<std::string>("Server.InterfaceName"), errbuf);
+            return;
+        }
+
+        /// Set capture filter.
+        bpf_program fp {};
+
+        auto code = pcap_compile(handle, &fp, config->get<std::string>("Server.CaptureFilter").c_str(), 0, PCAP_NETMASK_UNKNOWN);
+
+        if (code != 0) {
+            logger->error("Failed to compile capture filter: {}", pcap_geterr(handle));
+            return;
+        }
+
+        code = pcap_setfilter(handle, &fp);
+
+        if (code != 0) {
+            logger->error("Failed to set capture filter: {}", pcap_geterr(handle));
+            pcap_close(handle);
+            return;
+        }
     }
 
     pcap_pkthdr header {};
@@ -84,8 +118,11 @@ void trade::broker::CUTMdImpl::tick_receiver()
         const u_char* packet = pcap_next(handle, &header);
 
         if (packet == nullptr) {
-            m_is_running = false;
-            return;
+            if (filter == "stdin") {
+                m_is_running = false;
+                logger->info("No more packets to read");
+            }
+            continue;
         }
 
         /// boost::freelock::queue imposes a constraint that its elements
