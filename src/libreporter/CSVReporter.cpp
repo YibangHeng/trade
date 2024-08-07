@@ -57,7 +57,7 @@ void trade::reporter::CSVReporter::ranged_tick_generated(const std::shared_ptr<t
     new_ranged_tick_writer(ranged_tick->symbol());
 
     m_ranged_tick_writers[ranged_tick->symbol()] << fmt::format(
-        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
+        "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         ranged_tick->symbol(),
         ranged_tick->start_time(),
         ranged_tick->end_time(),

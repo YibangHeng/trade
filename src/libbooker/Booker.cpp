@@ -364,83 +364,6 @@ trade::booker::OrderTickPtr trade::booker::Booker::create_virtual_szse_order_tic
     return order_tick;
 }
 
-void trade::booker::Booker::generate_level_price(
-    const std::string& symbol,
-    const GeneratedL2TickPtr& latest_l2_tick
-)
-{
-    std::array<int64_t, 5> ask_price_levels    = {};
-    std::array<int64_t, 5> bid_price_levels    = {};
-    std::array<int64_t, 5> ask_quantity_levels = {};
-    std::array<int64_t, 5> bid_quantity_levels = {};
-
-    /// Ask booker.
-    auto ask_it = m_books[symbol]->asks().begin();
-
-    /// Ask price/quantity levels.
-    auto ask_price_level_it    = ask_price_levels.begin();
-    auto ask_quantity_level_it = ask_quantity_levels.begin();
-
-    while (ask_it != m_books[symbol]->asks().end()) {
-        if (*ask_price_level_it == 0)
-            *ask_price_level_it = BookerCommonData::to_price(ask_it->first.price());
-
-        if (*ask_price_level_it != BookerCommonData::to_price(ask_it->first.price())) {
-            ask_price_level_it++;
-            ask_quantity_level_it++;
-
-            if (ask_price_level_it == ask_price_levels.end()
-                || ask_quantity_level_it == ask_quantity_levels.end())
-                break;
-        }
-
-        *ask_price_level_it = BookerCommonData::to_price(ask_it->first.price());
-        *ask_quantity_level_it += BookerCommonData::to_quantity(ask_it->second.open_qty());
-
-        ask_it++;
-    }
-
-    /// Bid booker.
-    auto bid_it = m_books[symbol]->bids().begin();
-
-    /// Bid price/quantity levels.
-    auto bid_price_level_it    = bid_price_levels.begin();
-    auto bid_quantity_level_it = bid_quantity_levels.begin();
-
-    while (bid_it != m_books[symbol]->bids().end()) {
-        if (*bid_price_level_it == 0)
-            *bid_price_level_it = BookerCommonData::to_price(bid_it->first.price());
-
-        if (*bid_price_level_it != BookerCommonData::to_price(bid_it->first.price())) {
-            bid_price_level_it++;
-            bid_quantity_level_it++;
-
-            if (bid_price_level_it == bid_price_levels.end()
-                || bid_quantity_level_it == bid_quantity_levels.end())
-                break;
-        }
-
-        *bid_price_level_it = BookerCommonData::to_price(bid_it->first.price());
-        *bid_quantity_level_it += BookerCommonData::to_quantity(bid_it->second.open_qty());
-
-        bid_it++;
-    }
-
-    latest_l2_tick->clear_ask_levels();
-    latest_l2_tick->clear_bid_levels();
-
-    /// Assign price/quantity levels to latest l2 tick.
-    for (int i = 0; i < 5; i++) {
-        const auto ask_level = latest_l2_tick->add_ask_levels();
-        ask_level->set_price_1000x(ask_price_levels[i]);
-        ask_level->set_quantity(ask_quantity_levels[i]);
-
-        const auto bid_level = latest_l2_tick->add_bid_levels();
-        bid_level->set_price_1000x(bid_price_levels[i]);
-        bid_level->set_quantity(bid_quantity_levels[i]);
-    }
-}
-
 void trade::booker::Booker::new_booker(const std::string& symbol)
 {
     /// Do nothing if the order book already exists.
@@ -478,6 +401,9 @@ void trade::booker::Booker::refresh_range(const std::string& symbol, const int64
     latest_ranged_tick->set_ask_price_1_valid_duration_1000x(3010);
     latest_ranged_tick->set_bid_price_1_valid_duration_1000x(3010);
 
+    /// Level prices.
+    generate_level_price(symbol, latest_ranged_tick);
+
     /// Weighted prices.
     const auto& latest_l2_prices = std::make_shared<types::GeneratedL2Tick>();
     generate_level_price(symbol, latest_l2_prices);
@@ -486,12 +412,15 @@ void trade::booker::Booker::refresh_range(const std::string& symbol, const int64
         const auto& privious_l2_prices = m_privious_l2_prices[symbol];
         generate_weighted_price(latest_l2_prices, privious_l2_prices, latest_ranged_tick);
     }
+    else {
+        generate_weighted_price(latest_l2_prices, nullptr, latest_ranged_tick);
+    }
 
     m_privious_l2_prices[symbol] = latest_l2_prices;
 
     /// Initial price 1.
-    int64_t init_ask_price_1 = m_ranged_ticks[symbol].front()->x_ask_price_1_1000x();
-    int64_t init_bid_price_1 = m_ranged_ticks[symbol].front()->x_bid_price_1_1000x();
+    const int64_t init_ask_price_1 = m_ranged_ticks[symbol].front()->x_ask_price_1_1000x();
+    const int64_t init_bid_price_1 = m_ranged_ticks[symbol].front()->x_bid_price_1_1000x();
 
     /// Calculate ranged data.
     for (const auto& ranged_tick : m_ranged_ticks[symbol]) {
@@ -656,6 +585,16 @@ void trade::booker::Booker::generate_weighted_price(
     const auto divides = [](const auto& x, const auto& y) {
         return std::divides<double>()(x, y);
     };
+
+    /// Make sure weighted price is not empty.
+    if (previous_l2_tick == nullptr) {
+        for (int i = 0; i < 5; i++) {
+            ranged_tick->add_weighted_ask_price(0);
+            ranged_tick->add_weighted_bid_price(0);
+        }
+
+        return;
+    }
 
     int64_t previous_ask_price_1000x_1, previous_bid_price_1000x_1;
 

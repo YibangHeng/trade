@@ -73,10 +73,8 @@ private:
     OrderTickPtr create_virtual_szse_order_tick(const TradeTickPtr& trade_tick);
 
 private:
-    void generate_level_price(
-        const std::string& symbol,
-        const GeneratedL2TickPtr& latest_l2_tick
-    );
+    template<typename TickTypePtr>
+    void generate_level_price(const std::string& symbol, const TickTypePtr& tick);
 
 private:
     void new_booker(const std::string& symbol);
@@ -130,5 +128,80 @@ private:
 private:
     std::shared_ptr<reporter::IReporter> m_reporter;
 };
+
+template<typename TickTypePtr>
+void Booker::generate_level_price(const std::string& symbol, const TickTypePtr& tick)
+{
+    std::array<int64_t, 5> ask_price_levels    = {};
+    std::array<int64_t, 5> bid_price_levels    = {};
+    std::array<int64_t, 5> ask_quantity_levels = {};
+    std::array<int64_t, 5> bid_quantity_levels = {};
+
+    /// Ask booker.
+    auto ask_it = m_books[symbol]->asks().begin();
+
+    /// Ask price/quantity levels.
+    auto ask_price_level_it    = ask_price_levels.begin();
+    auto ask_quantity_level_it = ask_quantity_levels.begin();
+
+    while (ask_it != m_books[symbol]->asks().end()) {
+        if (*ask_price_level_it == 0)
+            *ask_price_level_it = BookerCommonData::to_price(ask_it->first.price());
+
+        if (*ask_price_level_it != BookerCommonData::to_price(ask_it->first.price())) {
+            ask_price_level_it++;
+            ask_quantity_level_it++;
+
+            if (ask_price_level_it == ask_price_levels.end()
+                || ask_quantity_level_it == ask_quantity_levels.end())
+                break;
+        }
+
+        *ask_price_level_it = BookerCommonData::to_price(ask_it->first.price());
+        *ask_quantity_level_it += BookerCommonData::to_quantity(ask_it->second.open_qty());
+
+        ask_it++;
+    }
+
+    /// Bid booker.
+    auto bid_it = m_books[symbol]->bids().begin();
+
+    /// Bid price/quantity levels.
+    auto bid_price_level_it    = bid_price_levels.begin();
+    auto bid_quantity_level_it = bid_quantity_levels.begin();
+
+    while (bid_it != m_books[symbol]->bids().end()) {
+        if (*bid_price_level_it == 0)
+            *bid_price_level_it = BookerCommonData::to_price(bid_it->first.price());
+
+        if (*bid_price_level_it != BookerCommonData::to_price(bid_it->first.price())) {
+            bid_price_level_it++;
+            bid_quantity_level_it++;
+
+            if (bid_price_level_it == bid_price_levels.end()
+                || bid_quantity_level_it == bid_quantity_levels.end())
+                break;
+        }
+
+        *bid_price_level_it = BookerCommonData::to_price(bid_it->first.price());
+        *bid_quantity_level_it += BookerCommonData::to_quantity(bid_it->second.open_qty());
+
+        bid_it++;
+    }
+
+    tick->clear_ask_levels();
+    tick->clear_bid_levels();
+
+    /// Assign price/quantity levels to latest l2 tick.
+    for (int i = 0; i < 5; i++) {
+        const auto ask_level = tick->add_ask_levels();
+        ask_level->set_price_1000x(ask_price_levels[i]);
+        ask_level->set_quantity(ask_quantity_levels[i]);
+
+        const auto bid_level = tick->add_bid_levels();
+        bid_level->set_price_1000x(bid_price_levels[i]);
+        bid_level->set_quantity(bid_quantity_levels[i]);
+    }
+}
 
 } // namespace trade::booker
