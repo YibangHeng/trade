@@ -1,5 +1,4 @@
 #include <cmath>
-#include <pcap.h>
 #include <utility>
 
 #include "libbroker/CUTImpl/CUTCommonData.h"
@@ -7,6 +6,7 @@
 #include "libbroker/CUTImpl/RawStructure.h"
 #include "utilities/AddressHelper.hpp"
 #include "utilities/NetworkHelper.hpp"
+#include "utilities/TimeHelper.hpp"
 #include "utilities/ToJSON.hpp"
 #include "utilities/UdpPayloadGetter.hpp"
 
@@ -67,39 +67,41 @@ void trade::broker::CUTMdImpl::unsubscribe(const std::unordered_set<std::string>
     }
 }
 
-void trade::broker::CUTMdImpl::tick_receiver()
+pcap_t* trade::broker::CUTMdImpl::init_pcap_handle(
+    const std::string& interface,
+    const std::string& filter
+) const
 {
-    char errbuf[PCAP_ERRBUF_SIZE];
-
-    const auto filter = config->get<std::string>("Server.CaptureFilter");
-
+    /// The handle to capture packets.
     pcap_t* handle;
+
+    char errbuf[PCAP_ERRBUF_SIZE];
 
     if (filter == "stdin") {
         handle = pcap_fopen_offline(stdin, errbuf);
 
         if (handle == nullptr) {
             logger->error("Failed to read PCAP stream: {}", errbuf);
-            return;
+            return nullptr;
         }
     }
     else {
         /// Open network interface.
-        handle = pcap_open_live(config->get<std::string>("Server.InterfaceName").c_str(), BUFSIZ, 1, 1000, errbuf);
+        handle = pcap_open_live(interface.c_str(), BUFSIZ, 1, 1000, errbuf);
 
         if (handle == nullptr) {
-            logger->error("Failed to capture packets from {}: {}", config->get<std::string>("Server.InterfaceName"), errbuf);
-            return;
+            logger->error("Failed to capture packets from {}: {}", interface, errbuf);
+            return nullptr;
         }
 
         /// Set capture filter.
         bpf_program fp {};
 
-        auto code = pcap_compile(handle, &fp, config->get<std::string>("Server.CaptureFilter").c_str(), 0, PCAP_NETMASK_UNKNOWN);
+        auto code = pcap_compile(handle, &fp, filter.c_str(), 0, PCAP_NETMASK_UNKNOWN);
 
         if (code != 0) {
             logger->error("Failed to compile capture filter: {}", pcap_geterr(handle));
-            return;
+            return nullptr;
         }
 
         code = pcap_setfilter(handle, &fp);
@@ -107,12 +109,55 @@ void trade::broker::CUTMdImpl::tick_receiver()
         if (code != 0) {
             logger->error("Failed to set capture filter: {}", pcap_geterr(handle));
             pcap_close(handle);
-            return;
+            return nullptr;
         }
     }
 
+    return handle;
+}
+
+pcap_dumper_t* trade::broker::CUTMdImpl::init_pcap_dumper(
+    pcap_t* handle,
+    std::string dump_file
+) const
+{
+    if (handle == nullptr || dump_file.empty())
+        return nullptr;
+
+    /// Replace ${date} with current date.
+    dump_file.replace(dump_file.find("${date}"), 7, utilities::Date<std::string>()());
+
+    /// Create folder if it does not exist.
+    const auto directory = std::filesystem::path(dump_file).parent_path();
+    if (!exists(directory))
+        create_directories(directory);
+
+    /// The file to store PCAP file.
+    const auto dumper = pcap_dump_open(handle, dump_file.c_str());
+
+    if (dumper == nullptr) {
+        logger->error("Failed to open dump file: {}", pcap_geterr(handle));
+        return nullptr;
+    }
+
+    return dumper;
+}
+
+void trade::broker::CUTMdImpl::tick_receiver()
+{
     pcap_pkthdr header {};
     size_t udp_payload_length;
+
+    /// Interface to capture packets.
+    const auto interface = config->get<std::string>("Server.Interface", "any");
+    /// Capture filter.
+    const auto filter = config->get<std::string>("Server.CaptureFilter", "udp");
+    /// Open dump file.
+    const auto dump_file = config->get<std::string>("Server.DumpFile", "");
+
+    /// Initialize pcap handle and dumper.
+    const auto handle = init_pcap_handle(interface, filter);
+    const auto dumper = init_pcap_dumper(handle, dump_file);
 
     while (m_is_running) {
         const u_char* packet = pcap_next(handle, &header);
@@ -124,6 +169,9 @@ void trade::broker::CUTMdImpl::tick_receiver()
             }
             continue;
         }
+
+        if (dumper != nullptr)
+            pcap_dump(reinterpret_cast<u_char*>(dumper), &header, packet);
 
         /// boost::freelock::queue imposes a constraint that its elements
         /// must have trivial destructors. Consequently, usage of
@@ -158,6 +206,9 @@ void trade::broker::CUTMdImpl::tick_receiver()
 
         full_counter = 0;
     }
+
+    handle != nullptr ? pcap_close(handle) : void();
+    dumper != nullptr ? pcap_dump_close(dumper) : void();
 }
 
 void trade::broker::CUTMdImpl::booker(MessageBufferType& message_buffer)
