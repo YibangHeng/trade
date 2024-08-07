@@ -50,6 +50,7 @@ trade::reporter::AsyncReporter::~AsyncReporter()
     m_exchange_trade_tick_thread.join();
     m_exchange_l2_tick_thread.join();
     m_generated_l2_tick_thread.join();
+    m_ranged_tick_thread.join();
 }
 
 void trade::reporter::AsyncReporter::broker_accepted(const std::shared_ptr<types::BrokerAcceptance> broker_acceptance)
