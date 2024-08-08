@@ -7,10 +7,14 @@
 trade::reporter::CSVReporter::~CSVReporter()
 {
     /// Flush all writers.
-    for (auto& writer : m_l2_tick_writers | std::views::values)
+    for (auto& writer : m_l2_tick_writers | std::views::values) {
+        writer.flush();
         writer.close();
-    for (auto& writer : m_ranged_tick_writers | std::views::values)
+    }
+    for (auto& writer : m_ranged_tick_writers | std::views::values) {
+        writer.flush();
         writer.close();
+    }
 }
 
 void trade::reporter::CSVReporter::l2_tick_generated(const std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick)

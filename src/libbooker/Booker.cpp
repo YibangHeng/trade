@@ -382,87 +382,108 @@ void trade::booker::Booker::new_booker(const std::string& symbol)
 
 void trade::booker::Booker::refresh_range(const std::string& symbol, const int64_t time)
 {
-    if (m_ranged_ticks[symbol].empty())
+    /// Ranged time starts from 93000000.
+    if (!m_latest_ranged_time.contains(symbol)) [[unlikely]] {
+        m_latest_ranged_time[symbol] = 93000000;
+        return;
+    }
+
+    /// No need for refreshing until next ranged time.
+    if (align_time(time) <= m_latest_ranged_time[symbol])
         return;
 
-    const auto first_ranged_tick = m_ranged_ticks[symbol].front();
+    m_latest_ranged_time[symbol] = align_time(time);
 
-    if (time - first_ranged_tick->exchange_time() < 3000)
-        return;
+    /// Remove ranged ticks that not in wanted time range.
+    const auto subrange = std::ranges::remove_if(m_ranged_ticks[symbol], [&](const auto& tick) {
+        return tick->exchange_time() < minus_3_seconds(time);
+    });
+    m_ranged_ticks[symbol].erase(subrange.begin(), m_ranged_ticks[symbol].end());
 
-    const auto latest_ranged_tick = std::make_shared<types::RangedTick>();
+    const auto generated_ranged_tick = std::make_shared<types::RangedTick>();
 
-    latest_ranged_tick->set_symbol(first_ranged_tick->symbol());
-    latest_ranged_tick->set_exchange_time(align_time(time)); /// Use aligned time.
-    latest_ranged_tick->set_start_time(INT_MAX);
-    latest_ranged_tick->set_end_time(INT_MIN);
-    latest_ranged_tick->set_highest_price_1000x(INT_MIN);
-    latest_ranged_tick->set_lowest_price_1000x(INT_MAX);
-    latest_ranged_tick->set_ask_price_1_valid_duration_1000x(3010);
-    latest_ranged_tick->set_bid_price_1_valid_duration_1000x(3010);
+    /// Common data.
+    generated_ranged_tick->set_symbol(symbol);
+    generated_ranged_tick->set_exchange_time(align_time(time)); /// Use aligned time.
 
     /// Level prices.
-    generate_level_price(symbol, latest_ranged_tick);
+    generate_level_price(symbol, generated_ranged_tick);
 
     /// Weighted prices.
     const auto& latest_l2_prices = std::make_shared<types::GeneratedL2Tick>();
+
     generate_level_price(symbol, latest_l2_prices);
 
     if (m_privious_l2_prices.contains(symbol)) {
         const auto& privious_l2_prices = m_privious_l2_prices[symbol];
-        generate_weighted_price(latest_l2_prices, privious_l2_prices, latest_ranged_tick);
+        generate_weighted_price(latest_l2_prices, privious_l2_prices, generated_ranged_tick);
     }
     else {
-        generate_weighted_price(latest_l2_prices, nullptr, latest_ranged_tick);
+        generate_weighted_price(latest_l2_prices, nullptr, generated_ranged_tick);
     }
 
     m_privious_l2_prices[symbol] = latest_l2_prices;
 
-    /// Initial price 1.
-    const int64_t init_ask_price_1 = m_ranged_ticks[symbol].front()->x_ask_price_1_1000x();
-    const int64_t init_bid_price_1 = m_ranged_ticks[symbol].front()->x_bid_price_1_1000x();
+    if (m_ranged_ticks[symbol].empty()) {
+        /// TODO: Set time and other filds here.
+        generated_ranged_tick->set_start_time(minus_3_seconds(align_time(time)));
+        generated_ranged_tick->set_end_time(align_time(time));
 
-    /// Calculate ranged data.
-    for (const auto& ranged_tick : m_ranged_ticks[symbol]) {
-        if (ranged_tick->exchange_time() < minus_3_seconds(time))
-            continue;
+        m_reporter->ranged_tick_generated(generated_ranged_tick);
+    }
+    else {
+        const auto first_ranged_tick = m_ranged_ticks[symbol].front();
 
-        latest_ranged_tick->set_start_time(std::min(latest_ranged_tick->start_time(), ranged_tick->exchange_time()));
-        latest_ranged_tick->set_end_time(std::max(latest_ranged_tick->end_time(), ranged_tick->exchange_time()));
+        generated_ranged_tick->set_start_time(INT_MAX);
+        generated_ranged_tick->set_end_time(INT_MIN);
+        generated_ranged_tick->set_highest_price_1000x(INT_MIN);
+        generated_ranged_tick->set_lowest_price_1000x(INT_MAX);
+        generated_ranged_tick->set_ask_price_1_valid_duration_1000x(3010);
+        generated_ranged_tick->set_bid_price_1_valid_duration_1000x(3010);
 
-        latest_ranged_tick->set_active_traded_sell_number(latest_ranged_tick->active_traded_sell_number() + ranged_tick->active_traded_sell_number());
-        latest_ranged_tick->set_active_sell_number(latest_ranged_tick->active_sell_number() + ranged_tick->active_sell_number());
-        latest_ranged_tick->set_active_sell_quantity(latest_ranged_tick->active_sell_quantity() + ranged_tick->active_sell_quantity());
-        latest_ranged_tick->set_active_sell_amount_1000x(latest_ranged_tick->active_sell_amount_1000x() + ranged_tick->active_sell_amount_1000x());
-        latest_ranged_tick->set_active_traded_buy_number(latest_ranged_tick->active_traded_buy_number() + ranged_tick->active_traded_buy_number());
-        latest_ranged_tick->set_active_buy_number(latest_ranged_tick->active_buy_number() + ranged_tick->active_buy_number());
-        latest_ranged_tick->set_active_buy_quantity(latest_ranged_tick->active_buy_quantity() + ranged_tick->active_buy_quantity());
-        latest_ranged_tick->set_active_buy_amount_1000x(latest_ranged_tick->active_buy_amount_1000x() + ranged_tick->active_buy_amount_1000x());
+        /// Initial price 1.
+        const int64_t init_ask_price_1 = m_ranged_ticks[symbol].front()->x_ask_price_1_1000x();
+        const int64_t init_bid_price_1 = m_ranged_ticks[symbol].front()->x_bid_price_1_1000x();
 
-        latest_ranged_tick->set_aggressive_sell_number(latest_ranged_tick->aggressive_sell_number() + ranged_tick->aggressive_sell_number());
-        latest_ranged_tick->set_aggressive_buy_number(latest_ranged_tick->aggressive_buy_number() + ranged_tick->aggressive_buy_number());
-        latest_ranged_tick->set_new_added_ask_1_quantity(latest_ranged_tick->new_added_ask_1_quantity() + ranged_tick->new_added_ask_1_quantity());
-        latest_ranged_tick->set_new_added_bid_1_quantity(latest_ranged_tick->new_added_bid_1_quantity() + ranged_tick->new_added_bid_1_quantity());
-        latest_ranged_tick->set_new_canceled_ask_1_quantity(latest_ranged_tick->new_canceled_ask_1_quantity() + ranged_tick->new_canceled_ask_1_quantity());
-        latest_ranged_tick->set_new_canceled_bid_1_quantity(latest_ranged_tick->new_canceled_bid_1_quantity() + ranged_tick->new_canceled_bid_1_quantity());
-        latest_ranged_tick->set_new_canceled_ask_all_quantity(latest_ranged_tick->new_canceled_ask_all_quantity() + ranged_tick->new_canceled_ask_all_quantity());
-        latest_ranged_tick->set_new_canceled_bid_all_quantity(latest_ranged_tick->new_canceled_bid_all_quantity() + ranged_tick->new_canceled_bid_all_quantity());
-        latest_ranged_tick->set_big_ask_amount_1000x(latest_ranged_tick->big_ask_amount_1000x() + ranged_tick->big_ask_amount_1000x());
-        latest_ranged_tick->set_big_bid_amount_1000x(latest_ranged_tick->big_bid_amount_1000x() + ranged_tick->big_bid_amount_1000x());
+        /// Calculate ranged data.
+        for (const auto& ranged_tick : m_ranged_ticks[symbol]) {
+            generated_ranged_tick->set_start_time(std::min(generated_ranged_tick->start_time(), ranged_tick->exchange_time()));
+            generated_ranged_tick->set_end_time(std::max(generated_ranged_tick->end_time(), ranged_tick->exchange_time()));
 
-        latest_ranged_tick->set_highest_price_1000x(std::max(latest_ranged_tick->highest_price_1000x(), ranged_tick->highest_price_1000x()));
-        latest_ranged_tick->set_lowest_price_1000x(std::min(latest_ranged_tick->lowest_price_1000x(), ranged_tick->lowest_price_1000x()));
+            generated_ranged_tick->set_active_traded_sell_number(generated_ranged_tick->active_traded_sell_number() + ranged_tick->active_traded_sell_number());
+            generated_ranged_tick->set_active_sell_number(generated_ranged_tick->active_sell_number() + ranged_tick->active_sell_number());
+            generated_ranged_tick->set_active_sell_quantity(generated_ranged_tick->active_sell_quantity() + ranged_tick->active_sell_quantity());
+            generated_ranged_tick->set_active_sell_amount_1000x(generated_ranged_tick->active_sell_amount_1000x() + ranged_tick->active_sell_amount_1000x());
+            generated_ranged_tick->set_active_traded_buy_number(generated_ranged_tick->active_traded_buy_number() + ranged_tick->active_traded_buy_number());
+            generated_ranged_tick->set_active_buy_number(generated_ranged_tick->active_buy_number() + ranged_tick->active_buy_number());
+            generated_ranged_tick->set_active_buy_quantity(generated_ranged_tick->active_buy_quantity() + ranged_tick->active_buy_quantity());
+            generated_ranged_tick->set_active_buy_amount_1000x(generated_ranged_tick->active_buy_amount_1000x() + ranged_tick->active_buy_amount_1000x());
 
-        if (ranged_tick->x_ask_price_1_1000x() > init_ask_price_1 && !latest_ranged_tick->ask_price_1_valid_duration_1000x() != 3010)
-            latest_ranged_tick->set_ask_price_1_valid_duration_1000x(ranged_tick->exchange_time() - latest_ranged_tick->start_time());
-        if (ranged_tick->x_bid_price_1_1000x() < init_bid_price_1 && !latest_ranged_tick->bid_price_1_valid_duration_1000x() != 3010)
-            latest_ranged_tick->set_bid_price_1_valid_duration_1000x(ranged_tick->exchange_time() - latest_ranged_tick->start_time());
+            generated_ranged_tick->set_aggressive_sell_number(generated_ranged_tick->aggressive_sell_number() + ranged_tick->aggressive_sell_number());
+            generated_ranged_tick->set_aggressive_buy_number(generated_ranged_tick->aggressive_buy_number() + ranged_tick->aggressive_buy_number());
+            generated_ranged_tick->set_new_added_ask_1_quantity(generated_ranged_tick->new_added_ask_1_quantity() + ranged_tick->new_added_ask_1_quantity());
+            generated_ranged_tick->set_new_added_bid_1_quantity(generated_ranged_tick->new_added_bid_1_quantity() + ranged_tick->new_added_bid_1_quantity());
+            generated_ranged_tick->set_new_canceled_ask_1_quantity(generated_ranged_tick->new_canceled_ask_1_quantity() + ranged_tick->new_canceled_ask_1_quantity());
+            generated_ranged_tick->set_new_canceled_bid_1_quantity(generated_ranged_tick->new_canceled_bid_1_quantity() + ranged_tick->new_canceled_bid_1_quantity());
+            generated_ranged_tick->set_new_canceled_ask_all_quantity(generated_ranged_tick->new_canceled_ask_all_quantity() + ranged_tick->new_canceled_ask_all_quantity());
+            generated_ranged_tick->set_new_canceled_bid_all_quantity(generated_ranged_tick->new_canceled_bid_all_quantity() + ranged_tick->new_canceled_bid_all_quantity());
+            generated_ranged_tick->set_big_ask_amount_1000x(generated_ranged_tick->big_ask_amount_1000x() + ranged_tick->big_ask_amount_1000x());
+            generated_ranged_tick->set_big_bid_amount_1000x(generated_ranged_tick->big_bid_amount_1000x() + ranged_tick->big_bid_amount_1000x());
+
+            generated_ranged_tick->set_highest_price_1000x(std::max(generated_ranged_tick->highest_price_1000x(), ranged_tick->highest_price_1000x()));
+            generated_ranged_tick->set_lowest_price_1000x(std::min(generated_ranged_tick->lowest_price_1000x(), ranged_tick->lowest_price_1000x()));
+
+            if (ranged_tick->x_ask_price_1_1000x() > init_ask_price_1 && !generated_ranged_tick->ask_price_1_valid_duration_1000x() != 3010)
+                generated_ranged_tick->set_ask_price_1_valid_duration_1000x(ranged_tick->exchange_time() - generated_ranged_tick->start_time());
+            if (ranged_tick->x_bid_price_1_1000x() < init_bid_price_1 && !generated_ranged_tick->bid_price_1_valid_duration_1000x() != 3010)
+                generated_ranged_tick->set_bid_price_1_valid_duration_1000x(ranged_tick->exchange_time() - generated_ranged_tick->start_time());
+        }
     }
 
     /// Clear ranged ticks.
     m_ranged_ticks[symbol].clear();
 
-    m_reporter->ranged_tick_generated(latest_ranged_tick);
+    m_reporter->ranged_tick_generated(generated_ranged_tick);
 }
 
 void trade::booker::Booker::add_range_snap(const OrderTickPtr& order_tick)
@@ -471,9 +492,6 @@ void trade::booker::Booker::add_range_snap(const OrderTickPtr& order_tick)
 
     if (!((time >= 93000000 && time <= 113000000) || (time >= 130000000 && time <= 150000000)))
         return;
-
-    /// Refresh range first.
-    refresh_range(order_tick->symbol(), time);
 
     const auto ranged_tick = std::make_shared<types::RangedTick>();
 
@@ -524,6 +542,8 @@ void trade::booker::Booker::add_range_snap(const OrderTickPtr& order_tick)
     ranged_tick->set_x_bid_price_1_1000x(BookerCommonData::to_price(m_books[order_tick->symbol()]->asks().begin()->first.price())); /// 当前买一价
 
     m_ranged_ticks[order_tick->symbol()].push_back(ranged_tick);
+
+    refresh_range(order_tick->symbol(), time);
 }
 
 void trade::booker::Booker::add_range_snap(
@@ -537,9 +557,6 @@ void trade::booker::Booker::add_range_snap(
 
     if (!((time > 93000000 && time < 113000000) || (time > 130000000 && time < 150000000)))
         return;
-
-    /// Refresh range first.
-    refresh_range(order->symbol(), time);
 
     const auto ranged_tick = std::make_shared<types::RangedTick>();
 
@@ -573,6 +590,8 @@ void trade::booker::Booker::add_range_snap(
     ranged_tick->set_x_bid_price_1_1000x(BookerCommonData::to_price(m_books[order->symbol()]->asks().begin()->first.price())); /// 当前买一价
 
     m_ranged_ticks[order->symbol()].push_back(ranged_tick);
+
+    refresh_range(order->symbol(), time);
 }
 
 void trade::booker::Booker::generate_weighted_price(

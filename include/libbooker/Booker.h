@@ -111,6 +111,8 @@ private:
     /// Symbol -> Previous l2 prices.
     /// Other fields in GeneratedL2Tick are not used.
     std::unordered_map<std::string, GeneratedL2TickPtr> m_privious_l2_prices;
+    /// Symbol -> Latest ranged time.
+    std::unordered_map<std::string, int64_t> m_latest_ranged_time;
 
 private:
     /// Symbol -> OrderBook.
