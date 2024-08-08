@@ -96,6 +96,9 @@ private:
     /// Align time to 3 seconds.
     /// E.g., 103000000 -> 103000000, 103001000 -> 103000000.
     static int64_t align_time(int64_t time);
+    /// Minus 3 seconds from time.
+    /// E.g., 103000000 -> 102957000, 103030000 -> 103027000.
+    static int64_t minus_3_seconds(int64_t time);
 
 private:
     std::unordered_set<std::string> m_failed_symbols;

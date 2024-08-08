@@ -424,7 +424,7 @@ void trade::booker::Booker::refresh_range(const std::string& symbol, const int64
 
     /// Calculate ranged data.
     for (const auto& ranged_tick : m_ranged_ticks[symbol]) {
-        if (ranged_tick->exchange_time() < time - 3000)
+        if (ranged_tick->exchange_time() < minus_3_seconds(time))
             continue;
 
         latest_ranged_tick->set_start_time(std::min(latest_ranged_tick->start_time(), ranged_tick->exchange_time()));
@@ -627,4 +627,37 @@ int64_t trade::booker::Booker::align_time(int64_t time)
     }
 
     return time * 1000;
+}
+
+int64_t trade::booker::Booker::minus_3_seconds(const int64_t time)
+{
+    /// Extract hours, minutes, and seconds from the input time.
+    int64_t hours              = time / 10000000;
+    int64_t minutes            = time / 100000 % 100;
+    int64_t seconds            = time / 1000 % 100;
+
+    const int64_t milliseconds = time % 1000;
+
+    /// Subtract 3 seconds.
+    seconds -= 3;
+
+    /// Handle underflow of seconds.
+    if (seconds < 0) {
+        seconds += 60;
+        minutes -= 1;
+    }
+
+    /// Handle underflow of minutes.
+    if (minutes < 0) {
+        minutes += 60;
+        hours -= 1;
+    }
+
+    /// Handle underflow of hours.
+    if (hours < 0) {
+        hours += 24;
+    }
+
+    /// Reconstruct the time.
+    return hours * 10000000 + minutes * 100000 + seconds * 1000 + milliseconds;
 }
