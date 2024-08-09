@@ -63,9 +63,10 @@ void trade::reporter::CSVReporter::ranged_tick_generated(const std::shared_ptr<t
     m_ranged_tick_writers[ranged_tick->symbol()] << fmt::format(
         "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
         ranged_tick->symbol(),
+        0, /// TODO: Use exchange date here.
+        ranged_tick->exchange_time(),
         ranged_tick->start_time(),
         ranged_tick->end_time(),
-        ranged_tick->exchange_time(),
         ranged_tick->ask_levels().at(4).price_1000x(),
         ranged_tick->ask_levels().at(3).price_1000x(),
         ranged_tick->ask_levels().at(2).price_1000x(),
@@ -109,6 +110,8 @@ void trade::reporter::CSVReporter::ranged_tick_generated(const std::shared_ptr<t
         ranged_tick->ask_price_1_valid_duration_1000x(),
         ranged_tick->bid_price_1_valid_duration_1000x()
     );
+
+    m_outside->ranged_tick_generated(ranged_tick);
 }
 
 void trade::reporter::CSVReporter::new_l2_tick_writer(const std::string& symbol)
@@ -166,9 +169,10 @@ void trade::reporter::CSVReporter::new_ranged_tick_writer(const std::string& sym
 
         m_ranged_tick_writers[symbol]
             << "symbol,"
+            << "exchange_date,"
+            << "exchange_time,"
             << "start_time,"
             << "end_time,"
-            << "exchange_time,"
             << "sell_price_1000x_5,"
             << "sell_price_1000x_4,"
             << "sell_price_1000x_3,"

@@ -39,6 +39,7 @@ find_package(fmt REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(spdlog REQUIRED)
+find_package(unofficial-mysql-connector-cpp CONFIG REQUIRED)
 find_package(unofficial-sqlite3 REQUIRED)
 find_package(ZeroMQ REQUIRED)
 
