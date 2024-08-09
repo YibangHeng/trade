@@ -27,7 +27,7 @@ using NewSubscribeRspCallBackType = std::function<void(
 using ConnectCallBackType         = std::function<void(const muduo::net::TcpConnectionPtr&)>;
 using DisconnectCallBackType      = std::function<void(const muduo::net::TcpConnectionPtr&)>;
 
-class PUBLIC_API SubReporterClientImpl final: public utilities::LoginSyncer
+class TD_PUBLIC_API SubReporterClientImpl final: public utilities::LoginSyncer
 {
 public:
     explicit SubReporterClientImpl(

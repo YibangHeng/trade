@@ -10,7 +10,7 @@
 namespace trade::reporter
 {
 
-class PUBLIC_API CSVReporter final: private AppBase<>, public NopReporter
+class TD_PUBLIC_API CSVReporter final: private AppBase<>, public NopReporter
 {
 public:
     explicit CSVReporter(

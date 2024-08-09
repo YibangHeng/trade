@@ -14,7 +14,7 @@
 namespace trade::reporter
 {
 
-class PUBLIC_API SubReporter final: private AppBase<>, public NopReporter
+class TD_PUBLIC_API SubReporter final: private AppBase<>, public NopReporter
 {
 public:
     explicit SubReporter(

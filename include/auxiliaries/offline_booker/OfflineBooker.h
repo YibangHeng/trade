@@ -25,7 +25,7 @@ struct StdTick {
     int64_t time;
 };
 
-class PUBLIC_API OfflineBooker final: private AppBase<>
+class TD_PUBLIC_API OfflineBooker final: private AppBase<>
 {
 public:
     OfflineBooker(int argc, char* argv[]);

@@ -11,7 +11,7 @@ namespace trade::reporter
 
 constexpr static int64_t level_depth = 10;
 
-class PUBLIC_API IReporter
+class TD_PUBLIC_API IReporter
 {
 public:
     explicit IReporter() = default;

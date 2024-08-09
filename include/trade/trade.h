@@ -13,7 +13,7 @@
 namespace trade
 {
 
-class PUBLIC_API Trade final: private AppBase<>
+class TD_PUBLIC_API Trade final: private AppBase<>
 {
 public:
     Trade(int argc, char* argv[]);

@@ -9,7 +9,7 @@
 namespace trade::broker
 {
 
-class PUBLIC_API CTPBroker final: public BrokerProxy<int>
+class TD_PUBLIC_API CTPBroker final: public BrokerProxy<int>
 {
 public:
     explicit CTPBroker(

@@ -8,7 +8,7 @@
 namespace trade::holder
 {
 
-class PUBLIC_API IHolder
+class TD_PUBLIC_API IHolder
 {
 public:
     explicit IHolder() = default;

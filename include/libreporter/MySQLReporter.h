@@ -9,7 +9,7 @@
 namespace trade::reporter
 {
 
-class PUBLIC_API MySQLReporter final: private AppBase<>, public NopReporter
+class TD_PUBLIC_API MySQLReporter final: private AppBase<>, public NopReporter
 {
 public:
     MySQLReporter(

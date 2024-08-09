@@ -8,7 +8,7 @@ namespace trade::reporter
 /// Do nothing but forward to the outside.
 /// It can also be the base reporter for those who do not want to implement
 /// everything.
-class PUBLIC_API NopReporter: public IReporter
+class TD_PUBLIC_API NopReporter: public IReporter
 {
 public:
     explicit NopReporter(const std::shared_ptr<IReporter>& outside = nullptr) : m_outside(outside) {}

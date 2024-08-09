@@ -92,7 +92,7 @@ private:
 };
 
 /// Helper class for synchronizing login/logout attempts.
-class PUBLIC_API LoginSyncer
+class TD_PUBLIC_API LoginSyncer
 {
 public:
     LoginSyncer()          = default;

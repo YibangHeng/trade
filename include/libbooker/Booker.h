@@ -23,7 +23,7 @@ struct BuySellPair {
     T sell;
 };
 
-class PUBLIC_API Booker final: AppBase<>,
+class TD_PUBLIC_API Booker final: AppBase<>,
                                private OrderBook::TypedTradeListener,
                                private OrderBook::TypedOrderListener
 {

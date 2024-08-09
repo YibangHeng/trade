@@ -11,7 +11,7 @@
 namespace trade
 {
 
-class PUBLIC_API RawMdRecorder final: private AppBase<uint32_t>
+class TD_PUBLIC_API RawMdRecorder final: private AppBase<uint32_t>
 {
 public:
     RawMdRecorder(int argc, char* argv[]);

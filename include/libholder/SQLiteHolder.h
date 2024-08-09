@@ -28,7 +28,7 @@ struct SQLite3StmtPtrDeleter {
 
 using SQLite3StmtPtr = std::unique_ptr<sqlite3_stmt, SQLite3StmtPtrDeleter>;
 
-class PUBLIC_API SQLiteHolder final: public IHolder, private AppBase<>
+class TD_PUBLIC_API SQLiteHolder final: public IHolder, private AppBase<>
 {
 public:
     explicit SQLiteHolder(const std::string& db_path = ":memory:");

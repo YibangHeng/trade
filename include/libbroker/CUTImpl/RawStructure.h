@@ -62,7 +62,7 @@ static_assert(offsetof(SSEHpfPackageHead, m_seq_lost_flag) == 25);
 static_assert(sizeof(SSEHpfPackageHead) == 26, "SSEHpfPackageHead should be 26 bytes");
 
 /// SSE has deprecated this struct.
-struct [[deprecated]] PUBLIC_API SSEHpfOrderTick {
+struct [[deprecated]] TD_PUBLIC_API SSEHpfOrderTick {
     SSEHpfPackageHead m_head;
     uint32_t m_order_index;
     uint32_t m_channel_id;
@@ -79,7 +79,7 @@ struct [[deprecated]] PUBLIC_API SSEHpfOrderTick {
 };
 
 /// SSE has deprecated this struct.
-struct [[deprecated]] PUBLIC_API SSEHpfTradeTick {
+struct [[deprecated]] TD_PUBLIC_API SSEHpfTradeTick {
     SSEHpfPackageHead m_head;
     uint32_t m_trade_seq_num;
     uint32_t m_channel_id;
@@ -95,7 +95,7 @@ struct [[deprecated]] PUBLIC_API SSEHpfTradeTick {
     uint32_t m_reserved;
 };
 
-struct PUBLIC_API SSEHpfTick {
+struct TD_PUBLIC_API SSEHpfTick {
     SSEHpfPackageHead m_head;
     uint32_t m_tick_index;
     uint32_t m_channel_id;
@@ -143,7 +143,7 @@ static_assert(offsetof(SSEPriceQuantityPair, m_px) == 4);
 static_assert(offsetof(SSEPriceQuantityPair, m_qty) == 8);
 static_assert(sizeof(SSEPriceQuantityPair) == 16, "SSEPriceQuantityPair should be 16 bytes");
 
-struct PUBLIC_API SSEHpfL2Snap {
+struct TD_PUBLIC_API SSEHpfL2Snap {
     SSEHpfPackageHead m_head;
     uint32_t m_update_time;
     char m_symbol_id[9];
@@ -231,7 +231,7 @@ static_assert(offsetof(SZSEHpfPackageHead, m_sequence_num) == 31);
 static_assert(offsetof(SZSEHpfPackageHead, m_md_stream_id) == 39);
 static_assert(sizeof(SZSEHpfPackageHead) == 43, "SZSEHpfPackageHead should be 43 bytes");
 
-struct PUBLIC_API SZSEHpfOrderTick {
+struct TD_PUBLIC_API SZSEHpfOrderTick {
     SZSEHpfPackageHead m_header;
     uint32_t m_px;
     uint64_t m_qty;
@@ -248,7 +248,7 @@ static_assert(offsetof(SZSEHpfOrderTick, m_order_type) == 56);
 static_assert(offsetof(SZSEHpfOrderTick, m_reserved) == 57);
 static_assert(sizeof(SZSEHpfOrderTick) == 64, "SZSEHpfOrderTick should be 64 bytes");
 
-struct PUBLIC_API SZSEHpfTradeTick {
+struct TD_PUBLIC_API SZSEHpfTradeTick {
     SZSEHpfPackageHead m_header;
     int64_t m_bid_app_seq_num;
     int64_t m_ask_app_seq_num;
@@ -274,7 +274,7 @@ static_assert(offsetof(SZSEPriceQuantityPair, m_price) == 0);
 static_assert(offsetof(SZSEPriceQuantityPair, m_qty) == 4);
 static_assert(sizeof(SZSEPriceQuantityPair) == 12);
 
-struct PUBLIC_API SZSEHpfL2Snap {
+struct TD_PUBLIC_API SZSEHpfL2Snap {
     SZSEHpfPackageHead m_header;
     uint8_t m_trading_phase_code;
     int64_t m_trades_num;

@@ -9,7 +9,7 @@
 namespace trade::reporter
 {
 
-class PUBLIC_API LogReporter final: public IReporter
+class TD_PUBLIC_API LogReporter final: public IReporter
 {
 public:
     explicit LogReporter(std::shared_ptr<IReporter> outside = std::make_shared<NopReporter>())
