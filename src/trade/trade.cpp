@@ -2,6 +2,9 @@
 #include <fmt/ranges.h>
 #include <iostream>
 
+/// BUG: <mysqlx/xdevapi.h> must be included before <pcap/pcap.h>?
+#include "libreporter/MySQLReporter.h"
+
 #include "info.h"
 #include "libbroker/CTPBroker.h"
 #include "libbroker/CUTBroker.h"
@@ -9,7 +12,6 @@
 #include "libreporter/AsyncReporter.h"
 #include "libreporter/CSVReporter.h"
 #include "libreporter/LogReporter.h"
-#include "libreporter/MySQLReporter.h"
 #include "libreporter/ShmReporter.h"
 #include "libreporter/SubReporter.h"
 #include "trade/trade.h"

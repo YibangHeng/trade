@@ -1,7 +1,7 @@
 #pragma once
 
 #include <boost/lockfree/spsc_queue.hpp>
-#include <pcap.h>
+#include <pcap/pcap.h>
 
 #include "AppBase.hpp"
 #include "libbooker/Booker.h"
