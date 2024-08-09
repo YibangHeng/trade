@@ -144,7 +144,7 @@ bool trade::OfflineBooker::argv_parse(const int argc, char* argv[])
 
 void trade::OfflineBooker::load_tick(const std::string& path)
 {
-    io::CSVReader<7> in(path);
+    io::CSVReader<8> in(path);
 
     in.read_header(
         io::ignore_extra_column,
