@@ -154,6 +154,7 @@ void trade::OfflineBooker::load_tick(const std::string& path)
         "order_type",
         "price",
         "quantity",
+        "date",
         "time"
     );
 
@@ -163,6 +164,7 @@ void trade::OfflineBooker::load_tick(const std::string& path)
     char order_type;
     double price;
     int64_t quantity;
+    int64_t date;
     int64_t time;
 
     while (m_is_running
@@ -173,6 +175,7 @@ void trade::OfflineBooker::load_tick(const std::string& path)
                order_type,
                price,
                quantity,
+               date,
                time
            )) {
         auto std_tick = new StdTick(
@@ -182,6 +185,7 @@ void trade::OfflineBooker::load_tick(const std::string& path)
             to_order_type(order_type),
             price,
             quantity,
+            date,
             time
         );
 
@@ -256,6 +260,7 @@ trade::booker::OrderTickPtr trade::OfflineBooker::to_order_tick(StdTick* std_tic
     order_tick->set_side(to_side(std_tick->ask_unique_id, std_tick->bid_unique_id));
     order_tick->set_price_1000x(static_cast<int64_t>(std_tick->price * 1000));
     order_tick->set_quantity(std_tick->quantity);
+    order_tick->set_exchange_date(std_tick->date);
     order_tick->set_exchange_time(to_exchange_time(std_tick->time));
 
     return order_tick;
@@ -273,6 +278,7 @@ trade::booker::TradeTickPtr trade::OfflineBooker::to_trade_tick(StdTick* std_tic
     trade_tick->set_symbol(std_tick->symbol);
     trade_tick->set_exec_price_1000x(static_cast<int64_t>(std_tick->price * 1000));
     trade_tick->set_exec_quantity(std_tick->quantity);
+    trade_tick->set_exchange_date(std_tick->date);
     trade_tick->set_exchange_time(to_exchange_time(std_tick->time));
 
     return trade_tick;

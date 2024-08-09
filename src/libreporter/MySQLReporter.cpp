@@ -70,7 +70,7 @@ void trade::reporter::MySQLReporter::ranged_tick_generated(const std::shared_ptr
     )
         .values(
             ranged_tick->symbol(),
-            0, /// TODO: Use exchange date here.
+            ranged_tick->exchange_date(),
             ranged_tick->exchange_time(),
             ranged_tick->start_time(),
             ranged_tick->end_time(),

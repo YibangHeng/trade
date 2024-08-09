@@ -121,6 +121,7 @@ bool trade::booker::Booker::trade(const TradeTickPtr& trade_tick)
         generated_l2_tick->set_quantity(trade_tick->exec_quantity());
         generated_l2_tick->set_ask_unique_id(trade_tick->ask_unique_id());
         generated_l2_tick->set_bid_unique_id(trade_tick->bid_unique_id());
+        generated_l2_tick->set_exchange_date(trade_tick->exchange_date());
         generated_l2_tick->set_exchange_time(trade_tick->exchange_time());
 
         generated_l2_tick->set_result(true); /// TODO: Use eunms to identify trades that made in call auction stage.
@@ -189,6 +190,7 @@ void trade::booker::Booker::switch_to_continuous_stage()
     for (auto& call_auction_holder : m_call_auction_holders | std::views::values) {
         while (true) {
             const auto order_tick = call_auction_holder.pop();
+
             if (order_tick == nullptr)
                 break;
 
@@ -297,6 +299,7 @@ void trade::booker::Booker::on_fill(
         latest_l2_tick->set_bid_unique_id(matched_order->unique_id());
     }
 
+    latest_l2_tick->set_exchange_date(order->exchange_date());
     latest_l2_tick->set_exchange_time(order->exchange_time());
 
     if (m_enable_advanced_calculating)
@@ -338,6 +341,7 @@ trade::booker::OrderTickPtr trade::booker::Booker::create_virtual_sse_order_tick
     order_tick->set_side(side);
     order_tick->set_price_1000x(trade_tick->exec_price_1000x());
     order_tick->set_quantity(trade_tick->exec_quantity());
+    order_tick->set_exchange_date(trade_tick->exchange_date());
     order_tick->set_exchange_time(trade_tick->exchange_time());
 
     return order_tick;
@@ -356,6 +360,7 @@ trade::booker::OrderTickPtr trade::booker::Booker::create_virtual_szse_order_tic
     order_tick->set_side(m_market_order[trade_tick->symbol()]->side());
     order_tick->set_price_1000x(trade_tick->exec_price_1000x());
     order_tick->set_quantity(trade_tick->exec_quantity());
+    order_tick->set_exchange_date(m_market_order[trade_tick->symbol()]->exchange_date());
     order_tick->set_exchange_time(m_market_order[trade_tick->symbol()]->exchange_time());
 
     /// For avoiding issus of deplicated order.
@@ -380,7 +385,11 @@ void trade::booker::Booker::new_booker(const std::string& symbol)
     logger->info("Created new order book for symbol {}", symbol);
 }
 
-void trade::booker::Booker::refresh_range(const std::string& symbol, const int64_t time)
+void trade::booker::Booker::refresh_range(
+    const std::string& symbol,
+    const int64_t exchange_date,
+    const int64_t exchange_time
+)
 {
     /// Ranged time starts from 93000000.
     if (!m_latest_ranged_time.contains(symbol)) [[unlikely]] {
@@ -389,14 +398,14 @@ void trade::booker::Booker::refresh_range(const std::string& symbol, const int64
     }
 
     /// No need for refreshing until next ranged time.
-    if (align_time(time) <= m_latest_ranged_time[symbol])
+    if (align_time(exchange_time) <= m_latest_ranged_time[symbol])
         return;
 
-    m_latest_ranged_time[symbol] = align_time(time);
+    m_latest_ranged_time[symbol] = align_time(exchange_time);
 
     /// Remove ranged ticks that not in wanted time range.
     const auto subrange = std::ranges::remove_if(m_ranged_ticks[symbol], [&](const auto& tick) {
-        return tick->exchange_time() < minus_3_seconds(time);
+        return tick->exchange_time() < minus_3_seconds(exchange_time);
     });
     m_ranged_ticks[symbol].erase(subrange.begin(), m_ranged_ticks[symbol].end());
 
@@ -404,7 +413,8 @@ void trade::booker::Booker::refresh_range(const std::string& symbol, const int64
 
     /// Common data.
     generated_ranged_tick->set_symbol(symbol);
-    generated_ranged_tick->set_exchange_time(align_time(time)); /// Use aligned time.
+    generated_ranged_tick->set_exchange_date(exchange_date);
+    generated_ranged_tick->set_exchange_time(align_time(exchange_time)); /// Use aligned time.
 
     /// Level prices.
     generate_level_price(symbol, generated_ranged_tick);
@@ -426,8 +436,8 @@ void trade::booker::Booker::refresh_range(const std::string& symbol, const int64
 
     if (m_ranged_ticks[symbol].empty()) {
         /// TODO: Set time and other filds here.
-        generated_ranged_tick->set_start_time(minus_3_seconds(align_time(time)));
-        generated_ranged_tick->set_end_time(align_time(time));
+        generated_ranged_tick->set_start_time(minus_3_seconds(align_time(exchange_time)));
+        generated_ranged_tick->set_end_time(align_time(exchange_time));
 
         m_reporter->ranged_tick_generated(generated_ranged_tick);
     }
@@ -496,6 +506,7 @@ void trade::booker::Booker::add_range_snap(const OrderTickPtr& order_tick)
     const auto ranged_tick = std::make_shared<types::RangedTick>();
 
     ranged_tick->set_symbol(order_tick->symbol());
+    ranged_tick->set_exchange_date(order_tick->exchange_date());
     ranged_tick->set_exchange_time(time);
 
     switch (order_tick->order_type()) {
@@ -543,7 +554,7 @@ void trade::booker::Booker::add_range_snap(const OrderTickPtr& order_tick)
 
     m_ranged_ticks[order_tick->symbol()].push_back(ranged_tick);
 
-    refresh_range(order_tick->symbol(), time);
+    refresh_range(order_tick->symbol(), order_tick->exchange_date(), time);
 }
 
 void trade::booker::Booker::add_range_snap(
@@ -561,6 +572,7 @@ void trade::booker::Booker::add_range_snap(
     const auto ranged_tick = std::make_shared<types::RangedTick>();
 
     ranged_tick->set_symbol(order->symbol());
+    ranged_tick->set_exchange_date(order->exchange_date());
     ranged_tick->set_exchange_time(time);
 
     if (order->is_buy()) {
@@ -591,7 +603,7 @@ void trade::booker::Booker::add_range_snap(
 
     m_ranged_ticks[order->symbol()].push_back(ranged_tick);
 
-    refresh_range(order->symbol(), time);
+    refresh_range(order->symbol(), order->exchange_date(), time);
 }
 
 void trade::booker::Booker::generate_weighted_price(

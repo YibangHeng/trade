@@ -80,7 +80,11 @@ private:
     void new_booker(const std::string& symbol);
 
 private:
-    void refresh_range(const std::string& symbol, int64_t time);
+    void refresh_range(
+        const std::string& symbol,
+        int64_t exchange_date,
+        int64_t exchange_time
+    );
     void add_range_snap(const OrderTickPtr& order_tick);
     void add_range_snap(
         const OrderWrapperPtr& order,
