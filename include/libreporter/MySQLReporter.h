@@ -27,9 +27,9 @@ public:
     void ranged_tick_generated(std::shared_ptr<types::RangedTick> ranged_tick) override;
 
 private:
-    mysqlx::Session sess;
-    mysqlx::Schema schema;
-    mysqlx::Table table;
+    std::shared_ptr<mysqlx::Session> m_sess;
+    std::shared_ptr<mysqlx::Schema> m_schema;
+    std::shared_ptr<mysqlx::Table> m_table;
 
 private:
     std::shared_ptr<IReporter> m_outside;
