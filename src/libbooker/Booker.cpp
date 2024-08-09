@@ -310,12 +310,16 @@ void trade::booker::Booker::on_fill(
 
 void trade::booker::Booker::on_cancel_reject(const OrderWrapperPtr& order, const char* reason)
 {
-    logger->error("Cancel for {} was rejected: {}", order->unique_id(), reason);
+    /// Do not log cancel rejections for failed symbols.
+    if (!m_failed_symbols.contains(order->symbol()))
+        logger->error("{}'s cancel for {} was rejected: {}", order->symbol(), order->unique_id(), reason);
 }
 
 void trade::booker::Booker::on_replace_reject(const OrderWrapperPtr& order, const char* reason)
 {
-    logger->error("Replace for {} was rejected: {}", order->unique_id(), reason);
+    /// Do not log replace rejections for failed symbols.
+    if (!m_failed_symbols.contains(order->symbol()))
+        logger->error("{}'s replace for {} was rejected: {}", order->symbol(), order->unique_id(), reason);
 }
 
 trade::booker::OrderTickPtr trade::booker::Booker::create_virtual_sse_order_tick(const TradeTickPtr& trade_tick, const types::SideType side)
