@@ -86,3 +86,10 @@ void trade::reporter::LogReporter::l2_tick_generated(const std::shared_ptr<types
 
     m_outside->l2_tick_generated(generated_l2_tick);
 }
+
+void trade::reporter::LogReporter::ranged_tick_generated(std::shared_ptr<types::RangedTick> ranged_tick)
+{
+    md_logger->info("Ranged tick generated: {}", utilities::ToJSON()(*ranged_tick));
+
+    m_outside->ranged_tick_generated(ranged_tick);
+}

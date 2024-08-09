@@ -11,7 +11,7 @@ namespace trade::reporter
 
 constexpr static int64_t level_depth = 10;
 
-class PUBLIC_API IReporter
+class TD_PUBLIC_API IReporter
 {
 public:
     explicit IReporter() = default;
@@ -40,6 +40,7 @@ public:
     virtual void exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick)         = 0;
     virtual void exchange_l2_snap_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) = 0;
     virtual void l2_tick_generated(std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick)      = 0;
+    virtual void ranged_tick_generated(std::shared_ptr<types::RangedTick> ranged_tick)            = 0;
 };
 
 } // namespace trade::reporter

@@ -9,7 +9,7 @@
 namespace trade::reporter
 {
 
-class PUBLIC_API LogReporter final: public IReporter
+class TD_PUBLIC_API LogReporter final: public IReporter
 {
 public:
     explicit LogReporter(std::shared_ptr<IReporter> outside = std::make_shared<NopReporter>())
@@ -43,6 +43,7 @@ public:
     void exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick) override;
     void exchange_l2_snap_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) override;
     void l2_tick_generated(std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick) override;
+    void ranged_tick_generated(std::shared_ptr<types::RangedTick> ranged_tick) override;
 
 private:
     std::shared_ptr<spdlog::logger> trade_logger;

@@ -14,7 +14,7 @@
 namespace trade
 {
 
-class PUBLIC_API SubReporterClient final: private AppBase<uint32_t>
+class TD_PUBLIC_API SubReporterClient final: private AppBase<uint32_t>
 {
 public:
     SubReporterClient(int argc, char* argv[]);

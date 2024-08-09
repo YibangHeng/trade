@@ -21,10 +21,11 @@ struct StdTick {
     types::OrderType order_type;
     double price;
     int64_t quantity;
+    int64_t date;
     int64_t time;
 };
 
-class PUBLIC_API OfflineBooker final: private AppBase<>
+class TD_PUBLIC_API OfflineBooker final: private AppBase<>
 {
 public:
     OfflineBooker(int argc, char* argv[]);

@@ -44,7 +44,7 @@ static_assert(static_cast<int>(OrderType::sell) == static_cast<int>(types::SideT
 static_assert(static_cast<int>(OrderType::cancel) == static_cast<int>(types::OrderType::cancel));
 static_assert(sizeof(OrderType) == 4, "OrderType should be 4 bytes");
 
-struct PUBLIC_API SMTickMateInfo {
+struct TD_PUBLIC_API SMTickMateInfo {
     size_t tick_count        = 0;
     int64_t last_update_time = 0; /// Time in ISO 8601 format.
     RESERVED(240)
@@ -52,7 +52,7 @@ struct PUBLIC_API SMTickMateInfo {
 
 static_assert(sizeof(SMTickMateInfo) == 256, "MateInfo for tick should be 256 bytes");
 
-struct PUBLIC_API SMExchangeL2SnapMateInfo {
+struct TD_PUBLIC_API SMExchangeL2SnapMateInfo {
     size_t exchange_l2_snap_count = 0;
     int64_t last_update_time      = 0; /// Time in ISO 8601 format.
     RESERVED(240)
@@ -60,7 +60,7 @@ struct PUBLIC_API SMExchangeL2SnapMateInfo {
 
 static_assert(sizeof(SMExchangeL2SnapMateInfo) == 256, "MateInfo for exchange l2 sanp should be 256 bytes");
 
-struct PUBLIC_API SMGeneratedL2TickMateInfo {
+struct TD_PUBLIC_API SMGeneratedL2TickMateInfo {
     size_t generated_l2_tick_count = 0;
     int64_t last_update_time       = 0; /// Time in ISO 8601 format.
     RESERVED(240)
@@ -88,7 +88,7 @@ enum class ShmUnionType
 static_assert(sizeof(ShmUnionType) == 4, "ShmUnionType should be 4 bytes");
 
 /// @types::OrderTick.
-struct PUBLIC_API OrderTick {
+struct TD_PUBLIC_API OrderTick {
     ShmUnionType shm_union_type;
 
     int64_t unique_id    = 0;
@@ -107,7 +107,7 @@ struct PUBLIC_API OrderTick {
 static_assert(sizeof(OrderTick) == 256, "Tick should be 256 bytes");
 
 /// @types::TradeTick.
-struct PUBLIC_API TradeTick {
+struct TD_PUBLIC_API TradeTick {
     ShmUnionType shm_union_type;
 
     int64_t ask_unique_id     = 0;
@@ -124,7 +124,7 @@ struct PUBLIC_API TradeTick {
 
 static_assert(sizeof(TradeTick) == 256, "Tick should be 256 bytes");
 
-struct PUBLIC_API ExchangeL2Snap {
+struct TD_PUBLIC_API ExchangeL2Snap {
     ShmUnionType shm_union_type;
 
     SymbolType symbol               = {};
@@ -159,7 +159,7 @@ struct PUBLIC_API ExchangeL2Snap {
 
 static_assert(sizeof(ExchangeL2Snap) == 256, "L2Tick should be 256 bytes");
 
-struct PUBLIC_API GeneratedL2Tick {
+struct TD_PUBLIC_API GeneratedL2Tick {
     ShmUnionType shm_union_type;
 
     SymbolType symbol     = {};
@@ -187,7 +187,7 @@ struct PUBLIC_API GeneratedL2Tick {
 
 static_assert(sizeof(GeneratedL2Tick) == 256, "L2Tick should be 256 bytes");
 
-union PUBLIC_API ShmUnion
+union TD_PUBLIC_API ShmUnion
 {
     OrderTick order_tick;
     TradeTick trade_tick;
@@ -199,7 +199,7 @@ static_assert(sizeof(ShmUnion) == 256, "ShmUnion should be 256 bytes");
 #pragma pack(pop)
 
 /// ShmReporter writes market data to shared memory.
-class PUBLIC_API ShmReporter final: private AppBase<>, public NopReporter
+class TD_PUBLIC_API ShmReporter final: private AppBase<>, public NopReporter
 {
 public:
     explicit ShmReporter(

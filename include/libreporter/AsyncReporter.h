@@ -9,7 +9,7 @@
 namespace trade::reporter
 {
 
-class PUBLIC_API AsyncReporter final: public IReporter
+class TD_PUBLIC_API AsyncReporter final: public IReporter
 {
 public:
     explicit AsyncReporter(std::shared_ptr<IReporter> outside = std::make_shared<NopReporter>());
@@ -38,6 +38,7 @@ public:
     void exchange_trade_tick_arrived(std::shared_ptr<types::TradeTick> trade_tick) override;
     void exchange_l2_snap_arrived(std::shared_ptr<types::ExchangeL2Snap> exchange_l2_snap) override;
     void l2_tick_generated(std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick) override;
+    void ranged_tick_generated(std::shared_ptr<types::RangedTick> ranged_tick) override;
 
 private:
     /// Order.
@@ -63,6 +64,7 @@ public:
     void do_exchange_trade_tick_arrived();
     void do_exchange_l2_tick_arrived();
     void do_l2_tick_generated();
+    void do_ranged_tick_generated();
 
 private:
     template<typename T>
@@ -111,6 +113,9 @@ private:
     BufferType<types::GeneratedL2Tick> m_generated_l2_tick_buffer;
     std::mutex m_generated_l2_tick_mutex;
     std::thread m_generated_l2_tick_thread;
+    BufferType<types::RangedTick> m_ranged_tick_buffer;
+    std::mutex m_ranged_tick_mutex;
+    std::thread m_ranged_tick_thread;
 
 private:
     std::atomic<bool> m_is_running;

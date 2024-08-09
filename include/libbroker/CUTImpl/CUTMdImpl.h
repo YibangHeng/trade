@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/lockfree/spsc_queue.hpp>
+#include <pcap/pcap.h>
 
 #include "AppBase.hpp"
 #include "libbooker/Booker.h"
@@ -30,6 +31,14 @@ public:
 private:
     using MessageBufferType = boost::lockfree::spsc_queue<std::vector<u_char>*, boost::lockfree::capacity<100000000>>;
 
+    pcap_t* init_pcap_handle(
+        const std::string& interface,
+        const std::string& filter
+    ) const;
+    pcap_dumper_t* init_pcap_dumper(
+        pcap_t* handle,
+        std::string dump_file
+    ) const;
     void tick_receiver();
     void booker(MessageBufferType& message_buffer);
 

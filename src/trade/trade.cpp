@@ -2,6 +2,9 @@
 #include <fmt/ranges.h>
 #include <iostream>
 
+/// BUG: <mysqlx/xdevapi.h> must be included before <pcap/pcap.h>?
+#include "libreporter/MySQLReporter.h"
+
 #include "info.h"
 #include "libbroker/CTPBroker.h"
 #include "libbroker/CUTBroker.h"
@@ -38,8 +41,16 @@ int trade::Trade::run()
         return EXIT_FAILURE;
     }
 
-    const auto log_reporter = std::make_shared<reporter::LogReporter>();
-    const auto csv_reporter = std::make_shared<reporter::CSVReporter>(config->get<std::string>("Output.CSVOutputFolder"), log_reporter);
+    const auto log_reporter   = std::make_shared<reporter::LogReporter>();
+    const auto mysql_reporter = std::make_shared<reporter::MySQLReporter>(
+        config->get<std::string>("Output.MySQLUrl", ""),
+        config->get<std::string>("Output.MySQLUser", ""),
+        config->get<std::string>("Output.MySQLPassword", ""),
+        config->get<std::string>("Output.MySQLDatabase", ""),
+        config->get<std::string>("Output.MySQLTable", ""),
+        log_reporter
+    );
+    const auto csv_reporter = std::make_shared<reporter::CSVReporter>(config->get<std::string>("Output.CSVOutputFolder"), mysql_reporter);
     const auto sub_reporter = std::make_shared<reporter::SubReporter>(10100, csv_reporter);
     const auto shm_reporter = std::make_shared<reporter::ShmReporter>(
         config->get<std::string>("Output.ShmName"),

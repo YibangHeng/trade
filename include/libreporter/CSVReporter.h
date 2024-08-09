@@ -10,7 +10,7 @@
 namespace trade::reporter
 {
 
-class PUBLIC_API CSVReporter final: private AppBase<>, public NopReporter
+class TD_PUBLIC_API CSVReporter final: private AppBase<>, public NopReporter
 {
 public:
     explicit CSVReporter(
@@ -28,14 +28,17 @@ public:
     /// Market data.
 public:
     void l2_tick_generated(std::shared_ptr<types::GeneratedL2Tick> generated_l2_tick) override;
+    void ranged_tick_generated(std::shared_ptr<types::RangedTick> ranged_tick) override;
 
 private:
     void new_l2_tick_writer(const std::string& symbol);
+    void new_ranged_tick_writer(const std::string& symbol);
 
 private:
     std::string m_output_folder;
     /// Symbol -> ofstream.
     std::unordered_map<std::string, std::ofstream> m_l2_tick_writers;
+    std::unordered_map<std::string, std::ofstream> m_ranged_tick_writers;
 
 private:
     std::shared_ptr<IReporter> m_outside;

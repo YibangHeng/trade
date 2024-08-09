@@ -10,7 +10,7 @@
 namespace trade
 {
 
-class PUBLIC_API OSTMdServer final: private AppBase<>
+class TD_PUBLIC_API OSTMdServer final: private AppBase<>
 {
 public:
     OSTMdServer(int argc, char* argv[]);

@@ -176,69 +176,57 @@ TEST_CASE("Shm writing and reading", "[ShmReporter]")
         l2_tick_0->set_symbol("600875.SH");
         l2_tick_0->set_price_1000x(2222);
         l2_tick_0->set_quantity(100);
-        l2_tick_0->set_sell_price_1000x_3(3333);
-        l2_tick_0->set_sell_quantity_3(3000);
-        l2_tick_0->set_sell_price_1000x_2(2222);
-        l2_tick_0->set_sell_quantity_2(2000);
-        l2_tick_0->set_sell_price_1000x_1(1111);
-        l2_tick_0->set_sell_quantity_1(1000);
-        l2_tick_0->set_buy_price_1000x_1(1111);
-        l2_tick_0->set_buy_quantity_1(1000);
-        l2_tick_0->set_buy_price_1000x_2(2222);
-        l2_tick_0->set_buy_quantity_2(2000);
-        l2_tick_0->set_buy_price_1000x_3(3333);
-        l2_tick_0->set_buy_quantity_3(3000);
+        for (int i = 1; i < 6; i++) {
+            const auto ask_levels = l2_tick_0->add_ask_levels();
+            ask_levels->set_price_1000x(i * 1111);
+            ask_levels->set_quantity(i * 1000);
+
+            const auto bid_levels = l2_tick_0->add_bid_levels();
+            bid_levels->set_price_1000x(i * 1111);
+            bid_levels->set_quantity(i * 1000);
+        }
 
         const auto l2_tick_1 = std::make_shared<trade::types::GeneratedL2Tick>();
         l2_tick_1->set_symbol("600875.SH");
         l2_tick_1->set_price_1000x(2233);
         l2_tick_1->set_quantity(200);
-        l2_tick_1->set_sell_price_1000x_3(3333);
-        l2_tick_1->set_sell_quantity_3(3000);
-        l2_tick_1->set_sell_price_1000x_2(2222);
-        l2_tick_1->set_sell_quantity_2(2000);
-        l2_tick_1->set_sell_price_1000x_1(1111);
-        l2_tick_1->set_sell_quantity_1(1000);
-        l2_tick_1->set_buy_price_1000x_1(1111);
-        l2_tick_1->set_buy_quantity_1(1000);
-        l2_tick_1->set_buy_price_1000x_2(2222);
-        l2_tick_1->set_buy_quantity_2(2000);
-        l2_tick_1->set_buy_price_1000x_3(3333);
-        l2_tick_1->set_buy_quantity_3(3000);
+        for (int i = 1; i < 6; i++) {
+            const auto ask_levels = l2_tick_1->add_ask_levels();
+            ask_levels->set_price_1000x(i * 1111);
+            ask_levels->set_quantity(i * 1000);
+
+            const auto bid_levels = l2_tick_1->add_bid_levels();
+            bid_levels->set_price_1000x(i * 1111);
+            bid_levels->set_quantity(i * 1000);
+        }
 
         const auto l2_tick_2 = std::make_shared<trade::types::GeneratedL2Tick>();
         l2_tick_2->set_symbol("600875.SH");
         l2_tick_2->set_price_1000x(3322);
         l2_tick_2->set_quantity(300);
-        l2_tick_2->set_sell_price_1000x_3(3333);
-        l2_tick_2->set_sell_quantity_3(3000);
-        l2_tick_2->set_sell_price_1000x_2(2222);
-        l2_tick_2->set_sell_quantity_2(2000);
-        l2_tick_2->set_sell_price_1000x_1(1111);
-        l2_tick_2->set_sell_quantity_1(1000);
-        l2_tick_2->set_buy_price_1000x_1(1111);
-        l2_tick_2->set_buy_quantity_1(1000);
-        l2_tick_2->set_buy_price_1000x_2(2222);
-        l2_tick_2->set_buy_quantity_2(2000);
-        l2_tick_2->set_buy_price_1000x_3(3333);
-        l2_tick_2->set_buy_quantity_3(3000);
+        for (int i = 1; i < 6; i++) {
+            const auto ask_levels = l2_tick_2->add_ask_levels();
+            ask_levels->set_price_1000x(i * 1111);
+            ask_levels->set_quantity(i * 1000);
+
+            const auto bid_levels = l2_tick_2->add_bid_levels();
+            bid_levels->set_price_1000x(i * 1111);
+            bid_levels->set_quantity(i * 1000);
+        }
 
         const auto l2_tick_3 = std::make_shared<trade::types::GeneratedL2Tick>();
         l2_tick_3->set_symbol("600875.SH");
         l2_tick_3->set_price_1000x(3333);
         l2_tick_3->set_quantity(400);
-        l2_tick_3->set_sell_price_1000x_3(3333);
-        l2_tick_3->set_sell_quantity_3(3000);
-        l2_tick_3->set_sell_price_1000x_2(2222);
-        l2_tick_3->set_sell_quantity_2(2000);
-        l2_tick_3->set_sell_price_1000x_1(1111);
-        l2_tick_3->set_sell_quantity_1(1000);
-        l2_tick_3->set_buy_price_1000x_1(1111);
-        l2_tick_3->set_buy_quantity_1(1000);
-        l2_tick_3->set_buy_price_1000x_2(2222);
-        l2_tick_3->set_buy_quantity_2(2000);
-        l2_tick_3->set_buy_price_1000x_3(3333);
-        l2_tick_3->set_buy_quantity_3(3000);
+        for (int i = 1; i < 6; i++) {
+            const auto ask_levels = l2_tick_3->add_ask_levels();
+            ask_levels->set_price_1000x(i * 1111);
+            ask_levels->set_quantity(i * 1000);
+
+            const auto bid_levels = l2_tick_3->add_bid_levels();
+            bid_levels->set_price_1000x(i * 1111);
+            bid_levels->set_quantity(i * 1000);
+        }
 
         reporter->l2_tick_generated(l2_tick_0);
         reporter->l2_tick_generated(l2_tick_1);
