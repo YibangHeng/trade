@@ -215,6 +215,7 @@ trade::booker::TradeTickPtr trade::broker::CUTCommonData::x_ost_forward_to_trade
     trade_tick->set_symbol(order_tick->symbol());
     trade_tick->set_exec_price_1000x(order_tick->price_1000x());
     trade_tick->set_exec_quantity(order_tick->quantity());
+    trade_tick->set_exchange_date(order_tick->exchange_date());
     trade_tick->set_exchange_time(order_tick->exchange_time());
 
     /// Reset order tick to nullptr.
@@ -233,6 +234,7 @@ trade::booker::OrderTickPtr trade::broker::CUTCommonData::x_ost_forward_to_order
     order_tick->set_side(trade_tick->ask_unique_id() > trade_tick->bid_unique_id() ? types::SideType::sell : types::SideType::buy);
     order_tick->set_price_1000x(trade_tick->exec_price_1000x());
     order_tick->set_quantity(trade_tick->exec_quantity());
+    order_tick->set_exchange_date(trade_tick->exchange_date());
     order_tick->set_exchange_time(trade_tick->exchange_time());
 
     /// Reset trade tick to nullptr.
@@ -261,10 +263,20 @@ int64_t trade::broker::CUTCommonData::to_quantity_from_szse(const uint32_t exe_q
     return exe_qty / 100;
 }
 
+int64_t trade::broker::CUTCommonData::to_date_from_sse(const uint16_t year, const uint8_t month, const uint8_t day)
+{
+    return year * 10000 + month * 100 + day;
+}
+
 int64_t trade::broker::CUTCommonData::to_time_from_sse(const uint32_t tick_time)
 {
     /// tick_time example: 9250000.
     return tick_time * 10;
+}
+
+int64_t trade::broker::CUTCommonData::to_date_from_szse(const uint64_t quote_update_time)
+{
+    return static_cast<int64_t>(quote_update_time / 1000000000);
 }
 
 int64_t trade::broker::CUTCommonData::to_time_from_szse(const uint64_t quote_update_time)

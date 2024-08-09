@@ -74,7 +74,9 @@ public:
     [[nodiscard]] static int64_t to_price_1000x_from_szse(uint32_t exe_px);
     [[nodiscard]] static int64_t to_quantity_from_sse(uint32_t qty);
     [[nodiscard]] static int64_t to_quantity_from_szse(uint32_t exe_qty);
+    [[nodiscard]] static int64_t to_date_from_sse(const uint16_t year, const uint8_t month, const uint8_t day);
     [[nodiscard]] static int64_t to_time_from_sse(uint32_t tick_time);
+    [[nodiscard]] static int64_t to_date_from_szse(uint64_t quote_update_time);
     [[nodiscard]] static int64_t to_time_from_szse(uint64_t quote_update_time);
 
     /// Append symbol info to exchange_raw id as prefix.
@@ -103,6 +105,7 @@ inline booker::OrderTickPtr CUTCommonData::to_order_tick<SSEHpfTick>(const std::
     order_tick->set_side(to_md_side_from_sse(raw_order->m_side_flag));
     order_tick->set_price_1000x(to_price_1000x_from_sse(raw_order->m_order_price));
     order_tick->set_quantity(to_quantity_from_sse(raw_order->m_qty));
+    order_tick->set_exchange_date(to_date_from_sse(raw_order->m_head.m_data_year, raw_order->m_head.m_data_month, raw_order->m_head.m_data_day));
     order_tick->set_exchange_time(to_time_from_sse(raw_order->m_tick_time));
     order_tick->set_x_ost_sse_ask_unique_id(to_unique_id(raw_order->m_sell_order_no, raw_order->m_symbol_id));
     order_tick->set_x_ost_sse_bid_unique_id(to_unique_id(raw_order->m_buy_order_no, raw_order->m_symbol_id));
@@ -127,6 +130,7 @@ inline booker::OrderTickPtr CUTCommonData::to_order_tick<SZSEHpfOrderTick>(const
     order_tick->set_side(to_md_side_from_szse(raw_order->m_side));
     order_tick->set_price_1000x(to_price_1000x_from_szse(raw_order->m_px));
     order_tick->set_quantity(to_quantity_from_szse(raw_order->m_qty));
+    order_tick->set_exchange_date(to_date_from_szse(raw_order->m_header.m_quote_update_time));
     order_tick->set_exchange_time(to_time_from_szse(raw_order->m_header.m_quote_update_time));
 
     /// Just ignore fill tick.
@@ -150,6 +154,7 @@ inline booker::TradeTickPtr CUTCommonData::to_trade_tick<SZSEHpfTradeTick>(const
     trade_tick->set_symbol(raw_trade->m_header.m_symbol);
     trade_tick->set_exec_price_1000x(to_price_1000x_from_szse(raw_trade->m_exe_px));
     trade_tick->set_exec_quantity(to_quantity_from_szse(raw_trade->m_exe_qty));
+    trade_tick->set_exchange_date(to_date_from_szse(raw_trade->m_header.m_quote_update_time));
     trade_tick->set_exchange_time(to_time_from_szse(raw_trade->m_header.m_quote_update_time));
     trade_tick->set_x_ost_szse_exe_type(to_order_type_from_szse(raw_trade->m_exe_type));
 

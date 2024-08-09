@@ -21,6 +21,7 @@ struct StdTick {
     types::OrderType order_type;
     double price;
     int64_t quantity;
+    int64_t date;
     int64_t time;
 };
 

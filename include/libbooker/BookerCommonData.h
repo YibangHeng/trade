@@ -27,5 +27,6 @@ using OrderTickPtr       = std::shared_ptr<types::OrderTick>;
 using TradeTickPtr       = std::shared_ptr<types::TradeTick>;
 using ExchangeL2SnapPtr  = std::shared_ptr<types::ExchangeL2Snap>;
 using GeneratedL2TickPtr = std::shared_ptr<types::GeneratedL2Tick>;
+using RangedTickPtr      = std::shared_ptr<types::RangedTick>;
 
 } // namespace trade::booker

@@ -62,6 +62,7 @@ std::shared_ptr<trade::types::OrderTick> trade::booker::CallAuctionHolder::to_or
     order_tick->set_side(order_wrapper->is_buy() ? types::SideType::buy : types::SideType::sell);
     order_tick->set_price_1000x(BookerCommonData::to_price(order_wrapper->price()));
     order_tick->set_quantity(BookerCommonData::to_quantity(order_wrapper->quantity_on_market()));
+    order_tick->set_exchange_date(order_wrapper->exchange_date());
     order_tick->set_exchange_time(order_wrapper->exchange_time());
 
     return order_tick;

@@ -39,6 +39,7 @@ find_package(fmt REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(spdlog REQUIRED)
+find_package(unofficial-mysql-connector-cpp REQUIRED)
 find_package(unofficial-sqlite3 REQUIRED)
 find_package(ZeroMQ REQUIRED)
 
@@ -73,38 +74,39 @@ set(CONFIG_FILES
         README.txt
 )
 
-foreach (CONFIG_FILE ${CONFIG_FILES})
-    configure_file(${CMAKE_SOURCE_DIR}/etc/${CONFIG_FILE}
-            ${CMAKE_BINARY_DIR}/etc/${CONFIG_FILE}
-            COPYONLY)
-    install(FILES ${CMAKE_SOURCE_DIR}/etc/${CONFIG_FILE}
-            DESTINATION /usr/local/etc
-            COMPONENT config)
-endforeach ()
+foreach(CONFIG_FILE ${CONFIG_FILES})
+        configure_file(${CMAKE_SOURCE_DIR}/etc/${CONFIG_FILE}
+                ${CMAKE_BINARY_DIR}/etc/${CONFIG_FILE}
+                COPYONLY)
+        install(FILES ${CMAKE_SOURCE_DIR}/etc/${CONFIG_FILE}
+                DESTINATION /usr/local/etc
+                COMPONENT config)
+endforeach()
 
 # Tests.
 include(CTest)
-if (BUILD_TESTING)
-    find_package(Catch2 REQUIRED)
-    include(Catch)
-    add_subdirectory(tests)
-endif ()
+
+if(BUILD_TESTING)
+        find_package(Catch2 REQUIRED)
+        include(Catch)
+        add_subdirectory(tests)
+endif()
 
 # Documentation.
-if (BUILD_DOCS)
-    add_subdirectory(doc)
-endif ()
+if(BUILD_DOCS)
+        add_subdirectory(doc)
+endif()
 
 # Python bindings.
-if (BUILD_PYTHON)
-    find_package(pybind11)
+if(BUILD_PYTHON)
+        find_package(pybind11)
 
-    pybind11_add_module(_trade python/trade/_trade.cpp)
-    target_link_libraries(_trade PUBLIC)
+        pybind11_add_module(_trade python/trade/_trade.cpp)
+        target_link_libraries(_trade PUBLIC)
 
-    # Install the Python module shared library.
-    install(TARGETS _trade DESTINATION .)
-endif ()
+        # Install the Python module shared library.
+        install(TARGETS _trade DESTINATION .)
+endif()
 
 # Add an alias target for use if this project is included as a subproject in another project.
 # add_library(trade::trade ALIAS trade)
